@@ -31,4 +31,4 @@ rm -f "$TEMP_FILE"
 echo "Updating the updater..."
 curl -sSf "https://gitea.h.rkd.pw/ilvar/rkd-compose/raw/branch/main/update.sh" -o "update.sh"
 
-echo "Done
+echo "Done"
