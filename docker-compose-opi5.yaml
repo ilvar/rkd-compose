@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  proxy:
+    image: traefik:v3.3
+    restart: always
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    environment:
+      GANDIV5_PERSONAL_ACCESS_TOKEN: "${GANDIV5_PERSONAL_ACCESS_TOKEN}"
+    volumes:
+      - /home/rkd/traefik/:/etc/traefik/
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  blocky:
+    image: spx01/blocky
+    container_name: blocky
+    restart: always
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "4000:4000/tcp"
+    cap_add:
+      - NET_ADMIN  
+    environment:
+      - TZ=Europe/Dublin
+    volumes:
+      - /home/rkd/.docker/blocky/config.yaml:/app/config.yml
+
+  mqtt:
+    container_name: MQTT
+    restart: always
+    image: eclipse-mosquitto
+    volumes:
+      - /home/rkd/.docker/mosquitto/config:/mosquitto/config
+      - /home/rkd/.docker/mosquitto/log:/mosquitto/log
+      - /home/rkd/.docker/mosquitto/data:/mosquitto/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: always
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  portainer-agent:
+    image: portainer/agent:2.27.1
+    ports:
+      - "9011:9001"
+    restart: always
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/var/lib/docker/volumes"
+      - "/:/host"
+
+  zigbee2mqtt:
+    container_name: zigbee2mqtt
+    restart: unless-stopped
+    image: koenkk/zigbee2mqtt
+    volumes:
+      - /home/rkd/.docker/zigbee2mqtt/data:/app/data
+      - /run/udev:/run/udev:ro
+    environment:
+      - TZ=Europe/Dublin
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    ports:
+      - "8180:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.zb.rule=Host(`zigbee.d.z85`) || Host(`zigbee.h.rkd.pw`)"
+      - "traefik.http.services.zb.loadbalancer.server.port=8080"
