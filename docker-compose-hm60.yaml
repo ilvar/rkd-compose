@@ -144,7 +144,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.kavita.rule=Host(`kavita.d.z85`) || Host(`kavita.h.rkd.pw`)"
+      - "traefik.http.routers.kavita.rule=Host(`kavita.h.rkd.pw`) || Host(`kavita.d.z85`)"
       - "traefik.http.services.kavita.loadbalancer.server.port=5000"
 
   hoarder-web:
@@ -162,7 +162,7 @@ services:
       NEXTAUTH_URL: https://hoarder.h.rkd.pw
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hoarder.rule=Host(`hoarder.d.z85`) || Host(`hoarder.h.rkd.pw`)"
+      - "traefik.http.routers.hoarder.rule=Host(`hoarder.h.rkd.pw`) || Host(`hoarder.d.z85`)"
       - "traefik.http.services.hoarder.loadbalancer.server.port=3000"
       - "compote.fav=true"
       
@@ -200,7 +200,7 @@ services:
       - ./.docker/ente/data:/data:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.ente.rule=Host(`ente.d.z85`) || Host(`ente.h.rkd.pw`)"
+      - "traefik.http.routers.ente.rule=Host(`ente.h.rkd.pw`) || Host(`ente.d.z85`)"
       - "traefik.http.services.ente.loadbalancer.server.port=8080"
       - "compote.fav=true"
 
@@ -271,7 +271,7 @@ services:
       - CAPROVER_URL=https://captain.c.rkd.pw
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.compote.rule=Host(`compote.docker.z85`) || Host(`c.h.rkd.pw`) || Host(`compote.h.rkd.pw`)"
+      - "traefik.http.routers.compote.rule=Host(`compote.h.rkd.pw`) || Host(`compote.docker.z85`) || Host(`c.h.rkd.pw`)"
       - "traefik.http.services.compote.loadbalancer.server.port=9000"
 
   homeassistant:
@@ -288,7 +288,7 @@ services:
       - 8123:8123
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.ha.rule=Host(`ha.z85`) || Host(`ha.h.rkd.pw`)"
+      - "traefik.http.routers.ha.rule=Host(`ha.h.rkd.pw`) || Host(`ha.z85`)"
       - "traefik.http.services.ha.loadbalancer.server.port=8123"
       - "compote.fav=true"
 
@@ -306,7 +306,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nodered.rule=Host(`nodered.z85`) || Host(`nodered.h.rkd.pw`) || Host(`n.h.rkd.pw`)"
+      - "traefik.http.routers.nodered.rule=Host(`nodered.h.rkd.pw`) || Host(`n.h.rkd.pw`) || Host(`nodered.z85`)"
       - "traefik.http.services.nodered.loadbalancer.server.port=1880"
       - "traefik.port=1880"
 
@@ -374,7 +374,7 @@ services:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host:photos.z85"
       - "traefik.port=2342"
-      - "traefik.http.routers.ph.rule=Host(`photos.z85`) || Host(`photos.h.rkd.pw`) || Host(`ph.h.rkd.pw`)"
+      - "traefik.http.routers.ph.rule=Host(`photos.h.rkd.pw`) || Host(`ph.h.rkd.pw`) || Host(`photos.z85`)"
       - "traefik.http.services.ph.loadbalancer.server.port=2342"
       - "compote.fav=true"
 
@@ -413,7 +413,7 @@ services:
       - /home/rkd/.docker/teslamate/import:/opt/app/import
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.tesla.rule=Host(`tesla.z85`) || Host(`t.h.rkd.pw`) || Host(`tesla.h.rkd.pw`)"
+      - "traefik.http.routers.tesla.rule=Host(`tesla.h.rkd.pw`) || Host(`tesla.z85`) || Host(`t.h.rkd.pw`)"
       - "traefik.http.services.teslamate.loadbalancer.server.port=4000"
       - "compote.fav=true"
 
@@ -474,7 +474,7 @@ services:
       - PAPERLESS_REDIS=redis://paperless-redis:6379
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.docs.rule=Host(`docs.z85`) || Host(`docs.h.rkd.pw`) || Host(`d.h.rkd.pw`)"
+      - "traefik.http.routers.docs.rule=Host(`docs.h.rkd.pw`) || Host(`d.h.rkd.pw`) || Host(`docs.z85`)"
       - "traefik.http.services.docs.loadbalancer.server.port=8000"
       - "compote.fav=true"
 
@@ -533,7 +533,7 @@ services:
       - VIRTUAL_HOST=nextcloud.h.rkd.pw
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nc.rule=Host(`nextcloud.z85`) || Host(`nc.h.rkd.pw`) || Host(`nextcloud.h.rkd.pw`)"
+      - "traefik.http.routers.nc.rule=Host(`nextcloud.h.rkd.pw`) || Host(`nextcloud.z85`) || Host(`nc.h.rkd.pw`)"
       - "traefik.http.services.nc.loadbalancer.server.port=80"
       
   gitea-db:
@@ -586,6 +586,6 @@ services:
       - "jackett.z85:192.168.1.123"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.kuma.rule=Host(`kuma.docker.z85`) || Host(`k.h.rkd.pw`) || Host(`kuma.h.rkd.pw`)"
+      - "traefik.http.routers.kuma.rule=Host(`kuma.h.rkd.pw`) || Host(`k.h.rkd.pw`)"
       - "traefik.http.services.kuma.loadbalancer.server.port=3001"
       
