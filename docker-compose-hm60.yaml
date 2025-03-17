@@ -93,7 +93,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s # allow enough time to shut down the various services
     image: ghcr.io/harakas/frigate:latest-rocm
-    shm_size: "1024mb" # update for your cameras based on calculation above
+    shm_size: "512mb" # update for your cameras based on calculation above
     security_opt:
       - apparmor=unconfined
       - systempaths=unconfined
@@ -110,7 +110,7 @@ services:
       - type: tmpfs # Optional: 1GB of memory, reduces SSD/SD Card wear
         target: /tmp/cache
         tmpfs:
-          size: 1000000000
+          size: 500000000
     ports:
       - "8554:8554" # RTSP feeds
       - "8555:8555/tcp" # WebRTC over tcp
@@ -149,6 +149,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.librechat.rule=Host(`librechat.h.rkd.pw`)"
       - "traefik.http.services.librechat.loadbalancer.server.port=3080"
+
   librechat-mongodb:
     container_name: chat-mongodb
     image: mongo
@@ -157,6 +158,7 @@ services:
     volumes:
       - /home/rkd/.docker/librechat/data-node:/data/db
     command: mongod --noauth
+
   librechat-meilisearch:
     container_name: chat-meilisearch
     image: getmeili/meilisearch:v1.12.3
@@ -168,6 +170,7 @@ services:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-}
     volumes:
       - /home/rkd/.docker/librechat/meili_data_v1.12:/meili_data
+
   librechat-vectordb:
     container_name: vectordb
     image: ankane/pgvector:latest
@@ -178,6 +181,7 @@ services:
     restart: always
     volumes:
       - /home/rkd/.docker/librechat/pgdata2:/var/lib/postgresql/data
+
   librechat-rag_api:
     container_name: rag_api
     image: ghcr.io/danny-avila/librechat-rag-api-dev-lite:latest
