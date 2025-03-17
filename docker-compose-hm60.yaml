@@ -80,6 +80,7 @@ services:
     volumes:
       - /home/rkd/.docker/radarr/data:/config
       - /home/rkd/.nas:/movies #optional
+      - /home/rkd/.nas:/nas
       - /home/rkd/.nas/Downloads:/downloads #optional
     restart: unless-stopped
     labels:
