@@ -49,7 +49,7 @@ services:
       - 'host.docker.internal:host-gateway'
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.jellyfin.rule=Host(`jf.h.rkd.pw`)"
+      - "traefik.http.routers.jellyfin.rule=Host(`jf.h.rkd.pw`) || Host(`jellyfin.h.rkd.pw`)"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
 
   jackett:
