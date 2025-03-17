@@ -86,6 +86,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.radarr.rule=Host(`radarr.h.rkd.pw`)"
       - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+      - "compote.fav=true"
 
   deluge:
     image: lscr.io/linuxserver/deluge:latest
@@ -108,6 +109,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.deluge.rule=Host(`deluge.h.rkd.pw`)"
       - "traefik.http.services.deluge.loadbalancer.server.port=8112"
+      - "compote.fav=true"
 
   frigate:
     container_name: frigate
@@ -144,6 +146,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.frigate.rule=Host(`frigate.h.rkd.pw`)"
       - "traefik.http.services.frigate.loadbalancer.server.port=5000"
+      - "compote.fav=true"
 
   librechat-api:
     container_name: LibreChat
@@ -171,6 +174,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.librechat.rule=Host(`librechat.h.rkd.pw`)"
       - "traefik.http.services.librechat.loadbalancer.server.port=3080"
+      - "compote.fav=true"
 
   librechat-mongodb:
     container_name: chat-mongodb
