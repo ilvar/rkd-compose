@@ -215,6 +215,7 @@ services:
     environment:
       - DB_HOST=librechat-vectordb
       - RAG_PORT=${RAG_PORT:-8000}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     restart: always
     depends_on:
       - librechat-vectordb
