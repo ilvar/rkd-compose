@@ -40,8 +40,8 @@ services:
       - KROKI_EXCALIDRAW_HOST=kroki-excalidraw
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.portainer.rule=Host(`kroki.h.rkd.pw`)"
-      - "traefik.http.services.portainer.loadbalancer.server.port=8000"
+      - "traefik.http.routers.kroki.rule=Host(`kroki.h.rkd.pw`)"
+      - "traefik.http.services.kroki.loadbalancer.server.port=8000"
       - "compote.fav=true"
 
   kroki-mermaid:
