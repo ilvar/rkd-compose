@@ -40,7 +40,7 @@ services:
       - type: bind
         source: /home/rkd/.nas
         target: /nas
-    restart: 'unless-stopped'
+    restart: 'always'
     # Optional - alternative address used for autodiscovery
     environment:
       - JELLYFIN_PublishedServerUrl=https://jf.h.rkd.pw
@@ -64,7 +64,7 @@ services:
     volumes:
       - /home/rkd/.docker/jackett/data:/config
       - /home/rkd/.nas/Downloads:/downloads
-    restart: unless-stopped
+    restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jackett.rule=Host(`jackett.h.rkd.pw`)"
@@ -82,7 +82,7 @@ services:
       - /home/rkd/.nas:/movies #optional
       - /home/rkd/.nas:/nas
       - /home/rkd/.nas/Downloads:/downloads #optional
-    restart: unless-stopped
+    restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.radarr.rule=Host(`radarr.h.rkd.pw`)"
@@ -105,7 +105,7 @@ services:
       - 6881:6881
       - 6881:6881/udp
       - 58846:58846 #optional
-    restart: unless-stopped
+    restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.deluge.rule=Host(`deluge.h.rkd.pw`)"
@@ -115,10 +115,12 @@ services:
   frigate:
     container_name: frigate
     privileged: true # this may not be necessary for all setups
-    restart: unless-stopped
+    restart: always
     stop_grace_period: 30s # allow enough time to shut down the various services
     image: ghcr.io/harakas/frigate:latest-rocm
     shm_size: "512mb" # update for your cameras based on calculation above
+    mem_limit: 3g
+    mem_reservation: 3g
     security_opt:
       - apparmor=unconfined
       - systempaths=unconfined
@@ -232,7 +234,7 @@ services:
       - ./.docker/kavita/config:/config
       - ./.docker/kavita/data:/data #optional
       - ./.docker/nextcloud/data/data/ilvar/files/Books:/data/nextcloud/Books
-    restart: unless-stopped
+    restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.kavita.rule=Host(`kavita.h.rkd.pw`) || Host(`kavita.d.z85`)"
@@ -240,7 +242,7 @@ services:
 
   hoarder-web:
     image: ghcr.io/hoarder-app/hoarder:${HOARDER_VERSION:-release}
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./.docker/hoarder/data:/data
     environment:
@@ -259,7 +261,7 @@ services:
 
   hoarder-chrome:
     image: gcr.io/zenika-hub/alpine-chrome:123
-    restart: unless-stopped
+    restart: always
     command:
       - --no-sandbox
       - --disable-gpu
@@ -270,7 +272,7 @@ services:
 
   hoarder-meilisearch:
     image: getmeili/meilisearch:v1.11.1
-    restart: unless-stopped
+    restart: always
     environment:
       MEILI_NO_ANALYTICS: "true"
       MEILI_MASTER_KEY: jedijedi
@@ -320,7 +322,7 @@ services:
   blocky:
     image: spx01/blocky
     container_name: blocky
-    restart: unless-stopped
+    restart: always
     ports:
       - "53:53/tcp"
       - "53:53/udp"
@@ -352,6 +354,7 @@ services:
     container_name: home-assistant
     restart: always
     image: homeassistant/home-assistant:latest
+    mem_limit: 1g
     user: 1000:1000
     volumes:
       - /home/rkd/.docker/hass-config:/config
@@ -400,11 +403,10 @@ services:
     # https://docs.photoprism.org/getting-started/faq/#why-is-photoprism-getting-stuck-in-a-restart-loop
     # restart: always
     restart: always
+    mem_limit: 1g
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
-    ports:
-      - 2342:2342 # [local port]:[container port]
     user: 1000:1000
     environment:
       PUID: 1000
