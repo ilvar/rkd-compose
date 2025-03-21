@@ -4,6 +4,7 @@ services:
   proxy:
     image: traefik:v3.3
     restart: always
+    mem_limit: 512m
     ports:
       - "80:80"
       - "8080:8080"
@@ -19,6 +20,7 @@ services:
 
   portainer:
     container_name: portainer
+    mem_limit: 512m
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./.docker/portainer_data:/data"
@@ -32,6 +34,7 @@ services:
     image: jellyfin/jellyfin
     container_name: jellyfin
     user: 1000:1000
+    mem_limit: 1g
     ports:
       - "8096:8096"
     volumes:
@@ -55,6 +58,7 @@ services:
   jackett:
     image: lscr.io/linuxserver/jackett:latest
     container_name: jackett
+    mem_limit: 512m
     environment:
       - PUID=1000
       - PGID=1000
@@ -73,6 +77,7 @@ services:
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
+    mem_limit: 512m
     environment:
       - PUID=1000
       - PGID=1000
@@ -92,6 +97,7 @@ services:
   deluge:
     image: lscr.io/linuxserver/deluge:latest
     container_name: deluge
+    mem_limit: 1g
     environment:
       - PUID=1000
       - PGID=1000
@@ -157,6 +163,7 @@ services:
       - librechat-mongodb
       - librechat-rag_api
     image: ghcr.io/danny-avila/librechat-dev:latest
+    mem_limit: 512m
     restart: always
     user: "1000:1000"
     extra_hosts:
@@ -183,6 +190,7 @@ services:
     container_name: chat-mongodb
     image: mongo
     restart: always
+    mem_limit: 512m
     user: "1000:1000"
     volumes:
       - /home/rkd/.docker/librechat/data-node:/data/db
@@ -192,6 +200,7 @@ services:
     container_name: chat-meilisearch
     image: getmeili/meilisearch:v1.12.3
     restart: always
+    mem_limit: 512m
     user: "1000:1000"
     environment:
       - MEILI_HOST=http://librechat-meilisearch:7700
@@ -207,6 +216,7 @@ services:
       POSTGRES_DB: mydatabase
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
+    mem_limit: 512m
     restart: always
     volumes:
       - /home/rkd/.docker/librechat/pgdata2:/var/lib/postgresql/data
@@ -225,6 +235,7 @@ services:
   kavita:
     image: lscr.io/linuxserver/kavita:latest
     container_name: kavita
+    mem_limit: 512m
     environment:
       - PUID=1000
       - PGID=1000
@@ -243,6 +254,7 @@ services:
   hoarder-web:
     image: ghcr.io/hoarder-app/hoarder:${HOARDER_VERSION:-release}
     restart: always
+    mem_limit: 1g
     volumes:
       - ./.docker/hoarder/data:/data
     environment:
@@ -262,6 +274,7 @@ services:
   hoarder-chrome:
     image: gcr.io/zenika-hub/alpine-chrome:123
     restart: always
+    mem_limit: 1g
     command:
       - --no-sandbox
       - --disable-gpu
@@ -273,6 +286,7 @@ services:
   hoarder-meilisearch:
     image: getmeili/meilisearch:v1.11.1
     restart: always
+    mem_limit: 512m
     environment:
       MEILI_NO_ANALYTICS: "true"
       MEILI_MASTER_KEY: jedijedi
@@ -281,6 +295,7 @@ services:
 
   ente-museum:
     image: ghcr.io/ente-io/server
+    mem_limit: 512m
     environment:
       ENTE_CREDENTIALS_FILE: /credentials.yaml
     volumes:
@@ -312,6 +327,7 @@ services:
 
   ente-minio:
     image: minio/minio
+    mem_limit: 512m
     environment:
       MINIO_ROOT_USER: test
       MINIO_ROOT_PASSWORD: testtest
@@ -323,6 +339,7 @@ services:
     image: spx01/blocky
     container_name: blocky
     restart: always
+    mem_limit: 512m
     ports:
       - "53:53/tcp"
       - "53:53/udp"
@@ -338,6 +355,7 @@ services:
     image: r.c.rkd.pw/compote:latest
     build: ./compote
     container_name: compote
+    mem_limit: 512m
     volumes:
       - /home/rkd/.docker/compote/config.yaml:/app/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock
@@ -373,6 +391,7 @@ services:
     container_name: node-red-1
     restart: always
     image: nodered/node-red
+    mem_limit: 512m
     depends_on:
       - "homeassistant"
     user: 1000:1000
@@ -390,6 +409,7 @@ services:
   redis:
     image: "redis:alpine"
     restart: always
+    mem_limit: 512m
     volumes:
       - ./redis/data:/data
     ports:
@@ -478,6 +498,7 @@ services:
   teslamate:
     image: teslamate/teslamate:latest
     restart: always
+    mem_limit: 512m
     environment:
       - DATABASE_USER=teslamate
       - DATABASE_PASS=secret
@@ -506,6 +527,7 @@ services:
   teslamate-grafana:
     image: teslamate/grafana:latest
     restart: always
+    mem_limit: 512m
     environment:
       - DATABASE_USER=teslamate
       - DATABASE_PASS=secret
@@ -527,15 +549,7 @@ services:
   paperless-webserver:
     image: jonaswinkler/paperless-ng
     restart: always
-    ports:
-        # You can adapt the port you want Paperless to listen on by
-        # modifying the part before the `:`.
-        - "18000:8000"
-    healthcheck:
-        test: ["CMD", "curl" , "-f", "http://localhost:8000"]
-        interval: 30s
-        timeout: 10s
-        retries: 5
+    mem_limit: 512m
     volumes:
         - /home/rkd/.docker/paperless/data:/usr/src/paperless/data
         - /home/rkd/.docker/paperless/media:/usr/src/paperless/media
@@ -557,6 +571,7 @@ services:
   paperless-consumer:
     image: jonaswinkler/paperless-ng
     restart: always
+    mem_limit: 512m
     depends_on:
         - paperless-webserver
     volumes:
@@ -589,6 +604,7 @@ services:
   nextcloud-app:
     image: nextcloud
     restart: always
+    mem_limit: 512m
     depends_on:
       - nextcloud-db
     volumes:
@@ -652,6 +668,7 @@ services:
   kuma:
     image: louislam/uptime-kuma:latest
     restart: always
+    mem_limit: 512m
     volumes:
       - /home/rkd/.docker/kuma/data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
