@@ -352,9 +352,9 @@ services:
       - /home/rkd/.docker/blocky/config.yaml:/app/config.yml
 
   compote:
-    image: r.c.rkd.pw/compote:latest
-    build: ./compote
-    container_name: compote
+    image: r.c.rkd.pw/compote2:latest
+    build: ./compote2
+    container_name: compote2
     mem_limit: 512m
     volumes:
       - /home/rkd/.docker/compote/config.yaml:/app/config.yaml:ro
