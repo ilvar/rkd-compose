@@ -515,7 +515,7 @@ services:
       - "compote.fav=true"
 
   teslamate-database:
-    image: postgres:13
+    image: postgres:17
     restart: always
     environment:
       - POSTGRES_USER=teslamate
