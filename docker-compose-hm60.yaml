@@ -293,48 +293,6 @@ services:
     volumes:
       - ./.docker/hoarder/meilisearch:/meili_data
 
-  ente-museum:
-    image: ghcr.io/ente-io/server
-    mem_limit: 512m
-    environment:
-      ENTE_CREDENTIALS_FILE: /credentials.yaml
-    volumes:
-      - ./.docker/ente/custom-logs:/var/logs
-      - ./.docker/ente/museum.yaml:/museum.yaml:ro
-      - ./.docker/ente/credentials.yaml:/credentials.yaml:ro
-      - ./.docker/ente/data:/data:ro
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ente.rule=Host(`ente.h.rkd.pw`) || Host(`ente.d.z85`)"
-      - "traefik.http.services.ente.loadbalancer.server.port=8080"
-      - "compote.fav=true"
-
-  ente-socat:
-    image: alpine/socat
-    network_mode: service:ente-museum
-    depends_on:
-      - ente-museum
-    command: "TCP-LISTEN:3200,fork,reuseaddr TCP:ente-minio:3200"
-
-  ente-postgres:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: pguser
-      POSTGRES_PASSWORD: pgpass
-      POSTGRES_DB: ente_db
-    volumes:
-      - ./.docker/ente/postgres-data:/var/lib/postgresql/data
-
-  ente-minio:
-    image: minio/minio
-    mem_limit: 512m
-    environment:
-      MINIO_ROOT_USER: test
-      MINIO_ROOT_PASSWORD: testtest
-    command: server /data --address ":3200" --console-address ":3201"
-    volumes:
-      - ./.docker/ente/minio-data:/data
-
   blocky:
     image: spx01/blocky
     container_name: blocky
