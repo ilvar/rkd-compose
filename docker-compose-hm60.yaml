@@ -698,7 +698,7 @@ services:
       - DB_PASSWORD=postgres
       - DB_USERNAME=postgres
       - DB_DATABASE_NAME=immich
-      - DB_HOST=immich-database
+      - DB_HOSTNAME=immich-database
     depends_on:
       - immich-redis
       - immich-database
