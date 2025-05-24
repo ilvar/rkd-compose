@@ -685,11 +685,12 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:release
-    # extends:
-    #   file: hwaccel.transcoding.yml
-    #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
+    group_add:
+      - video
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/kfd:/dev/kfd
     volumes:
-      # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
       - /home/rkd/.docker/immich/upload:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
     environment:
@@ -697,6 +698,7 @@ services:
       - DB_PASSWORD=postgres
       - DB_USERNAME=postgres
       - DB_DATABASE_NAME=immich
+      - DB_HOST=immich-database
     depends_on:
       - immich-redis
       - immich-database
