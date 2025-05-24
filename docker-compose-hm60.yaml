@@ -496,7 +496,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
 
   teslamate:
-    image: teslamate/teslamate:v1.33.0 
+    image: teslamate/teslamate:1.33.0
     restart: always
     mem_limit: 512m
     environment:
