@@ -505,14 +505,13 @@ services:
     restart: always
 
   paperless-webserver:
-    image: jonaswinkler/paperless-ng
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
     restart: always
     mem_limit: 512m
     volumes:
         - /home/rkd/.docker/paperless/data:/usr/src/paperless/data
         - /home/rkd/.docker/paperless/media:/usr/src/paperless/media
-        # You have to adapt the local path you want the consumption
-        # directory to mount to by modifying the part before the ':'.
+        - /home/rkd/.docker/paperless/export:/export
         - /home/rkd/.docker/paperless/consume:/consume
     environment:
       - PAPERLESS_OCR_LANGUAGES=eng
@@ -520,29 +519,15 @@ services:
       - PAPERLESS_USE_SSL=false
       - PAPERLESS_FORGIVING_OCR=true
       - PAPERLESS_REDIS=redis://paperless-redis:6379
+      - PAPERLESS_AUTO_LOGIN_USERNAME=ilvar
+      - PAPERLESS_OCR_MODE=skip
+      - PAPERLESS_CONSUMER_DISABLE=true
+      - PAPERLESS_WEBSERVER_WORKERS=4
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.docs.rule=Host(`docs.h.rkd.pw`) || Host(`d.h.rkd.pw`) || Host(`docs.z85`)"
       - "traefik.http.services.docs.loadbalancer.server.port=8000"
       - "compote.fav=true"
-
-  paperless-consumer:
-    image: jonaswinkler/paperless-ng
-    restart: always
-    mem_limit: 512m
-    depends_on:
-        - paperless-webserver
-    volumes:
-        - /home/rkd/.docker/paperless/data:/usr/src/paperless/data
-        - /home/rkd/.docker/paperless/media:/usr/src/paperless/media
-        - /home/rkd/.docker/paperless/consume:/consume
-    environment:
-      - PAPERLESS_OCR_LANGUAGES=eng
-      - TZ=Europe/Dublin
-      - PAPERLESS_USE_SSL=false
-      - PAPERLESS_FORGIVING_OCR=true
-      - PAPERLESS_REDIS=redis://paperless-redis:6379
-    command: ["document_consumer"]
 
   nextcloud-db:
     image: mariadb:10.5
