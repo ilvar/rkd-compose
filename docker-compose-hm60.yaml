@@ -525,7 +525,6 @@ services:
       - PAPERLESS_URL=http://docs.h.rkd.pw
       - USE_X_FORWARD_HOST=true
       - USE_X_FORWARD_PORT=true
-      - PAPERLESS_PROXY_SSL_HEADER='["HTTP_X_FORWARDED_PROTO", "https"]'
       - PAPERLESS_SECRET_KEY=ilvar
     labels:
       - "traefik.enable=true"
