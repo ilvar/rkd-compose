@@ -522,7 +522,7 @@ services:
       - PAPERLESS_OCR_MODE=skip
       - PAPERLESS_CONSUMER_DISABLE=true
       - PAPERLESS_WEBSERVER_WORKERS=4
-      - PAPERLESS_URL=http://docs.h.rkd.pw
+      - PAPERLESS_URL=https://docs.h.rkd.pw
       - USE_X_FORWARD_HOST=true
       - USE_X_FORWARD_PORT=true
       - PAPERLESS_SECRET_KEY=ilvar
