@@ -519,7 +519,6 @@ services:
       - PAPERLESS_USE_SSL=false
       - PAPERLESS_FORGIVING_OCR=true
       - PAPERLESS_REDIS=redis://paperless-redis:6379
-      - PAPERLESS_AUTO_LOGIN_USERNAME=ilvar
       - PAPERLESS_OCR_MODE=skip
       - PAPERLESS_CONSUMER_DISABLE=true
       - PAPERLESS_WEBSERVER_WORKERS=4
