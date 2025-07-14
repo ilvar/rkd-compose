@@ -2,7 +2,7 @@ version: '3'
 
 services:
   proxy:
-    image: traefik:v3.3
+    image: traefik:v3.4
     restart: always
     mem_limit: 512m
     ports:
@@ -13,7 +13,7 @@ services:
       - 1.1.1.1
       - 8.8.8.8
     environment:
-      GANDIV5_PERSONAL_ACCESS_TOKEN: "${GANDIV5_PERSONAL_ACCESS_TOKEN}"
+      CLOUDFLARE_DNS_API_TOKEN: "${CLOUDFLARE_DNS_API_TOKEN}"
     volumes:
       - /home/rkd/traefik/:/etc/traefik/
       - /var/run/docker.sock:/var/run/docker.sock
