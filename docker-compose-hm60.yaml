@@ -507,7 +507,8 @@ services:
   paperless-webserver:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     restart: always
-    mem_limit: 512m
+    depends_on:
+      - paperless-redis
     volumes:
         - /home/rkd/.docker/paperless/data:/usr/src/paperless/data
         - /home/rkd/.docker/paperless/media:/usr/src/paperless/media
