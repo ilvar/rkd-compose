@@ -39,6 +39,7 @@ customDNS:
   mapping:
     z85: 192.168.1.124
     rkd.pw: 65.109.66.224
+    dl.rkd.pw: 54.171.128.15
     zigbee.h.rkd.pw: 192.168.1.123
     h.rkd.pw: 192.168.1.124
     pi.hole: 192.168.1.124
