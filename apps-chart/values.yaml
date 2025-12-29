@@ -293,7 +293,7 @@ nextcloud:
       PUID: 1000
       PGID: 1000
     storage:
-      data: nextcloud-db-data
+      size: 10Gi
 
 kuma:
   enabled: true
@@ -348,7 +348,7 @@ immich:
       POSTGRES_DB: immich
       POSTGRES_INITDB_ARGS: --data-checksums
     storage:
-      data: immich-postgres-data
+      size: 20Gi
   ingress:
     enabled: true
     hosts:
@@ -422,7 +422,7 @@ minifluxDb:
   secrets:
     postgresPassword: "066a04f209"
   storage:
-    data: miniflux-db-data
+    size: 1Gi
 
 miniflux:
   enabled: true

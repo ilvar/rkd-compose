@@ -10,18 +10,17 @@ stringData:
   postgres-password: {{ .Values.minifluxDb.secrets.postgresPassword | default "" | quote }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: miniflux-db
   labels:
     app: miniflux-db
 spec:
+  serviceName: miniflux-db
   replicas: 1
   selector:
     matchLabels:
       app: miniflux-db
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
@@ -49,10 +48,15 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /var/lib/postgresql/data
-      volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: {{ .Values.minifluxDb.storage.data }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.minifluxDb.storage.size | default "1Gi" }}
 ---
 apiVersion: v1
 kind: Service
@@ -67,17 +71,6 @@ spec:
     protocol: TCP
   selector:
     app: miniflux-db
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.minifluxDb.storage.data }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
 ---
 apiVersion: v1
 kind: Secret

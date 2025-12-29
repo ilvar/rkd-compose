@@ -12,18 +12,17 @@ stringData:
   mysql-root-password: {{ .Values.nextcloud.secrets.mysqlRootPassword | default "nextcloud" | quote }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: nextcloud-db
   labels:
     app: nextcloud-db
 spec:
+  serviceName: nextcloud-db
   replicas: 1
   selector:
     matchLabels:
       app: nextcloud-db
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
@@ -64,10 +63,15 @@ spec:
       securityContext:
         runAsUser: {{ include "apps-chart.userID" .Values.nextcloud.db.user | int }}
         runAsGroup: {{ include "apps-chart.groupID" .Values.nextcloud.db.user | int }}
-      volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: {{ .Values.nextcloud.db.storage.data }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.nextcloud.db.storage.size | default "10Gi" }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -165,17 +169,6 @@ spec:
     protocol: TCP
   selector:
     app: nextcloud-app
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.nextcloud.db.storage.data }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

@@ -10,18 +10,17 @@ stringData:
   secret-key: {{ .Values.paperless.secrets.secretKey | default "ilvar" | quote }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: paperless-redis
   labels:
     app: paperless-redis
 spec:
+  serviceName: paperless-redis
   replicas: 1
   selector:
     matchLabels:
       app: paperless-redis
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:

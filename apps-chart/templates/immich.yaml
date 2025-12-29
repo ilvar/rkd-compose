@@ -11,18 +11,17 @@ stringData:
   postgres-password: {{ .Values.immich.secrets.postgresPassword | default "postgres" | quote }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: immich-database
   labels:
     app: immich-database
 spec:
+  serviceName: immich-database
   replicas: 1
   selector:
     matchLabels:
       app: immich-database
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
@@ -49,10 +48,15 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /var/lib/postgresql/data
-      volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: {{ .Values.immich.database.storage.data }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.immich.database.storage.size | default "20Gi" }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -216,17 +220,6 @@ spec:
     protocol: TCP
   selector:
     app: immich-server
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.immich.database.storage.data }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
