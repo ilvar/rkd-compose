@@ -1,0 +1,19 @@
+repos:
+  - repo: local
+    hooks:
+      - id: bump-chart-version
+        name: Bump Helm Chart Version
+        entry: python3 scripts/bump_chart_version.py
+        language: system
+        files: ^apps-chart/
+        exclude: ^apps-chart/Chart\.yaml$
+        pass_filenames: false
+        always_run: false
+      - id: helm-lint
+        name: Helm Lint
+        entry: bash -c 'helm lint apps-chart'
+        language: system
+        files: ^apps-chart/
+        pass_filenames: false
+        always_run: false
+
