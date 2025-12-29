@@ -230,13 +230,13 @@ paperless:
       PAPERLESS_URL: https://docs.h.rkd.pw
       USE_X_FORWARD_HOST: "true"
       USE_X_FORWARD_PORT: "true"
-  secrets:
-    secretKey: ilvar
     storage:
       data: paperless-data
       media: paperless-media
       export: paperless-export
       consume: paperless-consume
+  secrets:
+    secretKey: ilvar
   redis:
     image:
       repository: redis
