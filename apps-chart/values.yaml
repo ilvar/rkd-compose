@@ -78,7 +78,7 @@ jellyfin:
     tag: latest
   resources:
     limits:
-      memory: 6Gi
+      memory: 2Gi
   user: 1000:1000
   environment:
     JELLYFIN_PublishedServerUrl: https://jf.h.rkd.pw
@@ -103,7 +103,7 @@ deluge:
     tag: latest
   resources:
     limits:
-      memory: 1Gi
+      memory: 512Mi
   environment:
     PUID: 1000
     PGID: 1000
@@ -131,7 +131,7 @@ homeassistant:
     tag: latest
   resources:
     limits:
-      memory: 1Gi
+      memory: 512Mi
   user: 1000:1000
   privileged: true
   ports:
@@ -154,7 +154,7 @@ hoarder:
       tag: release
     resources:
       limits:
-        memory: 1Gi
+        memory: 512Mi
     environment:
       MEILI_ADDR: http://hoarder-meilisearch:7700
       BROWSER_WEB_URL: http://hoarder-chrome:9222
@@ -177,7 +177,7 @@ hoarder:
       tag: "123"
     resources:
       limits:
-        memory: 1Gi
+        memory: 512Mi
   meilisearch:
     image:
       repository: getmeili/meilisearch
@@ -218,6 +218,9 @@ paperless:
     image:
       repository: ghcr.io/paperless-ngx/paperless-ngx
       tag: latest
+    resources:
+      limits:
+        memory: 512Mi
     environment:
       PAPERLESS_OCR_LANGUAGES: eng
       TZ: Europe/Dublin
@@ -241,6 +244,9 @@ paperless:
     image:
       repository: redis
       tag: "6.0"
+    resources:
+      limits:
+        memory: 256Mi
   ingress:
     enabled: true
     hosts:
@@ -286,6 +292,9 @@ nextcloud:
     image:
       repository: mariadb
       tag: "10.5"
+    resources:
+      limits:
+        memory: 512Mi
     user: 1000:1000
     environment:
       MYSQL_DATABASE: nextcloud
@@ -318,6 +327,9 @@ immich:
     image:
       repository: ghcr.io/immich-app/immich-server
       tag: release
+    resources:
+      limits:
+        memory: 1Gi
     environment:
       TZ: Europe/Dublin
       DB_USERNAME: postgres
@@ -332,6 +344,9 @@ immich:
     image:
       repository: ghcr.io/immich-app/immich-machine-learning
       tag: release
+    resources:
+      limits:
+        memory: 2Gi
     storage:
       modelCache: immich-model-cache
   redis:
@@ -339,10 +354,16 @@ immich:
       repository: docker.io/valkey/valkey
       tag: 8-bookworm
       digest: sha256:ff21bc0f8194dc9c105b769aeabf9585fea6a8ed649c0781caeac5cb3c247884
+    resources:
+      limits:
+        memory: 256Mi
   database:
     image:
       repository: ghcr.io/immich-app/postgres
       tag: 14-vectorchord0.3.0-pgvectors0.2.0
+    resources:
+      limits:
+        memory: 512Mi
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: immich
