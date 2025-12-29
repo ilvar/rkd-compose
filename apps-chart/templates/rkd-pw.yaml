@@ -1,0 +1,66 @@
+{{- if .Values.rkdPw.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rkd-pw
+  labels:
+    app: rkd-pw
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rkd-pw
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: rkd-pw
+    spec:
+      containers:
+      - name: rkd-pw
+        image: "{{ .Values.rkdPw.image.repository }}:{{ .Values.rkdPw.image.tag }}"
+        resources:
+          limits:
+            memory: {{ .Values.rkdPw.resources.limits.memory }}
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rkd-pw
+  labels:
+    app: rkd-pw
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+  selector:
+    app: rkd-pw
+---
+{{- if .Values.rkdPw.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rkd-pw
+  labels:
+    app: rkd-pw
+spec:
+  rules:
+  {{- range .Values.rkdPw.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rkd-pw
+            port:
+              number: {{ $.Values.rkdPw.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}

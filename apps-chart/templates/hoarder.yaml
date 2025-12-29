@@ -1,0 +1,229 @@
+{{- if .Values.hoarder.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hoarder-secrets
+  labels:
+    app: hoarder
+type: Opaque
+stringData:
+  nextauth-secret: {{ .Values.hoarder.secrets.nextauthSecret | default "jedijedi" | quote }}
+  meili-master-key: {{ .Values.hoarder.secrets.meiliMasterKey | default "jedijedi" | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hoarder-web
+  labels:
+    app: hoarder-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hoarder-web
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: hoarder-web
+    spec:
+      containers:
+      - name: hoarder-web
+        image: "{{ .Values.hoarder.web.image.repository }}:{{ .Values.hoarder.web.image.tag }}"
+        env:
+        - name: MEILI_ADDR
+          value: {{ .Values.hoarder.web.environment.MEILI_ADDR | quote }}
+        - name: BROWSER_WEB_URL
+          value: {{ .Values.hoarder.web.environment.BROWSER_WEB_URL | quote }}
+        - name: DATA_DIR
+          value: {{ .Values.hoarder.web.environment.DATA_DIR | quote }}
+        - name: NEXTAUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: hoarder-secrets
+              key: nextauth-secret
+        - name: MEILI_MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hoarder-secrets
+              key: meili-master-key
+        - name: NEXTAUTH_URL
+          value: {{ .Values.hoarder.web.environment.NEXTAUTH_URL | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.hoarder.web.resources.limits.memory }}
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.hoarder.web.storage.data }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hoarder-chrome
+  labels:
+    app: hoarder-chrome
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hoarder-chrome
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: hoarder-chrome
+    spec:
+      containers:
+      - name: hoarder-chrome
+        image: "{{ .Values.hoarder.chrome.image.repository }}:{{ .Values.hoarder.chrome.image.tag }}"
+        command:
+        - --no-sandbox
+        - --disable-gpu
+        - --disable-dev-shm-usage
+        - --remote-debugging-address=0.0.0.0
+        - --remote-debugging-port=9222
+        - --hide-scrollbars
+        ports:
+        - containerPort: 9222
+          protocol: TCP
+        resources:
+          limits:
+            memory: {{ .Values.hoarder.chrome.resources.limits.memory }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hoarder-meilisearch
+  labels:
+    app: hoarder-meilisearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hoarder-meilisearch
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: hoarder-meilisearch
+    spec:
+      containers:
+      - name: hoarder-meilisearch
+        image: "{{ .Values.hoarder.meilisearch.image.repository }}:{{ .Values.hoarder.meilisearch.image.tag }}"
+        env:
+        - name: MEILI_NO_ANALYTICS
+          value: {{ .Values.hoarder.meilisearch.environment.MEILI_NO_ANALYTICS | quote }}
+        - name: MEILI_MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hoarder-secrets
+              key: meili-master-key
+        ports:
+        - containerPort: 7700
+          protocol: TCP
+        resources:
+          limits:
+            memory: {{ .Values.hoarder.meilisearch.resources.limits.memory }}
+        volumeMounts:
+        - name: data
+          mountPath: /meili_data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.hoarder.meilisearch.storage.data }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hoarder-web
+  labels:
+    app: hoarder-web
+spec:
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: hoarder-web
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hoarder-chrome
+  labels:
+    app: hoarder-chrome
+spec:
+  ports:
+  - port: 9222
+    targetPort: 9222
+    protocol: TCP
+  selector:
+    app: hoarder-chrome
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hoarder-meilisearch
+  labels:
+    app: hoarder-meilisearch
+spec:
+  ports:
+  - port: 7700
+    targetPort: 7700
+    protocol: TCP
+  selector:
+    app: hoarder-meilisearch
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.hoarder.web.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.hoarder.meilisearch.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+{{- if and .Values.hoarder.enabled .Values.hoarder.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hoarder
+  labels:
+    app: hoarder-web
+spec:
+  rules:
+  {{- range .Values.hoarder.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hoarder-web
+            port:
+              number: {{ $.Values.hoarder.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

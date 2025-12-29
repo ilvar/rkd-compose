@@ -1,0 +1,105 @@
+{{- if .Values.bugsink.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bugsink-secrets
+  labels:
+    app: bugsink
+type: Opaque
+stringData:
+  secret-key: {{ .Values.bugsink.secrets.secretKey | default "" | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bugsink
+  labels:
+    app: bugsink
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bugsink
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bugsink
+    spec:
+      containers:
+      - name: bugsink
+        image: "{{ .Values.bugsink.image.repository }}:{{ .Values.bugsink.image.tag }}"
+        env:
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: bugsink-secrets
+              key: secret-key
+        - name: CREATE_SUPERUSER
+          value: {{ .Values.bugsink.environment.CREATE_SUPERUSER | quote }}
+        - name: PORT
+          value: {{ .Values.bugsink.environment.PORT | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.bugsink.resources.limits.memory }}
+        ports:
+        - containerPort: {{ .Values.bugsink.environment.PORT | int }}
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.bugsink.storage.data }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bugsink
+  labels:
+    app: bugsink
+spec:
+  ports:
+  - port: {{ .Values.bugsink.ingress.servicePort }}
+    targetPort: {{ .Values.bugsink.environment.PORT | int }}
+    protocol: TCP
+  selector:
+    app: bugsink
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.bugsink.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+{{- if and .Values.bugsink.enabled .Values.bugsink.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bugsink
+  labels:
+    app: bugsink
+spec:
+  rules:
+  {{- range .Values.bugsink.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bugsink
+            port:
+              number: {{ $.Values.bugsink.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

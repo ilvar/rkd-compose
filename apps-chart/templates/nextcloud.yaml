@@ -1,0 +1,214 @@
+{{- if .Values.nextcloud.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nextcloud-secrets
+  labels:
+    app: nextcloud
+type: Opaque
+stringData:
+  admin-password: {{ .Values.nextcloud.secrets.adminPassword | default "" | quote }}
+  mysql-password: {{ .Values.nextcloud.secrets.mysqlPassword | default "nextcloud" | quote }}
+  mysql-root-password: {{ .Values.nextcloud.secrets.mysqlRootPassword | default "nextcloud" | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-db
+  labels:
+    app: nextcloud-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nextcloud-db
+    spec:
+      containers:
+      - name: nextcloud-db
+        image: "{{ .Values.nextcloud.db.image.repository }}:{{ .Values.nextcloud.db.image.tag }}"
+        command:
+        - mysqld
+        - --transaction-isolation=READ-COMMITTED
+        - --binlog-format=ROW
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-secrets
+              key: mysql-root-password
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-secrets
+              key: mysql-password
+        - name: MYSQL_DATABASE
+          value: {{ .Values.nextcloud.db.environment.MYSQL_DATABASE | quote }}
+        - name: MYSQL_USER
+          value: {{ .Values.nextcloud.db.environment.MYSQL_USER | quote }}
+        - name: PUID
+          value: {{ .Values.nextcloud.db.environment.PUID | quote }}
+        - name: PGID
+          value: {{ .Values.nextcloud.db.environment.PGID | quote }}
+        ports:
+        - containerPort: 3306
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+      securityContext:
+        runAsUser: {{ include "apps-chart.userID" .Values.nextcloud.db.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.nextcloud.db.user | int }}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.nextcloud.db.storage.data }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-app
+  labels:
+    app: nextcloud-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud-app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nextcloud-app
+    spec:
+      containers:
+      - name: nextcloud-app
+        image: "{{ .Values.nextcloud.app.image.repository }}:{{ .Values.nextcloud.app.image.tag }}"
+        env:
+        - name: PUID
+          value: {{ .Values.nextcloud.app.environment.PUID | quote }}
+        - name: PGID
+          value: {{ .Values.nextcloud.app.environment.PGID | quote }}
+        - name: NEXTCLOUD_ADMIN_USER
+          value: {{ .Values.nextcloud.app.environment.NEXTCLOUD_ADMIN_USER | quote }}
+        - name: NEXTCLOUD_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-secrets
+              key: admin-password
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-secrets
+              key: mysql-password
+        - name: MYSQL_DATABASE
+          value: {{ .Values.nextcloud.app.environment.MYSQL_DATABASE | quote }}
+        - name: MYSQL_USER
+          value: {{ .Values.nextcloud.app.environment.MYSQL_USER | quote }}
+        - name: MYSQL_HOST
+          value: {{ .Values.nextcloud.app.environment.MYSQL_HOST | quote }}
+        - name: NEXTCLOUD_TRUSTED_DOMAINS
+          value: {{ .Values.nextcloud.app.environment.NEXTCLOUD_TRUSTED_DOMAINS | quote }}
+        - name: OVERWRITEHOST
+          value: {{ .Values.nextcloud.app.environment.OVERWRITEHOST | quote }}
+        - name: OVERWRITEPROTOCOL
+          value: {{ .Values.nextcloud.app.environment.OVERWRITEPROTOCOL | quote }}
+        - name: VIRTUAL_HOST
+          value: {{ .Values.nextcloud.app.environment.VIRTUAL_HOST | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.nextcloud.app.resources.limits.memory }}
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html
+      securityContext:
+        runAsUser: {{ include "apps-chart.userID" .Values.nextcloud.app.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.nextcloud.app.user | int }}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.nextcloud.app.storage.data }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-db
+  labels:
+    app: nextcloud-db
+spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
+    protocol: TCP
+  selector:
+    app: nextcloud-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-app
+  labels:
+    app: nextcloud-app
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: nextcloud-app
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.nextcloud.db.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.nextcloud.app.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+{{- if and .Values.nextcloud.enabled .Values.nextcloud.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud
+  labels:
+    app: nextcloud-app
+spec:
+  rules:
+  {{- range .Values.nextcloud.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nextcloud-app
+            port:
+              number: {{ $.Values.nextcloud.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

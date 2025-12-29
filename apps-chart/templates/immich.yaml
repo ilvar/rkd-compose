@@ -1,0 +1,276 @@
+{{- if .Values.immich.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: immich-secrets
+  labels:
+    app: immich
+type: Opaque
+stringData:
+  db-password: {{ .Values.immich.secrets.dbPassword | default "postgres" | quote }}
+  postgres-password: {{ .Values.immich.secrets.postgresPassword | default "postgres" | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-database
+  labels:
+    app: immich-database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-database
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: immich-database
+    spec:
+      containers:
+      - name: immich-database
+        image: "{{ .Values.immich.database.image.repository }}:{{ .Values.immich.database.image.tag }}"
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: immich-secrets
+              key: postgres-password
+        - name: POSTGRES_USER
+          value: {{ .Values.immich.database.environment.POSTGRES_USER | quote }}
+        - name: POSTGRES_DB
+          value: {{ .Values.immich.database.environment.POSTGRES_DB | quote }}
+        - name: POSTGRES_INITDB_ARGS
+          value: {{ .Values.immich.database.environment.POSTGRES_INITDB_ARGS | quote }}
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.immich.database.storage.data }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-redis
+  labels:
+    app: immich-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: immich-redis
+    spec:
+      containers:
+      - name: immich-redis
+        image: "{{ .Values.immich.redis.image.repository }}:{{ .Values.immich.redis.image.tag }}@{{ .Values.immich.redis.image.digest }}"
+        ports:
+        - containerPort: 6379
+          protocol: TCP
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-machine-learning
+  labels:
+    app: immich-machine-learning
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-machine-learning
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: immich-machine-learning
+    spec:
+      containers:
+      - name: immich-machine-learning
+        image: "{{ .Values.immich.machineLearning.image.repository }}:{{ .Values.immich.machineLearning.image.tag }}"
+        volumeMounts:
+        - name: model-cache
+          mountPath: /cache
+      volumes:
+      - name: model-cache
+        persistentVolumeClaim:
+          claimName: {{ .Values.immich.machineLearning.storage.modelCache }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  labels:
+    app: immich-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-server
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: immich-server
+    spec:
+      containers:
+      - name: immich-server
+        image: "{{ .Values.immich.server.image.repository }}:{{ .Values.immich.server.image.tag }}"
+        env:
+        - name: TZ
+          value: {{ .Values.immich.server.environment.TZ | quote }}
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: immich-secrets
+              key: db-password
+        - name: DB_USERNAME
+          value: {{ .Values.immich.server.environment.DB_USERNAME | quote }}
+        - name: DB_DATABASE_NAME
+          value: {{ .Values.immich.server.environment.DB_DATABASE_NAME | quote }}
+        - name: DB_HOSTNAME
+          value: {{ .Values.immich.server.environment.DB_HOSTNAME | quote }}
+        ports:
+        - containerPort: 2283
+          protocol: TCP
+        volumeMounts:
+        - name: localtime
+          mountPath: /etc/localtime
+          readOnly: true
+        - name: upload
+          mountPath: /usr/src/app/upload
+      volumes:
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+          type: File
+      - name: upload
+        persistentVolumeClaim:
+          claimName: {{ .Values.immich.server.storage.upload }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-database
+  labels:
+    app: immich-database
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: immich-database
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-redis
+  labels:
+    app: immich-redis
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+  selector:
+    app: immich-redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-server
+  labels:
+    app: immich-server
+spec:
+  ports:
+  - port: 2283
+    targetPort: 2283
+    protocol: TCP
+  selector:
+    app: immich-server
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.immich.database.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.immich.server.storage.upload }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.immich.machineLearning.storage.modelCache }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+{{- if and .Values.immich.enabled .Values.immich.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: immich
+  labels:
+    app: immich-server
+spec:
+  rules:
+  {{- range .Values.immich.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: immich-server
+            port:
+              number: {{ $.Values.immich.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

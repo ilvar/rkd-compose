@@ -1,0 +1,112 @@
+{{- if .Values.homeassistant.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homeassistant
+  labels:
+    app: homeassistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homeassistant
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: homeassistant
+    spec:
+      containers:
+      - name: homeassistant
+        image: "{{ .Values.homeassistant.image.repository }}:{{ .Values.homeassistant.image.tag }}"
+        resources:
+          limits:
+            memory: {{ .Values.homeassistant.resources.limits.memory }}
+        ports:
+        - containerPort: {{ .Values.homeassistant.ports.http }}
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: media
+          mountPath: /media
+        - name: localtime
+          mountPath: /etc/localtime
+          readOnly: true
+      securityContext:
+        runAsUser: {{ include "apps-chart.userID" .Values.homeassistant.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.homeassistant.user | int }}
+        privileged: {{ .Values.homeassistant.privileged }}
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: {{ .Values.homeassistant.storage.config }}
+      - name: media
+        persistentVolumeClaim:
+          claimName: {{ .Values.homeassistant.storage.media }}
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+          type: File
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homeassistant
+  labels:
+    app: homeassistant
+spec:
+  ports:
+  - port: {{ .Values.homeassistant.ports.http }}
+    targetPort: {{ .Values.homeassistant.ports.http }}
+    protocol: TCP
+  selector:
+    app: homeassistant
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.homeassistant.storage.config }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.homeassistant.storage.media }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+{{- if and .Values.homeassistant.enabled .Values.homeassistant.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homeassistant
+  labels:
+    app: homeassistant
+spec:
+  rules:
+  {{- range .Values.homeassistant.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: homeassistant
+            port:
+              number: {{ $.Values.homeassistant.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

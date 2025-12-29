@@ -1,0 +1,89 @@
+{{- if .Values.archive.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archive
+  labels:
+    app: archive
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: archive
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: archive
+    spec:
+      containers:
+      - name: archive
+        image: "{{ .Values.archive.image.repository }}:{{ .Values.archive.image.tag }}"
+        env:
+        - name: ALLOWED_HOSTS
+          value: {{ .Values.archive.environment.ALLOWED_HOSTS | quote }}
+        - name: MEDIA_MAX_SIZE
+          value: {{ .Values.archive.environment.MEDIA_MAX_SIZE | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.archive.resources.limits.memory }}
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.archive.storage.data }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: archive
+  labels:
+    app: archive
+spec:
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: archive
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.archive.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+{{- if .Values.archive.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: archive
+  labels:
+    app: archive
+spec:
+  rules:
+  {{- range .Values.archive.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: archive
+            port:
+              number: {{ $.Values.archive.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}

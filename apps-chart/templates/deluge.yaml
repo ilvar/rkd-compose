@@ -1,0 +1,132 @@
+{{- if .Values.deluge.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deluge
+  labels:
+    app: deluge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deluge
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: deluge
+    spec:
+      containers:
+      - name: deluge
+        image: "{{ .Values.deluge.image.repository }}:{{ .Values.deluge.image.tag }}"
+        env:
+        - name: PUID
+          value: {{ .Values.deluge.environment.PUID | quote }}
+        - name: PGID
+          value: {{ .Values.deluge.environment.PGID | quote }}
+        - name: TZ
+          value: {{ .Values.deluge.environment.TZ | quote }}
+        - name: DELUGE_LOGLEVEL
+          value: {{ .Values.deluge.environment.DELUGE_LOGLEVEL | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.deluge.resources.limits.memory }}
+        ports:
+        - containerPort: {{ .Values.deluge.ports.bittorrent.tcp }}
+          protocol: TCP
+          hostPort: {{ .Values.deluge.ports.bittorrent.tcp }}
+        - containerPort: {{ .Values.deluge.ports.bittorrent.udp }}
+          protocol: UDP
+          hostPort: {{ .Values.deluge.ports.bittorrent.udp }}
+        - containerPort: {{ .Values.deluge.ports.daemon }}
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: nas
+          mountPath: /nas
+        - name: downloads
+          mountPath: /downloads
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: {{ .Values.deluge.storage.config }}
+      - name: nas
+        persistentVolumeClaim:
+          claimName: {{ .Values.deluge.storage.nas }}
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: {{ .Values.deluge.storage.downloads }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deluge
+  labels:
+    app: deluge
+spec:
+  ports:
+  - port: 8112
+    targetPort: 8112
+    protocol: TCP
+  selector:
+    app: deluge
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.deluge.storage.config }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.deluge.storage.nas }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.deluge.storage.downloads }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+{{- if and .Values.deluge.enabled .Values.deluge.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deluge
+  labels:
+    app: deluge
+spec:
+  rules:
+  {{- range .Values.deluge.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: deluge
+            port:
+              number: {{ $.Values.deluge.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

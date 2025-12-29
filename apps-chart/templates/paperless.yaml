@@ -1,0 +1,207 @@
+{{- if .Values.paperless.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: paperless-secrets
+  labels:
+    app: paperless
+type: Opaque
+stringData:
+  secret-key: {{ .Values.paperless.secrets.secretKey | default "ilvar" | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-redis
+  labels:
+    app: paperless-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: paperless-redis
+    spec:
+      containers:
+      - name: paperless-redis
+        image: "{{ .Values.paperless.redis.image.repository }}:{{ .Values.paperless.redis.image.tag }}"
+        ports:
+        - containerPort: 6379
+          protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-webserver
+  labels:
+    app: paperless-webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-webserver
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: paperless-webserver
+    spec:
+      containers:
+      - name: paperless-webserver
+        image: "{{ .Values.paperless.webserver.image.repository }}:{{ .Values.paperless.webserver.image.tag }}"
+        env:
+        - name: PAPERLESS_OCR_LANGUAGES
+          value: {{ .Values.paperless.webserver.environment.PAPERLESS_OCR_LANGUAGES | quote }}
+        - name: TZ
+          value: {{ .Values.paperless.webserver.environment.TZ | quote }}
+        - name: PAPERLESS_USE_SSL
+          value: {{ .Values.paperless.webserver.environment.PAPERLESS_USE_SSL | quote }}
+        - name: PAPERLESS_FORGIVING_OCR
+          value: {{ .Values.paperless.webserver.environment.PAPERLESS_FORGIVING_OCR | quote }}
+        - name: PAPERLESS_REDIS
+          value: {{ .Values.paperless.webserver.environment.PAPERLESS_REDIS | quote }}
+        - name: PAPERLESS_OCR_MODE
+          value: {{ .Values.paperless.webserver.environment.PAPERLESS_OCR_MODE | quote }}
+        - name: PAPERLESS_CONSUMER_DISABLE
+          value: {{ .Values.paperless.webserver.environment.PAPERLESS_CONSUMER_DISABLE | quote }}
+        - name: PAPERLESS_WEBSERVER_WORKERS
+          value: {{ .Values.paperless.webserver.environment.PAPERLESS_WEBSERVER_WORKERS | quote }}
+        - name: PAPERLESS_URL
+          value: {{ .Values.paperless.webserver.environment.PAPERLESS_URL | quote }}
+        - name: USE_X_FORWARD_HOST
+          value: {{ .Values.paperless.webserver.environment.USE_X_FORWARD_HOST | quote }}
+        - name: USE_X_FORWARD_PORT
+          value: {{ .Values.paperless.webserver.environment.USE_X_FORWARD_PORT | quote }}
+        - name: PAPERLESS_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: secret-key
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /usr/src/paperless/data
+        - name: media
+          mountPath: /usr/src/paperless/media
+        - name: export
+          mountPath: /export
+        - name: consume
+          mountPath: /consume
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.paperless.webserver.storage.data }}
+      - name: media
+        persistentVolumeClaim:
+          claimName: {{ .Values.paperless.webserver.storage.media }}
+      - name: export
+        persistentVolumeClaim:
+          claimName: {{ .Values.paperless.webserver.storage.export }}
+      - name: consume
+        persistentVolumeClaim:
+          claimName: {{ .Values.paperless.webserver.storage.consume }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-redis
+  labels:
+    app: paperless-redis
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+  selector:
+    app: paperless-redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-webserver
+  labels:
+    app: paperless-webserver
+spec:
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: paperless-webserver
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.paperless.webserver.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.paperless.webserver.storage.media }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.paperless.webserver.storage.export }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.paperless.webserver.storage.consume }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+{{- if and .Values.paperless.enabled .Values.paperless.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paperless
+  labels:
+    app: paperless-webserver
+spec:
+  rules:
+  {{- range .Values.paperless.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: paperless-webserver
+            port:
+              number: {{ $.Values.paperless.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

@@ -1,0 +1,405 @@
+categories:
+- Infrastructure
+- Media
+- Productivity
+- Development
+
+questions:
+- variable: blocky.enabled
+  label: "Enable Blocky DNS"
+  description: "DNS server with ad-blocking capabilities"
+  type: boolean
+  default: true
+  group: "DNS & Networking"
+
+- variable: blocky.timezone
+  label: "Blocky Timezone"
+  description: "Timezone for Blocky"
+  type: string
+  default: "Europe/Dublin"
+  group: "DNS & Networking"
+
+- variable: portainer.enabled
+  label: "Enable Portainer"
+  description: "Container management UI"
+  type: boolean
+  default: true
+  group: "Management"
+
+- variable: portainer.ingress.hosts[0]
+  label: "Portainer Host"
+  description: "Hostname for Portainer (e.g., portainer.h.rkd.pw)"
+  type: string
+  default: "portainer.h.rkd.pw"
+  group: "Management"
+
+- variable: jellyfin.enabled
+  label: "Enable Jellyfin"
+  description: "Media server"
+  type: boolean
+  default: true
+  group: "Media"
+
+- variable: jellyfin.ingress.hosts[0]
+  label: "Jellyfin Primary Host"
+  description: "Primary hostname for Jellyfin"
+  type: string
+  default: "jf.h.rkd.pw"
+  group: "Media"
+
+- variable: jellyfin.resources.limits.memory
+  label: "Jellyfin Memory Limit"
+  description: "Memory limit for Jellyfin (e.g., 6Gi)"
+  type: string
+  default: "6Gi"
+  group: "Media"
+
+- variable: jackett.enabled
+  label: "Enable Jackett"
+  description: "Torrent indexer"
+  type: boolean
+  default: true
+  group: "Media"
+
+- variable: jackett.ingress.hosts[0]
+  label: "Jackett Host"
+  description: "Hostname for Jackett"
+  type: string
+  default: "jackett.h.rkd.pw"
+  group: "Media"
+
+- variable: radarr.enabled
+  label: "Enable Radarr"
+  description: "Movie collection manager"
+  type: boolean
+  default: true
+  group: "Media"
+
+- variable: radarr.ingress.hosts[0]
+  label: "Radarr Host"
+  description: "Hostname for Radarr"
+  type: string
+  default: "radarr.h.rkd.pw"
+  group: "Media"
+
+- variable: deluge.enabled
+  label: "Enable Deluge"
+  description: "BitTorrent client"
+  type: boolean
+  default: true
+  group: "Media"
+
+- variable: deluge.ingress.hosts[0]
+  label: "Deluge Host"
+  description: "Hostname for Deluge"
+  type: string
+  default: "deluge.h.rkd.pw"
+  group: "Media"
+
+- variable: homeassistant.enabled
+  label: "Enable Home Assistant"
+  description: "Home automation platform"
+  type: boolean
+  default: true
+  group: "Home Automation"
+
+- variable: homeassistant.ingress.hosts[0]
+  label: "Home Assistant Host"
+  description: "Hostname for Home Assistant"
+  type: string
+  default: "ha.h.rkd.pw"
+  group: "Home Automation"
+
+- variable: hoarder.enabled
+  label: "Enable Hoarder"
+  description: "Web scraping and automation tool"
+  type: boolean
+  default: true
+  group: "Productivity"
+
+- variable: hoarder.web.environment.NEXTAUTH_URL
+  label: "Hoarder URL"
+  description: "Full URL for Hoarder (e.g., https://hoarder.h.rkd.pw)"
+  type: string
+  default: "https://hoarder.h.rkd.pw"
+  group: "Productivity"
+
+- variable: hoarder.ingress.hosts[0]
+  label: "Hoarder Host"
+  description: "Hostname for Hoarder"
+  type: string
+  default: "hoarder.h.rkd.pw"
+  group: "Productivity"
+
+- variable: compote.enabled
+  label: "Enable Compote"
+  description: "Docker management dashboard"
+  type: boolean
+  default: true
+  group: "Management"
+
+- variable: compote.ingress.hosts[0]
+  label: "Compote Host"
+  description: "Hostname for Compote"
+  type: string
+  default: "compote.h.rkd.pw"
+  group: "Management"
+
+- variable: compote.secrets.caproverPassword
+  label: "CapRover Password"
+  description: "Password for CapRover integration (optional)"
+  type: password
+  group: "Management"
+
+- variable: paperless.enabled
+  label: "Enable Paperless"
+  description: "Document management system"
+  type: boolean
+  default: true
+  group: "Productivity"
+
+- variable: paperless.webserver.environment.PAPERLESS_URL
+  label: "Paperless URL"
+  description: "Full URL for Paperless (e.g., https://docs.h.rkd.pw)"
+  type: string
+  default: "https://docs.h.rkd.pw"
+  group: "Productivity"
+
+- variable: paperless.ingress.hosts[0]
+  label: "Paperless Host"
+  description: "Hostname for Paperless"
+  type: string
+  default: "docs.h.rkd.pw"
+  group: "Productivity"
+
+- variable: paperless.secrets.secretKey
+  label: "Paperless Secret Key"
+  description: "Secret key for Paperless (used for session encryption)"
+  type: password
+  default: "ilvar"
+  group: "Productivity"
+
+- variable: nextcloud.enabled
+  label: "Enable Nextcloud"
+  description: "File sharing and collaboration platform"
+  type: boolean
+  default: true
+  group: "Productivity"
+
+- variable: nextcloud.app.environment.NEXTCLOUD_ADMIN_USER
+  label: "Nextcloud Admin Username"
+  description: "Administrator username for Nextcloud"
+  type: string
+  default: "ilvar"
+  group: "Productivity"
+
+- variable: nextcloud.secrets.adminPassword
+  label: "Nextcloud Admin Password"
+  description: "Administrator password for Nextcloud"
+  type: password
+  required: true
+  group: "Productivity"
+
+- variable: nextcloud.ingress.hosts[0]
+  label: "Nextcloud Host"
+  description: "Hostname for Nextcloud"
+  type: string
+  default: "nextcloud.h.rkd.pw"
+  group: "Productivity"
+
+- variable: nextcloud.secrets.mysqlPassword
+  label: "Nextcloud MySQL Password"
+  description: "Password for Nextcloud MySQL database user"
+  type: password
+  default: "nextcloud"
+  group: "Productivity"
+
+- variable: nextcloud.secrets.mysqlRootPassword
+  label: "Nextcloud MySQL Root Password"
+  description: "Root password for Nextcloud MySQL database"
+  type: password
+  default: "nextcloud"
+  group: "Productivity"
+
+- variable: kuma.enabled
+  label: "Enable Uptime Kuma"
+  description: "Uptime monitoring dashboard"
+  type: boolean
+  default: true
+  group: "Monitoring"
+
+- variable: kuma.ingress.hosts[0]
+  label: "Kuma Host"
+  description: "Hostname for Uptime Kuma"
+  type: string
+  default: "kuma.h.rkd.pw"
+  group: "Monitoring"
+
+- variable: immich.enabled
+  label: "Enable Immich"
+  description: "Self-hosted photo and video backup solution"
+  type: boolean
+  default: true
+  group: "Media"
+
+- variable: immich.ingress.hosts[0]
+  label: "Immich Host"
+  description: "Hostname for Immich"
+  type: string
+  default: "immich.h.rkd.pw"
+  group: "Media"
+
+- variable: bugsink.enabled
+  label: "Enable Bugsink"
+  description: "Bug tracking and issue management"
+  type: boolean
+  default: true
+  group: "Development"
+
+- variable: bugsink.secrets.secretKey
+  label: "Bugsink Secret Key"
+  description: "Secret key for Bugsink (at least 50 characters)"
+  type: password
+  required: true
+  group: "Development"
+
+- variable: bugsink.environment.CREATE_SUPERUSER
+  label: "Bugsink Admin User"
+  description: "Admin user credentials (format: username:password)"
+  type: string
+  default: "admin:admin"
+  group: "Development"
+
+- variable: bugsink.ingress.hosts[0]
+  label: "Bugsink Host"
+  description: "Hostname for Bugsink"
+  type: string
+  default: "bugsink.k.rkd.pw"
+  group: "Development"
+
+- variable: itTools.enabled
+  label: "Enable IT-Tools"
+  description: "Collection of useful IT tools"
+  type: boolean
+  default: true
+  group: "Development"
+
+- variable: itTools.ingress.hosts[0]
+  label: "IT-Tools Host"
+  description: "Hostname for IT-Tools"
+  type: string
+  default: "it-tools.k.rkd.pw"
+  group: "Development"
+
+- variable: archive.enabled
+  label: "Enable Archive"
+  description: "Archive application"
+  type: boolean
+  default: true
+  group: "Productivity"
+
+- variable: archive.ingress.enabled
+  label: "Enable Archive Ingress"
+  description: "Expose Archive via Ingress"
+  type: boolean
+  default: false
+  group: "Productivity"
+
+- variable: miniflux.enabled
+  label: "Enable Miniflux"
+  description: "RSS feed reader"
+  type: boolean
+  default: true
+  group: "Productivity"
+
+- variable: miniflux.ingress.hosts[0]
+  label: "Miniflux Host"
+  description: "Hostname for Miniflux"
+  type: string
+  default: "miniflux.rkd.pw"
+  group: "Productivity"
+
+- variable: miniflux.secrets.adminPassword
+  label: "Miniflux Admin Password"
+  description: "Administrator password for Miniflux"
+  type: password
+  default: "jedi8947"
+  group: "Productivity"
+
+- variable: minifluxDb.enabled
+  label: "Enable Miniflux Database"
+  description: "PostgreSQL database for Miniflux"
+  type: boolean
+  default: true
+  group: "Productivity"
+
+- variable: minifluxDb.secrets.postgresPassword
+  label: "Miniflux DB Password"
+  description: "PostgreSQL password for Miniflux database"
+  type: password
+  default: "066a04f209"
+  group: "Productivity"
+
+- variable: blog.enabled
+  label: "Enable Blog"
+  description: "Blog application"
+  type: boolean
+  default: true
+  group: "Productivity"
+
+- variable: blog.ingress.hosts[0]
+  label: "Blog Host"
+  description: "Hostname for Blog"
+  type: string
+  default: "blog.rkd.pw"
+  group: "Productivity"
+
+- variable: rkdPw.enabled
+  label: "Enable RKD.PW"
+  description: "Main website"
+  type: boolean
+  default: true
+  group: "Productivity"
+
+- variable: rkdPw.ingress.hosts[0]
+  label: "RKD.PW Primary Host"
+  description: "Primary hostname (e.g., rkd.pw)"
+  type: string
+  default: "rkd.pw"
+  group: "Productivity"
+
+- variable: irishSchools.enabled
+  label: "Enable Irish Schools"
+  description: "Irish Schools application"
+  type: boolean
+  default: true
+  group: "Productivity"
+
+- variable: irishSchools.ingress.enabled
+  label: "Enable Irish Schools Ingress"
+  description: "Expose Irish Schools via Ingress"
+  type: boolean
+  default: false
+  group: "Productivity"
+
+- variable: changes.enabled
+  label: "Enable Changes"
+  description: "Website change detection and monitoring"
+  type: boolean
+  default: true
+  group: "Monitoring"
+
+- variable: changes.ingress.hosts[0]
+  label: "Changes Host"
+  description: "Hostname for Changes"
+  type: string
+  default: "changes.rkd.pw"
+  group: "Monitoring"
+
+- variable: changes.environment.BASE_URL
+  label: "Changes Base URL"
+  description: "Base URL for Changes (e.g., http://changes.c.rkd.pw)"
+  type: string
+  default: "http://changes.c.rkd.pw"
+  group: "Monitoring"
+

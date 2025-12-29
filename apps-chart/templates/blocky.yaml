@@ -1,0 +1,60 @@
+{{- if .Values.blocky.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blocky-config
+  labels:
+    app: blocky
+data:
+  config.yml: |
+{{ .Files.Get "config/blocky.yaml" | indent 4 }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: blocky
+  labels:
+    app: blocky
+spec:
+  selector:
+    matchLabels:
+      app: blocky
+  template:
+    metadata:
+      labels:
+        app: blocky
+    spec:
+      hostNetwork: false
+      containers:
+      - name: blocky
+        image: "{{ .Values.blocky.image.repository }}:{{ .Values.blocky.image.tag }}"
+        env:
+        - name: TZ
+          value: {{ .Values.blocky.timezone | quote }}
+        ports:
+        - name: dns-tcp
+          containerPort: {{ .Values.blocky.ports.dns.tcp }}
+          protocol: TCP
+          hostPort: {{ .Values.blocky.ports.dns.tcp }}
+        - name: dns-udp
+          containerPort: {{ .Values.blocky.ports.dns.udp }}
+          protocol: UDP
+          hostPort: {{ .Values.blocky.ports.dns.udp }}
+        - name: http
+          containerPort: {{ .Values.blocky.ports.http }}
+          protocol: TCP
+          hostPort: {{ .Values.blocky.ports.http }}
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        volumeMounts:
+        - name: config
+          mountPath: /app/config.yml
+          subPath: config.yml
+      volumes:
+      - name: config
+        configMap:
+          name: blocky-config
+{{- end }}
+

@@ -1,0 +1,66 @@
+{{- if .Values.blog.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog
+  labels:
+    app: blog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blog
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: blog
+    spec:
+      containers:
+      - name: blog
+        image: "{{ .Values.blog.image.repository }}:{{ .Values.blog.image.tag }}"
+        resources:
+          limits:
+            memory: {{ .Values.blog.resources.limits.memory }}
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog
+  labels:
+    app: blog
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+  selector:
+    app: blog
+---
+{{- if .Values.blog.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blog
+  labels:
+    app: blog
+spec:
+  rules:
+  {{- range .Values.blog.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: blog
+            port:
+              number: {{ $.Values.blog.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}

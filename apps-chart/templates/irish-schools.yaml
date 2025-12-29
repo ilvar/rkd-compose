@@ -1,0 +1,66 @@
+{{- if .Values.irishSchools.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: irish-schools
+  labels:
+    app: irish-schools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: irish-schools
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: irish-schools
+    spec:
+      containers:
+      - name: irish-schools
+        image: "{{ .Values.irishSchools.image.repository }}:{{ .Values.irishSchools.image.tag }}"
+        resources:
+          limits:
+            memory: {{ .Values.irishSchools.resources.limits.memory }}
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: irish-schools
+  labels:
+    app: irish-schools
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+  selector:
+    app: irish-schools
+---
+{{- if .Values.irishSchools.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: irish-schools
+  labels:
+    app: irish-schools
+spec:
+  rules:
+  {{- range .Values.irishSchools.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: irish-schools
+            port:
+              number: {{ $.Values.irishSchools.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}

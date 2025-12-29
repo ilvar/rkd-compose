@@ -1,0 +1,66 @@
+{{- if .Values.itTools.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: it-tools
+  labels:
+    app: it-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: it-tools
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: it-tools
+    spec:
+      containers:
+      - name: it-tools
+        image: "{{ .Values.itTools.image.repository }}:{{ .Values.itTools.image.tag }}"
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        resources:
+          limits:
+            memory: {{ .Values.itTools.resources.limits.memory }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: it-tools
+  labels:
+    app: it-tools
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: it-tools
+---
+{{- if .Values.itTools.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: it-tools
+  labels:
+    app: it-tools
+spec:
+  rules:
+  {{- range .Values.itTools.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: it-tools
+            port:
+              number: {{ $.Values.itTools.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}

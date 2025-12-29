@@ -1,0 +1,87 @@
+{{- if .Values.changes.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: changes
+  labels:
+    app: changes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: changes
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: changes
+    spec:
+      containers:
+      - name: changes
+        image: "{{ .Values.changes.image.repository }}:{{ .Values.changes.image.tag }}"
+        env:
+        - name: BASE_URL
+          value: {{ .Values.changes.environment.BASE_URL | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.changes.resources.limits.memory }}
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /datastore
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.changes.storage.data }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: changes
+  labels:
+    app: changes
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+  selector:
+    app: changes
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.changes.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+{{- if .Values.changes.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: changes
+  labels:
+    app: changes
+spec:
+  rules:
+  {{- range .Values.changes.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: changes
+            port:
+              number: {{ $.Values.changes.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}

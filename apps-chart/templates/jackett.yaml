@@ -1,0 +1,107 @@
+{{- if .Values.jackett.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jackett
+  labels:
+    app: jackett
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jackett
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jackett
+    spec:
+      containers:
+      - name: jackett
+        image: "{{ .Values.jackett.image.repository }}:{{ .Values.jackett.image.tag }}"
+        env:
+        - name: PUID
+          value: {{ .Values.jackett.environment.PUID | quote }}
+        - name: PGID
+          value: {{ .Values.jackett.environment.PGID | quote }}
+        - name: TZ
+          value: {{ .Values.jackett.environment.TZ | quote }}
+        - name: AUTO_UPDATE
+          value: {{ .Values.jackett.environment.AUTO_UPDATE | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.jackett.resources.limits.memory }}
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: downloads
+          mountPath: /downloads
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: {{ .Values.jackett.storage.config }}
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: {{ .Values.jackett.storage.downloads }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jackett
+  labels:
+    app: jackett
+spec:
+  ports:
+  - port: 9117
+    targetPort: 9117
+    protocol: TCP
+  selector:
+    app: jackett
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.jackett.storage.config }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.jackett.storage.downloads }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+{{- if and .Values.jackett.enabled .Values.jackett.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jackett
+  labels:
+    app: jackett
+spec:
+  rules:
+  {{- range .Values.jackett.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jackett
+            port:
+              number: {{ $.Values.jackett.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

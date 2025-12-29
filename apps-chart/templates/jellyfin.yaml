@@ -1,0 +1,123 @@
+{{- if .Values.jellyfin.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  labels:
+    app: jellyfin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jellyfin
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      containers:
+      - name: jellyfin
+        image: "{{ .Values.jellyfin.image.repository }}:{{ .Values.jellyfin.image.tag }}"
+        env:
+        - name: JELLYFIN_PublishedServerUrl
+          value: {{ .Values.jellyfin.environment.JELLYFIN_PublishedServerUrl | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.jellyfin.resources.limits.memory }}
+        ports:
+        - containerPort: {{ .Values.jellyfin.ports.http }}
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: cache
+          mountPath: /cache
+        - name: nas
+          mountPath: /nas
+      securityContext:
+        runAsUser: {{ include "apps-chart.userID" .Values.jellyfin.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.jellyfin.user | int }}
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: {{ .Values.jellyfin.storage.config }}
+      - name: cache
+        persistentVolumeClaim:
+          claimName: {{ .Values.jellyfin.storage.cache }}
+      - name: nas
+        persistentVolumeClaim:
+          claimName: {{ .Values.jellyfin.storage.nas }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+  labels:
+    app: jellyfin
+spec:
+  ports:
+  - port: {{ .Values.jellyfin.ports.http }}
+    targetPort: {{ .Values.jellyfin.ports.http }}
+    protocol: TCP
+  selector:
+    app: jellyfin
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.jellyfin.storage.config }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.jellyfin.storage.cache }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.jellyfin.storage.nas }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+{{- if and .Values.jellyfin.enabled .Values.jellyfin.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin
+  labels:
+    app: jellyfin
+spec:
+  rules:
+  {{- range .Values.jellyfin.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin
+            port:
+              number: {{ $.Values.jellyfin.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

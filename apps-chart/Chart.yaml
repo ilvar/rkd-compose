@@ -1,0 +1,25 @@
+apiVersion: v2
+name: rkd-apps-chart
+description: A comprehensive Helm chart for deploying multiple self-hosted applications including media servers, productivity tools, development utilities, and monitoring solutions.
+type: application
+version: 0.1.0
+appVersion: "1.0"
+keywords:
+  - self-hosted
+  - media-server
+  - productivity
+  - monitoring
+  - development
+  - home-automation
+maintainers:
+  - name: Your Name
+    email: your.email@example.com
+sources:
+  - https://github.com/rkd-pw/rkd-apps-chart
+icon: https://raw.githubusercontent.com/kubernetes/kubernetes/master/logo/logo.png
+annotations:
+  catalog.cattle.io/display-name: "RKD Applications Chart"
+  catalog.cattle.io/certified: "false"
+  catalog.cattle.io/namespace: "default"
+  catalog.cattle.io/release-name: "rkd-apps-chart"
+

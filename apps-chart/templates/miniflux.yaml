@@ -1,0 +1,170 @@
+{{- if .Values.miniflux.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: miniflux-db-secrets
+  labels:
+    app: miniflux-db
+type: Opaque
+stringData:
+  postgres-password: {{ .Values.minifluxDb.secrets.postgresPassword | default "" | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: miniflux-db
+  labels:
+    app: miniflux-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: miniflux-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: miniflux-db
+    spec:
+      containers:
+      - name: miniflux-db
+        image: "{{ .Values.minifluxDb.image.repository }}:{{ .Values.minifluxDb.image.tag }}"
+        env:
+        - name: POSTGRES_USER
+          value: {{ .Values.minifluxDb.environment.POSTGRES_USER | quote }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: miniflux-db-secrets
+              key: postgres-password
+        - name: POSTGRES_DB
+          value: {{ .Values.minifluxDb.environment.POSTGRES_DB | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.minifluxDb.resources.limits.memory }}
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.minifluxDb.storage.data }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: miniflux-db
+  labels:
+    app: miniflux-db
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: miniflux-db
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.minifluxDb.storage.data }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: miniflux-secrets
+  labels:
+    app: miniflux
+type: Opaque
+stringData:
+  admin-password: {{ .Values.miniflux.secrets.adminPassword | default "" | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: miniflux
+  labels:
+    app: miniflux
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: miniflux
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: miniflux
+    spec:
+      containers:
+      - name: miniflux
+        image: "{{ .Values.miniflux.image.repository }}:{{ .Values.miniflux.image.tag }}"
+        env:
+        - name: DATABASE_URL
+          value: {{ .Values.miniflux.environment.DATABASE_URL | quote }}
+        - name: RUN_MIGRATIONS
+          value: {{ .Values.miniflux.environment.RUN_MIGRATIONS | quote }}
+        - name: CREATE_ADMIN
+          value: {{ .Values.miniflux.environment.CREATE_ADMIN | quote }}
+        - name: ADMIN_USERNAME
+          value: {{ .Values.miniflux.environment.ADMIN_USERNAME | quote }}
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: miniflux-secrets
+              key: admin-password
+        resources:
+          limits:
+            memory: {{ .Values.miniflux.resources.limits.memory }}
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: miniflux
+  labels:
+    app: miniflux
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: miniflux
+---
+{{- if .Values.miniflux.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: miniflux
+  labels:
+    app: miniflux
+spec:
+  rules:
+  {{- range .Values.miniflux.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: miniflux
+            port:
+              number: {{ $.Values.miniflux.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}

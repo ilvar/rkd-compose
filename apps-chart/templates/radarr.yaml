@@ -1,0 +1,137 @@
+{{- if .Values.radarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  labels:
+    app: radarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      containers:
+      - name: radarr
+        image: "{{ .Values.radarr.image.repository }}:{{ .Values.radarr.image.tag }}"
+        env:
+        - name: PUID
+          value: {{ .Values.radarr.environment.PUID | quote }}
+        - name: PGID
+          value: {{ .Values.radarr.environment.PGID | quote }}
+        - name: TZ
+          value: {{ .Values.radarr.environment.TZ | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.radarr.resources.limits.memory }}
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: movies
+          mountPath: /movies
+        - name: nas
+          mountPath: /nas
+        - name: downloads
+          mountPath: /downloads
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: {{ .Values.radarr.storage.config }}
+      - name: movies
+        persistentVolumeClaim:
+          claimName: {{ .Values.radarr.storage.movies }}
+      - name: nas
+        persistentVolumeClaim:
+          claimName: {{ .Values.radarr.storage.nas }}
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: {{ .Values.radarr.storage.downloads }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr
+  labels:
+    app: radarr
+spec:
+  ports:
+  - port: 7878
+    targetPort: 7878
+    protocol: TCP
+  selector:
+    app: radarr
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.radarr.storage.config }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.radarr.storage.movies }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.radarr.storage.nas }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.radarr.storage.downloads }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+{{- if and .Values.radarr.enabled .Values.radarr.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: radarr
+  labels:
+    app: radarr
+spec:
+  rules:
+  {{- range .Values.radarr.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: radarr
+            port:
+              number: {{ $.Values.radarr.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

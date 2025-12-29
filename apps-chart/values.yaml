@@ -1,0 +1,507 @@
+blocky:
+  enabled: true
+  image:
+    repository: spx01/blocky
+    tag: latest
+  timezone: Europe/Dublin
+  ports:
+    dns:
+      tcp: 53
+      udp: 53
+    http: 4000
+
+portainer:
+  enabled: true
+  image:
+    repository: portainer/portainer-ee
+    tag: lts
+  resources:
+    limits:
+      memory: 512Mi
+  storage:
+    data: portainer-data
+  ingress:
+    enabled: true
+    hosts:
+      - portainer.h.rkd.pw
+    servicePort: 9000
+
+jackett:
+  enabled: true
+  image:
+    repository: lscr.io/linuxserver/jackett
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+  environment:
+    PUID: 1000
+    PGID: 1000
+    TZ: Etc/UTC
+    AUTO_UPDATE: "true"
+  storage:
+    config: jackett-data
+    downloads: jackett-downloads
+  ingress:
+    enabled: true
+    hosts:
+      - jackett.h.rkd.pw
+    servicePort: 9117
+
+radarr:
+  enabled: true
+  image:
+    repository: lscr.io/linuxserver/radarr
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+  environment:
+    PUID: 1000
+    PGID: 1000
+    TZ: Etc/UTC
+  storage:
+    config: radarr-data
+    movies: radarr-movies
+    nas: radarr-nas
+    downloads: radarr-downloads
+  ingress:
+    enabled: true
+    hosts:
+      - radarr.h.rkd.pw
+    servicePort: 7878
+
+jellyfin:
+  enabled: true
+  image:
+    repository: jellyfin/jellyfin
+    tag: latest
+  resources:
+    limits:
+      memory: 6Gi
+  user: 1000:1000
+  environment:
+    JELLYFIN_PublishedServerUrl: https://jf.h.rkd.pw
+  ports:
+    http: 8096
+  storage:
+    config: jellyfin-config
+    cache: jellyfin-cache
+    nas: jellyfin-nas
+  ingress:
+    enabled: true
+    hosts:
+      - jf.h.rkd.pw
+      - jellyfin.h.rkd.pw
+      - jellyfin.local
+    servicePort: 8096
+
+deluge:
+  enabled: true
+  image:
+    repository: lscr.io/linuxserver/deluge
+    tag: latest
+  resources:
+    limits:
+      memory: 1Gi
+  environment:
+    PUID: 1000
+    PGID: 1000
+    TZ: Etc/UTC
+    DELUGE_LOGLEVEL: error
+  ports:
+    bittorrent:
+      tcp: 6881
+      udp: 6881
+    daemon: 58846
+  storage:
+    config: deluge-config
+    nas: deluge-nas
+    downloads: deluge-downloads
+  ingress:
+    enabled: true
+    hosts:
+      - deluge.h.rkd.pw
+    servicePort: 8112
+
+homeassistant:
+  enabled: true
+  image:
+    repository: homeassistant/home-assistant
+    tag: latest
+  resources:
+    limits:
+      memory: 1Gi
+  user: 1000:1000
+  privileged: true
+  ports:
+    http: 8123
+  storage:
+    config: homeassistant-config
+    media: homeassistant-media
+  ingress:
+    enabled: true
+    hosts:
+      - ha.h.rkd.pw
+      - ha.z85
+    servicePort: 8123
+
+hoarder:
+  enabled: true
+  web:
+    image:
+      repository: ghcr.io/hoarder-app/hoarder
+      tag: release
+    resources:
+      limits:
+        memory: 1Gi
+    environment:
+      MEILI_ADDR: http://hoarder-meilisearch:7700
+      BROWSER_WEB_URL: http://hoarder-chrome:9222
+      DATA_DIR: /data
+      NEXTAUTH_URL: https://hoarder.h.rkd.pw
+    storage:
+      data: hoarder-data
+  secrets:
+    nextauthSecret: jedijedi
+    meiliMasterKey: jedijedi
+  ingress:
+    enabled: true
+    hosts:
+      - hoarder.h.rkd.pw
+      - hoarder.d.z85
+    servicePort: 3000
+  chrome:
+    image:
+      repository: gcr.io/zenika-hub/alpine-chrome
+      tag: "123"
+    resources:
+      limits:
+        memory: 1Gi
+  meilisearch:
+    image:
+      repository: getmeili/meilisearch
+      tag: v1.11.1
+    resources:
+      limits:
+        memory: 512Mi
+    environment:
+      MEILI_NO_ANALYTICS: "true"
+    storage:
+      data: hoarder-meilisearch-data
+
+compote:
+  enabled: true
+  image:
+    repository: r.c.rkd.pw/compote2
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+  environment:
+    CAPROVER_URL: https://captain.c.rkd.pw
+  secrets:
+    caproverPassword: ""
+  storage:
+    data: compote-data
+  ingress:
+    enabled: true
+    hosts:
+      - compote.h.rkd.pw
+      - compote.docker.z85
+      - c.h.rkd.pw
+    servicePort: 3000
+
+paperless:
+  enabled: true
+  webserver:
+    image:
+      repository: ghcr.io/paperless-ngx/paperless-ngx
+      tag: latest
+    environment:
+      PAPERLESS_OCR_LANGUAGES: eng
+      TZ: Europe/Dublin
+      PAPERLESS_USE_SSL: "false"
+      PAPERLESS_FORGIVING_OCR: "true"
+      PAPERLESS_REDIS: redis://paperless-redis:6379
+      PAPERLESS_OCR_MODE: skip
+      PAPERLESS_CONSUMER_DISABLE: "true"
+      PAPERLESS_WEBSERVER_WORKERS: 4
+      PAPERLESS_URL: https://docs.h.rkd.pw
+      USE_X_FORWARD_HOST: "true"
+      USE_X_FORWARD_PORT: "true"
+  secrets:
+    secretKey: ilvar
+    storage:
+      data: paperless-data
+      media: paperless-media
+      export: paperless-export
+      consume: paperless-consume
+  redis:
+    image:
+      repository: redis
+      tag: "6.0"
+  ingress:
+    enabled: true
+    hosts:
+      - docs.h.rkd.pw
+      - d.h.rkd.pw
+      - docs.z85
+    servicePort: 8000
+
+nextcloud:
+  enabled: true
+  app:
+    image:
+      repository: nextcloud
+      tag: latest
+    resources:
+      limits:
+        memory: 512Mi
+    user: 1000:1000
+    environment:
+      PUID: 1000
+      PGID: 1000
+      NEXTCLOUD_ADMIN_USER: ilvar
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_HOST: nextcloud-db
+      NEXTCLOUD_TRUSTED_DOMAINS: nextcloud.h.rkd.pw,nextcloud.z85,nc.h.rkd.pw
+      OVERWRITEHOST: nextcloud.h.rkd.pw
+      OVERWRITEPROTOCOL: https
+    storage:
+      data: nextcloud-data
+  secrets:
+    adminPassword: ""
+    mysqlPassword: nextcloud
+    mysqlRootPassword: nextcloud
+  ingress:
+    enabled: true
+    hosts:
+      - nextcloud.h.rkd.pw
+      - nextcloud.z85
+      - nc.h.rkd.pw
+    servicePort: 80
+  db:
+    image:
+      repository: mariadb
+      tag: "10.5"
+    user: 1000:1000
+    environment:
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      PUID: 1000
+      PGID: 1000
+    storage:
+      data: nextcloud-db-data
+
+kuma:
+  enabled: true
+  image:
+    repository: louislam/uptime-kuma
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+  storage:
+    data: kuma-data
+  ingress:
+    enabled: true
+    hosts:
+      - kuma.h.rkd.pw
+      - k.h.rkd.pw
+    servicePort: 3001
+
+immich:
+  enabled: true
+  server:
+    image:
+      repository: ghcr.io/immich-app/immich-server
+      tag: release
+    environment:
+      TZ: Europe/Dublin
+      DB_USERNAME: postgres
+      DB_DATABASE_NAME: immich
+      DB_HOSTNAME: immich-database
+    storage:
+      upload: immich-upload
+  secrets:
+    dbPassword: postgres
+    postgresPassword: postgres
+  ingress:
+    enabled: true
+    hosts:
+      - immich.h.rkd.pw
+    servicePort: 2283
+
+bugsink:
+  enabled: true
+  image:
+    repository: bugsink/bugsink
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+  environment:
+    CREATE_SUPERUSER: "admin:admin"
+    PORT: "8000"
+  secrets:
+    secretKey: ""
+  storage:
+    data: bugsink-data
+  ingress:
+    enabled: true
+    hosts:
+      - bugsink.k.rkd.pw
+    servicePort: 8000
+
+itTools:
+  enabled: true
+  image:
+    repository: corentinth/it-tools
+    tag: latest
+  resources:
+    limits:
+      memory: 256Mi
+  ingress:
+    enabled: true
+    hosts:
+      - it-tools.k.rkd.pw
+    servicePort: 80
+  machineLearning:
+    image:
+      repository: ghcr.io/immich-app/immich-machine-learning
+      tag: release
+    storage:
+      modelCache: immich-model-cache
+  redis:
+    image:
+      repository: docker.io/valkey/valkey
+      tag: 8-bookworm
+      digest: sha256:ff21bc0f8194dc9c105b769aeabf9585fea6a8ed649c0781caeac5cb3c247884
+  database:
+    image:
+      repository: ghcr.io/immich-app/postgres
+      tag: 14-vectorchord0.3.0-pgvectors0.2.0
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: immich
+      POSTGRES_INITDB_ARGS: --data-checksums
+    storage:
+      data: immich-postgres-data
+
+archive:
+  enabled: true
+  image:
+    repository: img-captain-archive
+    tag: "1"
+  resources:
+    limits:
+      memory: 512Mi
+  environment:
+    ALLOWED_HOSTS: "*"
+    MEDIA_MAX_SIZE: "750m"
+  storage:
+    data: archive-data
+  ingress:
+    enabled: false
+    hosts: []
+    servicePort: 8000
+
+minifluxDb:
+  enabled: true
+  image:
+    repository: postgres
+    tag: 9.6.18-alpine
+  resources:
+    limits:
+      memory: 512Mi
+  environment:
+    POSTGRES_USER: miniflux
+    POSTGRES_DB: miniflux
+  secrets:
+    postgresPassword: "066a04f209"
+  storage:
+    data: miniflux-db-data
+
+miniflux:
+  enabled: true
+  image:
+    repository: miniflux/miniflux
+    tag: 2.2.1
+  resources:
+    limits:
+      memory: 512Mi
+  environment:
+    DATABASE_URL: postgres://miniflux:066a04f209@miniflux-db:5432/miniflux?sslmode=disable
+    RUN_MIGRATIONS: "1"
+    CREATE_ADMIN: "1"
+    ADMIN_USERNAME: ilvar
+  secrets:
+    adminPassword: "jedi8947"
+  ingress:
+    enabled: true
+    hosts:
+      - miniflux.rkd.pw
+    servicePort: 8080
+
+blog:
+  enabled: true
+  image:
+    repository: r.c.rkd.pw/captain_blog
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+  ingress:
+    enabled: true
+    hosts:
+      - blog.rkd.pw
+    servicePort: 5000
+
+rkdPw:
+  enabled: true
+  image:
+    repository: registry.rkd.pw/rkd_pw
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+  ingress:
+    enabled: true
+    hosts:
+      - rkd.pw
+      - www.rkd.pw
+    servicePort: 5000
+
+irishSchools:
+  enabled: true
+  image:
+    repository: registry.rkd.pw/irish-schools
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+  ingress:
+    enabled: false
+    hosts: []
+    servicePort: 5000
+
+changes:
+  enabled: true
+  image:
+    repository: dgtlmoon/changedetection.io
+    tag: 0.42.2
+  resources:
+    limits:
+      memory: 512Mi
+  environment:
+    BASE_URL: http://changes.c.rkd.pw
+  storage:
+    data: changes-data
+  ingress:
+    enabled: true
+    hosts:
+      - changes.rkd.pw
+    servicePort: 5000
+
