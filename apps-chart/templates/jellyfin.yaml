@@ -96,7 +96,7 @@ spec:
   resources:
     requests:
       storage: 100Gi
-{{- if and .Values.jellyfin.enabled .Values.jellyfin.ingress.enabled }}
+{{- if and .Values.jellyfin.enabled .Values.jellyfin.ingress.enabled (gt (len .Values.jellyfin.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

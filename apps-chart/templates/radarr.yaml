@@ -110,7 +110,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-{{- if and .Values.radarr.enabled .Values.radarr.ingress.enabled }}
+{{- if and .Values.radarr.enabled .Values.radarr.ingress.enabled (gt (len .Values.radarr.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

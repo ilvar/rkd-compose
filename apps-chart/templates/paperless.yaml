@@ -180,7 +180,7 @@ spec:
   resources:
     requests:
       storage: 5Gi
-{{- if and .Values.paperless.enabled .Values.paperless.ingress.enabled }}
+{{- if and .Values.paperless.enabled .Values.paperless.ingress.enabled (gt (len .Values.paperless.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

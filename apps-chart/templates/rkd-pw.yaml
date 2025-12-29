@@ -41,7 +41,7 @@ spec:
   selector:
     app: rkd-pw
 ---
-{{- if .Values.rkdPw.ingress.enabled }}
+{{- if and .Values.rkdPw.ingress.enabled (gt (len .Values.rkdPw.ingress.hosts) 0) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

@@ -78,7 +78,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-{{- if and .Values.compote.enabled .Values.compote.ingress.enabled }}
+{{- if and .Values.compote.enabled .Values.compote.ingress.enabled (gt (len .Values.compote.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

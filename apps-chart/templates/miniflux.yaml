@@ -145,7 +145,7 @@ spec:
   selector:
     app: miniflux
 ---
-{{- if .Values.miniflux.ingress.enabled }}
+{{- if and .Values.miniflux.ingress.enabled (gt (len .Values.miniflux.ingress.hosts) 0) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

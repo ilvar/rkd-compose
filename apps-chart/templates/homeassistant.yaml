@@ -34,10 +34,11 @@ spec:
         - name: localtime
           mountPath: /etc/localtime
           readOnly: true
+        securityContext:
+          privileged: {{ .Values.homeassistant.privileged }}
       securityContext:
         runAsUser: {{ include "apps-chart.userID" .Values.homeassistant.user | int }}
         runAsGroup: {{ include "apps-chart.groupID" .Values.homeassistant.user | int }}
-        privileged: {{ .Values.homeassistant.privileged }}
       volumes:
       - name: config
         persistentVolumeClaim:

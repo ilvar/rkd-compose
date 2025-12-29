@@ -41,7 +41,7 @@ spec:
   selector:
     app: blog
 ---
-{{- if .Values.blog.ingress.enabled }}
+{{- if and .Values.blog.ingress.enabled (gt (len .Values.blog.ingress.hosts) 0) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

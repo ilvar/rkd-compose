@@ -63,7 +63,7 @@ spec:
   resources:
     requests:
       storage: 5Gi
-{{- if and .Values.kuma.enabled .Values.kuma.ingress.enabled }}
+{{- if and .Values.kuma.enabled .Values.kuma.ingress.enabled (gt (len .Values.kuma.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

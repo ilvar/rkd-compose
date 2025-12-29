@@ -58,7 +58,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-{{- if and .Values.portainer.enabled .Values.portainer.ingress.enabled }}
+{{- if and .Values.portainer.enabled .Values.portainer.ingress.enabled (gt (len .Values.portainer.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

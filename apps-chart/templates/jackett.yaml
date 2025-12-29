@@ -80,7 +80,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-{{- if and .Values.jackett.enabled .Values.jackett.ingress.enabled }}
+{{- if and .Values.jackett.enabled .Values.jackett.ingress.enabled (gt (len .Values.jackett.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

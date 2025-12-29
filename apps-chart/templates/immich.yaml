@@ -249,7 +249,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-{{- if and .Values.immich.enabled .Values.immich.ingress.enabled }}
+{{- if and .Values.immich.enabled .Values.immich.ingress.enabled (gt (len .Values.immich.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

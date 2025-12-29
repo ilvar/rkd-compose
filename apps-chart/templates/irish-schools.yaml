@@ -41,7 +41,7 @@ spec:
   selector:
     app: irish-schools
 ---
-{{- if .Values.irishSchools.ingress.enabled }}
+{{- if and .Values.irishSchools.ingress.enabled (gt (len .Values.irishSchools.ingress.hosts) 0) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

@@ -78,7 +78,7 @@ spec:
   resources:
     requests:
       storage: 5Gi
-{{- if and .Values.bugsink.enabled .Values.bugsink.ingress.enabled }}
+{{- if and .Values.bugsink.enabled .Values.bugsink.ingress.enabled (gt (len .Values.bugsink.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
