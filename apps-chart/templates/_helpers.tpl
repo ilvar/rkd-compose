@@ -26,9 +26,10 @@ Parse user ID from user:group format
 */}}
 {{- define "apps-chart.userID" -}}
 {{- if . }}
-{{- $parts := split ":" . }}
+{{- $userStr := toString . }}
+{{- $parts := splitList ":" $userStr }}
 {{- if gt (len $parts) 0 }}
-{{- index $parts 0 }}
+{{- toString (index $parts 0) }}
 {{- else }}
 1000
 {{- end }}
@@ -42,9 +43,10 @@ Parse group ID from user:group format
 */}}
 {{- define "apps-chart.groupID" -}}
 {{- if . }}
-{{- $parts := split ":" . }}
+{{- $userStr := toString . }}
+{{- $parts := splitList ":" $userStr }}
 {{- if gt (len $parts) 1 }}
-{{- index $parts 1 }}
+{{- toString (index $parts 1) }}
 {{- else }}
 1000
 {{- end }}
