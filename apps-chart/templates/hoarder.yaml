@@ -82,7 +82,7 @@ spec:
       containers:
       - name: hoarder-chrome
         image: "{{ .Values.hoarder.chrome.image.repository }}:{{ .Values.hoarder.chrome.image.tag }}"
-        command:
+        args:
         - --no-sandbox
         - --disable-gpu
         - --disable-dev-shm-usage
