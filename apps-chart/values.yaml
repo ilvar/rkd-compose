@@ -638,6 +638,8 @@ termix:
 jitsi-meet:
   enabled: true
   publicURL: https://jitsi.h.rkd.pw
+  enableAuth: true
+  enableGuests: false
   web:
     replicaCount: 1
     resources:
@@ -655,6 +657,9 @@ jitsi-meet:
       requests:
         memory: 128Mi
         cpu: 100m
+    persistence:
+      enabled: true
+      size: 3Gi
   jicofo:
     resources:
       limits:
