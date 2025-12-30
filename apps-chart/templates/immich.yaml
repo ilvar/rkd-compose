@@ -27,6 +27,15 @@ spec:
       labels:
         app: immich-database
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: immich-database
         image: "{{ .Values.immich.database.image.repository }}:{{ .Values.immich.database.image.tag }}"
@@ -115,6 +124,15 @@ spec:
       labels:
         app: immich-machine-learning
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: immich-machine-learning
         image: "{{ .Values.immich.machineLearning.image.repository }}:{{ .Values.immich.machineLearning.image.tag }}"
@@ -144,6 +162,15 @@ spec:
       labels:
         app: immich-server
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: immich-server
         image: "{{ .Values.immich.server.image.repository }}:{{ .Values.immich.server.image.tag }}"
@@ -176,8 +203,9 @@ spec:
           path: /etc/localtime
           type: File
       - name: upload
-        persistentVolumeClaim:
-          claimName: {{ .Values.immich.server.storage.upload }}
+        hostPath:
+          path: /home/rkd/.docker/immich/upload
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -220,17 +248,6 @@ spec:
     protocol: TCP
   selector:
     app: immich-server
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.immich.server.storage.upload }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

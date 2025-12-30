@@ -1,14 +1,4 @@
 {{- if .Values.bugsink.enabled }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: bugsink-secrets
-  labels:
-    app: bugsink
-type: Opaque
-stringData:
-  secret-key: {{ .Values.bugsink.secrets.secretKey | default "" | quote }}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:

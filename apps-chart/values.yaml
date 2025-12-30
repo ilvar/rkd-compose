@@ -426,24 +426,6 @@ itTools:
       - it-tools.k.rkd.pw
     servicePort: 80
 
-archive:
-  enabled: true
-  image:
-    repository: img-captain-archive
-    tag: "1"
-  resources:
-    limits:
-      memory: 512Mi
-  environment:
-    ALLOWED_HOSTS: "*"
-    MEDIA_MAX_SIZE: "750m"
-  storage:
-    data: archive-data
-  ingress:
-    enabled: false
-    hosts: []
-    servicePort: 8000
-
 minifluxDb:
   enabled: true
   image:
@@ -517,11 +499,11 @@ rkdPw:
 irishSchools:
   enabled: true
   image:
-    repository: registry.rkd.pw/irish-schools
+    repository: ilvar/irish-schools
     tag: latest
   resources:
     limits:
-      memory: 512Mi
+      memory: 64Mi
   ingress:
     enabled: false
     hosts: 

@@ -28,6 +28,15 @@ spec:
       labels:
         app: nextcloud-db
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: nextcloud-db
         image: "{{ .Values.nextcloud.db.image.repository }}:{{ .Values.nextcloud.db.image.tag }}"
@@ -91,6 +100,15 @@ spec:
       labels:
         app: nextcloud-app
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: nextcloud-app
         image: "{{ .Values.nextcloud.app.image.repository }}:{{ .Values.nextcloud.app.image.tag }}"
@@ -139,8 +157,9 @@ spec:
         runAsGroup: {{ include "apps-chart.groupID" .Values.nextcloud.app.user | int }}
       volumes:
       - name: data
-        persistentVolumeClaim:
-          claimName: {{ .Values.nextcloud.app.storage.data }}
+        hostPath:
+          path: /home/rkd/.docker/nextcloud/data
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -170,16 +189,6 @@ spec:
   selector:
     app: nextcloud-app
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.nextcloud.app.storage.data }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
 {{- if and .Values.nextcloud.enabled .Values.nextcloud.ingress.enabled (gt (len .Values.nextcloud.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
