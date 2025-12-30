@@ -483,7 +483,7 @@ blog:
 rkdPw:
   enabled: true
   image:
-    repository: registry.rkd.pw/rkd_pw
+    repository: ilvar/rkdpw
     tag: latest
   resources:
     limits:
@@ -492,6 +492,7 @@ rkdPw:
     enabled: true
     hosts:
       - rkd.pw
+      - rkd.k.rkd.pw
       - www.rkd.pw
     servicePort: 5000
 
