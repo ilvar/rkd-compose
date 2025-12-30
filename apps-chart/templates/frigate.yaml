@@ -97,19 +97,15 @@ spec:
       - name: dev-kfd
         hostPath:
           path: /dev/kfd
-          type: CharDevice
       - name: dev-dma-heap
         hostPath:
           path: /dev/dma_heap
-          type: CharDevice
       - name: dev-rga
         hostPath:
           path: /dev/rga
-          type: CharDevice
       - name: dev-mpp-service
         hostPath:
           path: /dev/mpp_service
-          type: CharDevice
       hostNetwork: false
       dnsPolicy: ClusterFirst
 ---
