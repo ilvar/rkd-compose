@@ -17,6 +17,15 @@ spec:
       labels:
         app: deluge
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: deluge
         image: "{{ .Values.deluge.image.repository }}:{{ .Values.deluge.image.tag }}"
@@ -50,14 +59,17 @@ spec:
           mountPath: /downloads
       volumes:
       - name: config
-        persistentVolumeClaim:
-          claimName: {{ .Values.deluge.storage.config }}
+        hostPath:
+          path: /home/rkd/.docker/deluge/config
+          type: DirectoryOrCreate
       - name: nas
-        persistentVolumeClaim:
-          claimName: {{ .Values.deluge.storage.nas }}
+        hostPath:
+          path: /home/rkd/.nas
+          type: DirectoryOrCreate
       - name: downloads
-        persistentVolumeClaim:
-          claimName: {{ .Values.deluge.storage.downloads }}
+        hostPath:
+          path: /home/rkd/.nas/Downloads
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -72,39 +84,6 @@ spec:
     protocol: TCP
   selector:
     app: deluge
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.deluge.storage.config }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.deluge.storage.nas }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.deluge.storage.downloads }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
 {{- if and .Values.deluge.enabled .Values.deluge.ingress.enabled (gt (len .Values.deluge.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1

@@ -1,21 +1,21 @@
-{{- if .Values.homeassistant.enabled }}
+{{- if .Values.nodered.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: homeassistant
+  name: nodered
   labels:
-    app: homeassistant
+    app: nodered
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: homeassistant
+      app: nodered
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: homeassistant
+        app: nodered
     spec:
       affinity:
         nodeAffinity:
@@ -27,33 +27,33 @@ spec:
                 values:
                 - rkd-um560
       containers:
-      - name: homeassistant
-        image: "{{ .Values.homeassistant.image.repository }}:{{ .Values.homeassistant.image.tag }}"
+      - name: nodered
+        image: "{{ .Values.nodered.image.repository }}:{{ .Values.nodered.image.tag }}"
         resources:
           limits:
-            memory: {{ .Values.homeassistant.resources.limits.memory }}
+            memory: {{ .Values.nodered.resources.limits.memory }}
         ports:
-        - containerPort: {{ .Values.homeassistant.ports.http }}
+        - containerPort: {{ .Values.nodered.ports.http }}
           protocol: TCP
         volumeMounts:
-        - name: config
-          mountPath: /config
-        - name: media
-          mountPath: /media
+        - name: data
+          mountPath: /data
+        - name: hass-media
+          mountPath: /hass_media
         - name: localtime
           mountPath: /etc/localtime
           readOnly: true
         securityContext:
-          privileged: {{ .Values.homeassistant.privileged }}
+          privileged: {{ .Values.nodered.privileged }}
       securityContext:
-        runAsUser: {{ include "apps-chart.userID" .Values.homeassistant.user | int }}
-        runAsGroup: {{ include "apps-chart.groupID" .Values.homeassistant.user | int }}
+        runAsUser: {{ include "apps-chart.userID" .Values.nodered.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.nodered.user | int }}
       volumes:
-      - name: config
+      - name: data
         hostPath:
-          path: /home/rkd/.docker/hass-config
+          path: /home/rkd/.docker/node-red-1/user
           type: DirectoryOrCreate
-      - name: media
+      - name: hass-media
         hostPath:
           path: /home/rkd/.docker/hass_media
           type: DirectoryOrCreate
@@ -65,27 +65,27 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: homeassistant
+  name: nodered
   labels:
-    app: homeassistant
+    app: nodered
 spec:
   ports:
-  - port: {{ .Values.homeassistant.ports.http }}
-    targetPort: {{ .Values.homeassistant.ports.http }}
+  - port: {{ .Values.nodered.ports.http }}
+    targetPort: {{ .Values.nodered.ports.http }}
     protocol: TCP
   selector:
-    app: homeassistant
-{{- if and .Values.homeassistant.enabled .Values.homeassistant.ingress.enabled }}
+    app: nodered
+{{- if and .Values.nodered.enabled .Values.nodered.ingress.enabled (gt (len .Values.nodered.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: homeassistant
+  name: nodered
   labels:
-    app: homeassistant
+    app: nodered
 spec:
   rules:
-  {{- range .Values.homeassistant.ingress.hosts }}
+  {{- range .Values.nodered.ingress.hosts }}
   - host: {{ . | quote }}
     http:
       paths:
@@ -93,9 +93,9 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: homeassistant
+            name: nodered
             port:
-              number: {{ $.Values.homeassistant.ingress.servicePort }}
+              number: {{ $.Values.nodered.ingress.servicePort }}
   {{- end }}
 {{- end }}
 {{- end }}

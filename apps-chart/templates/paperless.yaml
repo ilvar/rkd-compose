@@ -26,6 +26,15 @@ spec:
       labels:
         app: paperless-redis
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: paperless-redis
         image: "{{ .Values.paperless.redis.image.repository }}:{{ .Values.paperless.redis.image.tag }}"
@@ -51,6 +60,15 @@ spec:
       labels:
         app: paperless-webserver
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: paperless-webserver
         image: "{{ .Values.paperless.webserver.image.repository }}:{{ .Values.paperless.webserver.image.tag }}"
@@ -96,17 +114,21 @@ spec:
           mountPath: /consume
       volumes:
       - name: data
-        persistentVolumeClaim:
-          claimName: {{ .Values.paperless.webserver.storage.data }}
+        hostPath:
+          path: /home/rkd/.docker/paperless/data
+          type: DirectoryOrCreate
       - name: media
-        persistentVolumeClaim:
-          claimName: {{ .Values.paperless.webserver.storage.media }}
+        hostPath:
+          path: /home/rkd/.docker/paperless/media
+          type: DirectoryOrCreate
       - name: export
-        persistentVolumeClaim:
-          claimName: {{ .Values.paperless.webserver.storage.export }}
+        hostPath:
+          path: /home/rkd/.docker/paperless/export
+          type: DirectoryOrCreate
       - name: consume
-        persistentVolumeClaim:
-          claimName: {{ .Values.paperless.webserver.storage.consume }}
+        hostPath:
+          path: /home/rkd/.docker/paperless/consume
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -135,50 +157,6 @@ spec:
     protocol: TCP
   selector:
     app: paperless-webserver
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.paperless.webserver.storage.data }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.paperless.webserver.storage.media }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 50Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.paperless.webserver.storage.export }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.paperless.webserver.storage.consume }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
 {{- if and .Values.paperless.enabled .Values.paperless.ingress.enabled (gt (len .Values.paperless.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1

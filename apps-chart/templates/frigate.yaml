@@ -1,0 +1,166 @@
+{{- if .Values.frigate.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frigate
+  labels:
+    app: frigate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frigate
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: frigate
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
+      containers:
+      - name: frigate
+        image: "{{ .Values.frigate.image.repository }}:{{ .Values.frigate.image.tag }}"
+        env:
+        - name: FRIGATE_RTSP_PASSWORD
+          value: {{ .Values.frigate.environment.FRIGATE_RTSP_PASSWORD | quote }}
+        - name: LIBVA_DRIVER_NAME
+          value: {{ .Values.frigate.environment.LIBVA_DRIVER_NAME | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.frigate.resources.limits.memory }}
+          requests:
+            memory: {{ .Values.frigate.resources.requests.memory }}
+        ports:
+        - containerPort: {{ .Values.frigate.ports.rtsp }}
+          protocol: TCP
+          hostPort: {{ .Values.frigate.ports.rtsp }}
+        - containerPort: {{ .Values.frigate.ports.webrtc.tcp }}
+          protocol: TCP
+          hostPort: {{ .Values.frigate.ports.webrtc.tcp }}
+        - containerPort: {{ .Values.frigate.ports.webrtc.udp }}
+          protocol: UDP
+          hostPort: {{ .Values.frigate.ports.webrtc.udp }}
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: storage
+          mountPath: /media/frigate
+        - name: cache
+          mountPath: /tmp/cache
+        - name: localtime
+          mountPath: /etc/localtime
+          readOnly: true
+        - name: dev-dri
+          mountPath: /dev/dri
+        - name: dev-kfd
+          mountPath: /dev/kfd
+        - name: dev-dma-heap
+          mountPath: /dev/dma_heap
+        - name: dev-rga
+          mountPath: /dev/rga
+        - name: dev-mpp-service
+          mountPath: /dev/mpp_service
+        securityContext:
+          privileged: {{ .Values.frigate.privileged }}
+      securityContext:
+        seccompProfile:
+          type: Unconfined
+      volumes:
+      - name: config
+        hostPath:
+          path: /home/rkd/.docker/frigate/config
+          type: DirectoryOrCreate
+      - name: storage
+        hostPath:
+          path: /home/rkd/.docker/frigate/storage
+          type: DirectoryOrCreate
+      - name: cache
+        emptyDir:
+          sizeLimit: {{ .Values.frigate.storage.cacheSize }}
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+          type: File
+      - name: dev-dri
+        hostPath:
+          path: /dev/dri
+          type: Directory
+      - name: dev-kfd
+        hostPath:
+          path: /dev/kfd
+          type: CharDevice
+      - name: dev-dma-heap
+        hostPath:
+          path: /dev/dma_heap
+          type: CharDevice
+      - name: dev-rga
+        hostPath:
+          path: /dev/rga
+          type: CharDevice
+      - name: dev-mpp-service
+        hostPath:
+          path: /dev/mpp_service
+          type: CharDevice
+      hostNetwork: false
+      dnsPolicy: ClusterFirst
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frigate
+  labels:
+    app: frigate
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.frigate.ingress.servicePort }}
+    targetPort: {{ .Values.frigate.ingress.servicePort }}
+    protocol: TCP
+  - name: rtsp
+    port: {{ .Values.frigate.ports.rtsp }}
+    targetPort: {{ .Values.frigate.ports.rtsp }}
+    protocol: TCP
+  - name: webrtc-tcp
+    port: {{ .Values.frigate.ports.webrtc.tcp }}
+    targetPort: {{ .Values.frigate.ports.webrtc.tcp }}
+    protocol: TCP
+  - name: webrtc-udp
+    port: {{ .Values.frigate.ports.webrtc.udp }}
+    targetPort: {{ .Values.frigate.ports.webrtc.udp }}
+    protocol: UDP
+  selector:
+    app: frigate
+{{- if and .Values.frigate.enabled .Values.frigate.ingress.enabled (gt (len .Values.frigate.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frigate
+  labels:
+    app: frigate
+spec:
+  rules:
+  {{- range .Values.frigate.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frigate
+            port:
+              number: {{ $.Values.frigate.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

@@ -17,6 +17,15 @@ spec:
       labels:
         app: jackett
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: jackett
         image: "{{ .Values.jackett.image.repository }}:{{ .Values.jackett.image.tag }}"
@@ -39,11 +48,13 @@ spec:
           mountPath: /downloads
       volumes:
       - name: config
-        persistentVolumeClaim:
-          claimName: {{ .Values.jackett.storage.config }}
+        hostPath:
+          path: /home/rkd/.docker/jackett/data
+          type: DirectoryOrCreate
       - name: downloads
-        persistentVolumeClaim:
-          claimName: {{ .Values.jackett.storage.downloads }}
+        hostPath:
+          path: /home/rkd/.nas/Downloads
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -58,28 +69,6 @@ spec:
     protocol: TCP
   selector:
     app: jackett
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.jackett.storage.config }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.jackett.storage.downloads }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
 {{- if and .Values.jackett.enabled .Values.jackett.ingress.enabled (gt (len .Values.jackett.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1

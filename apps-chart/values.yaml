@@ -152,6 +152,53 @@ homeassistant:
       - ha.z85
     servicePort: 8123
 
+frigate:
+  enabled: true
+  image:
+    repository: ghcr.io/harakas/frigate
+    tag: latest-rocm
+  resources:
+    limits:
+      memory: 3Gi
+    requests:
+      memory: 3Gi
+  privileged: true
+  ports:
+    rtsp: 8554
+    webrtc:
+      tcp: 8555
+      udp: 8555
+  environment:
+    FRIGATE_RTSP_PASSWORD: frigate
+    LIBVA_DRIVER_NAME: radeonsi
+  storage:
+    cacheSize: 500Mi
+  ingress:
+    enabled: true
+    hosts:
+      - frigate.h.rkd.pw
+    servicePort: 5000
+
+nodered:
+  enabled: true
+  image:
+    repository: nodered/node-red
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+  user: 1000:1000
+  privileged: true
+  ports:
+    http: 1880
+  ingress:
+    enabled: true
+    hosts:
+      - nodered.h.rkd.pw
+      - n.h.rkd.pw
+      - nodered.z85
+    servicePort: 1880
+
 hoarder:
   enabled: true
   web:

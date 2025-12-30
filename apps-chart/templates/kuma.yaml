@@ -17,6 +17,15 @@ spec:
       labels:
         app: kuma
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: kuma
         image: "{{ .Values.kuma.image.repository }}:{{ .Values.kuma.image.tag }}"
@@ -36,8 +45,9 @@ spec:
         hostPath:
           path: /var/run/docker.sock
       - name: data
-        persistentVolumeClaim:
-          claimName: {{ .Values.kuma.storage.data }}
+        hostPath:
+          path: /home/rkd/.docker/kuma/data
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -52,17 +62,6 @@ spec:
     protocol: TCP
   selector:
     app: kuma
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.kuma.storage.data }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
 {{- if and .Values.kuma.enabled .Values.kuma.ingress.enabled (gt (len .Values.kuma.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1

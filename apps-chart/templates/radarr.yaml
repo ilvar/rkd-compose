@@ -17,6 +17,15 @@ spec:
       labels:
         app: radarr
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k3s.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: radarr
         image: "{{ .Values.radarr.image.repository }}:{{ .Values.radarr.image.tag }}"
@@ -41,17 +50,21 @@ spec:
           mountPath: /downloads
       volumes:
       - name: config
-        persistentVolumeClaim:
-          claimName: {{ .Values.radarr.storage.config }}
+        hostPath:
+          path: /home/rkd/.docker/radarr/data
+          type: DirectoryOrCreate
       - name: movies
-        persistentVolumeClaim:
-          claimName: {{ .Values.radarr.storage.movies }}
+        hostPath:
+          path: /home/rkd/.nas
+          type: DirectoryOrCreate
       - name: nas
-        persistentVolumeClaim:
-          claimName: {{ .Values.radarr.storage.nas }}
+        hostPath:
+          path: /home/rkd/.nas
+          type: DirectoryOrCreate
       - name: downloads
-        persistentVolumeClaim:
-          claimName: {{ .Values.radarr.storage.downloads }}
+        hostPath:
+          path: /home/rkd/.nas/Downloads
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -66,50 +79,6 @@ spec:
     protocol: TCP
   selector:
     app: radarr
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.radarr.storage.config }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.radarr.storage.movies }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.radarr.storage.nas }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.radarr.storage.downloads }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
 {{- if and .Values.radarr.enabled .Values.radarr.ingress.enabled (gt (len .Values.radarr.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
