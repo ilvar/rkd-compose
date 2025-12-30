@@ -78,6 +78,15 @@ metadata:
   labels:
     app: jackett
 spec:
+{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.jackett.ingress.hosts) }}
+{{- if gt (len $rkdHosts) 0 }}
+  tls:
+  - hosts:
+{{- range $rkdHosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
   rules:
   {{- range .Values.jackett.ingress.hosts }}
   - host: {{ . | quote }}

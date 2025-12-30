@@ -84,6 +84,15 @@ metadata:
   labels:
     app: jellyfin
 spec:
+{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.jellyfin.ingress.hosts) }}
+{{- if gt (len $rkdHosts) 0 }}
+  tls:
+  - hosts:
+{{- range $rkdHosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
   rules:
   {{- range .Values.jellyfin.ingress.hosts }}
   - host: {{ . | quote }}

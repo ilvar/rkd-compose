@@ -23,6 +23,8 @@ spec:
     metadata:
       labels:
         app: blocky
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       hostNetwork: false
       containers:

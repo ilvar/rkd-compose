@@ -27,6 +27,8 @@ spec:
     metadata:
       labels:
         app: hoarder-web
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       containers:
       - name: hoarder-web
@@ -211,6 +213,15 @@ metadata:
   labels:
     app: hoarder-web
 spec:
+{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.hoarder.ingress.hosts) }}
+{{- if gt (len $rkdHosts) 0 }}
+  tls:
+  - hosts:
+{{- range $rkdHosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
   rules:
   {{- range .Values.hoarder.ingress.hosts }}
   - host: {{ . | quote }}

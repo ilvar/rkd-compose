@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: bugsink
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       containers:
       - name: bugsink
@@ -77,6 +79,15 @@ metadata:
   labels:
     app: bugsink
 spec:
+{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.bugsink.ingress.hosts) }}
+{{- if gt (len $rkdHosts) 0 }}
+  tls:
+  - hosts:
+{{- range $rkdHosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
   rules:
   {{- range .Values.bugsink.ingress.hosts }}
   - host: {{ . | quote }}

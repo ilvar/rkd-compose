@@ -25,6 +25,8 @@ spec:
     metadata:
       labels:
         app: miniflux-db
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       containers:
       - name: miniflux-db
@@ -99,6 +101,8 @@ spec:
     metadata:
       labels:
         app: miniflux
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       containers:
       - name: miniflux
@@ -146,6 +150,15 @@ metadata:
   labels:
     app: miniflux
 spec:
+{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.miniflux.ingress.hosts) }}
+{{- if gt (len $rkdHosts) 0 }}
+  tls:
+  - hosts:
+{{- range $rkdHosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
   rules:
   {{- range .Values.miniflux.ingress.hosts }}
   - host: {{ . | quote }}

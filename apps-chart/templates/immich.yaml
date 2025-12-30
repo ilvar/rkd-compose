@@ -26,6 +26,8 @@ spec:
     metadata:
       labels:
         app: immich-database
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       affinity:
         nodeAffinity:
@@ -185,6 +187,8 @@ spec:
     metadata:
       labels:
         app: immich-server
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       affinity:
         nodeAffinity:
@@ -296,6 +300,15 @@ metadata:
   labels:
     app: immich-server
 spec:
+{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.immich.ingress.hosts) }}
+{{- if gt (len $rkdHosts) 0 }}
+  tls:
+  - hosts:
+{{- range $rkdHosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
   rules:
   {{- range .Values.immich.ingress.hosts }}
   - host: {{ . | quote }}
