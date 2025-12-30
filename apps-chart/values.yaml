@@ -478,6 +478,7 @@ blog:
     enabled: true
     hosts:
       - blog.rkd.pw
+      - blog.k.rkd.pw
     servicePort: 5000
 
 rkdPw:
@@ -493,6 +494,7 @@ rkdPw:
     hosts:
       - rkd.pw
       - rkd.k.rkd.pw
+      - rkdpw.k.rkd.pw
       - www.rkd.pw
     servicePort: 5000
 
@@ -506,7 +508,9 @@ irishSchools:
       memory: 512Mi
   ingress:
     enabled: false
-    hosts: []
+    hosts: 
+      - irish-schools.k.rkd.pw
+      - irish-schools.rkd.pw
     servicePort: 5000
 
 changes:
@@ -518,12 +522,12 @@ changes:
     limits:
       memory: 512Mi
   environment:
-    BASE_URL: http://changes.c.rkd.pw
+    BASE_URL: http://changes.k.rkd.pw
   storage:
     data: changes-data
   ingress:
     enabled: true
     hosts:
-      - changes.rkd.pw
+      - changes.k.rkd.pw
     servicePort: 5000
 
