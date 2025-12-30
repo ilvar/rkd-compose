@@ -98,11 +98,10 @@ metadata:
   labels:
     app: compote
 spec:
-{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.compote.ingress.hosts) }}
-{{- if gt (len $rkdHosts) 0 }}
+{{- if gt (len .Values.compote.ingress.hosts) 0 }}
   tls:
   - hosts:
-{{- range $rkdHosts }}
+{{- range .Values.compote.ingress.hosts }}
     - {{ . | quote }}
 {{- end }}
     secretName: homelab-wildcard-h-tls

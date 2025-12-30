@@ -84,11 +84,10 @@ metadata:
   labels:
     app: homeassistant
 spec:
-{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.homeassistant.ingress.hosts) }}
-{{- if gt (len $rkdHosts) 0 }}
+{{- if gt (len .Values.homeassistant.ingress.hosts) 0 }}
   tls:
   - hosts:
-{{- range $rkdHosts }}
+{{- range .Values.homeassistant.ingress.hosts }}
     - {{ . | quote }}
 {{- end }}
     secretName: homelab-wildcard-h-tls

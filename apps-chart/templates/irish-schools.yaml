@@ -49,11 +49,10 @@ metadata:
   labels:
     app: irish-schools
 spec:
-{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.irishSchools.ingress.hosts) }}
-{{- if gt (len $rkdHosts) 0 }}
+{{- if gt (len .Values.irishSchools.ingress.hosts) 0 }}
   tls:
   - hosts:
-{{- range $rkdHosts }}
+{{- range .Values.irishSchools.ingress.hosts }}
     - {{ . | quote }}
 {{- end }}
     secretName: homelab-wildcard-h-tls

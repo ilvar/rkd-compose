@@ -93,11 +93,10 @@ metadata:
   labels:
     app: deluge
 spec:
-{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.deluge.ingress.hosts) }}
-{{- if gt (len $rkdHosts) 0 }}
+{{- if gt (len .Values.deluge.ingress.hosts) 0 }}
   tls:
   - hosts:
-{{- range $rkdHosts }}
+{{- range .Values.deluge.ingress.hosts }}
     - {{ . | quote }}
 {{- end }}
     secretName: homelab-wildcard-h-tls

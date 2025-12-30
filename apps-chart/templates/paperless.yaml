@@ -182,11 +182,10 @@ metadata:
   labels:
     app: paperless-webserver
 spec:
-{{- $rkdHosts := fromJson (include "apps-chart.getRkdPwHosts" .Values.paperless.ingress.hosts) }}
-{{- if gt (len $rkdHosts) 0 }}
+{{- if gt (len .Values.paperless.ingress.hosts) 0 }}
   tls:
   - hosts:
-{{- range $rkdHosts }}
+{{- range .Values.paperless.ingress.hosts }}
     - {{ . | quote }}
 {{- end }}
     secretName: homelab-wildcard-h-tls

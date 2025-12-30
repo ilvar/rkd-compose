@@ -55,20 +55,3 @@ Parse group ID from user:group format
 {{- end }}
 {{- end }}
 
-{{/*
-Get rkd.pw hosts from a list
-*/}}
-{{- define "apps-chart.getRkdPwHosts" -}}
-{{- $rkdHosts := list }}
-{{- range . }}
-{{- if contains ".rkd.pw" . }}
-{{- $rkdHosts = append $rkdHosts . }}
-{{- end }}
-{{- end }}
-{{- if gt (len $rkdHosts) 0 }}
-{{- $rkdHosts | toJson }}
-{{- else }}
-[]
-{{- end }}
-{{- end }}
-
