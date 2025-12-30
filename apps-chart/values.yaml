@@ -137,7 +137,7 @@ homeassistant:
   resources:
     limits:
       memory: 512Mi
-  user: 1000:1000
+  user: 0:0
   privileged: true
   ports:
     http: 8123
