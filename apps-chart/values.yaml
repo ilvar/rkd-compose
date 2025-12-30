@@ -24,6 +24,7 @@ portainer:
     enabled: true
     hosts:
       - portainer.h.rkd.pw
+      - portainer.k.rkd.pw
     servicePort: 9000
 
 jackett:
@@ -46,6 +47,7 @@ jackett:
     enabled: true
     hosts:
       - jackett.h.rkd.pw
+      - jackett.k.rkd.pw
     servicePort: 9117
 
 radarr:
@@ -69,6 +71,7 @@ radarr:
     enabled: true
     hosts:
       - radarr.h.rkd.pw
+      - radarr.k.rkd.pw
     servicePort: 7878
 
 jellyfin:
@@ -93,6 +96,7 @@ jellyfin:
     hosts:
       - jf.h.rkd.pw
       - jellyfin.h.rkd.pw
+      - jellyfin.k.rkd.pw
       - jellyfin.local
     servicePort: 8096
 
@@ -122,6 +126,7 @@ deluge:
     enabled: true
     hosts:
       - deluge.h.rkd.pw
+      - deluge.k.rkd.pw
     servicePort: 8112
 
 homeassistant:
@@ -143,6 +148,7 @@ homeassistant:
     enabled: true
     hosts:
       - ha.h.rkd.pw
+      - ha.k.rkd.pw
       - ha.z85
     servicePort: 8123
 
@@ -169,6 +175,7 @@ hoarder:
     enabled: true
     hosts:
       - hoarder.h.rkd.pw
+      - hoarder.k.rkd.pw
       - hoarder.d.z85
     servicePort: 3000
   chrome:
@@ -208,6 +215,7 @@ compote:
     enabled: true
     hosts:
       - compote.h.rkd.pw
+      - compote.k.rkd.pw
       - compote.docker.z85
       - c.h.rkd.pw
     servicePort: 3000
@@ -251,6 +259,7 @@ paperless:
     enabled: true
     hosts:
       - docs.h.rkd.pw
+      - docs.k.rkd.pw
       - d.h.rkd.pw
       - docs.z85
     servicePort: 8000
@@ -285,6 +294,7 @@ nextcloud:
     enabled: true
     hosts:
       - nextcloud.h.rkd.pw
+      - nextcloud.k.rkd.pw
       - nextcloud.z85
       - nc.h.rkd.pw
     servicePort: 80
@@ -318,6 +328,7 @@ kuma:
     enabled: true
     hosts:
       - kuma.h.rkd.pw
+      - kuma.k.rkd.pw
       - k.h.rkd.pw
     servicePort: 3001
 
@@ -374,6 +385,7 @@ immich:
     enabled: true
     hosts:
       - immich.h.rkd.pw
+      - immich.k.rkd.pw
     servicePort: 2283
 
 bugsink:
@@ -467,6 +479,7 @@ miniflux:
     enabled: true
     hosts:
       - miniflux.rkd.pw
+      - miniflux.k.rkd.pw
     servicePort: 8080
 
 blog:
