@@ -12,8 +12,8 @@ keywords:
   - development
   - home-automation
 maintainers:
-  - name: Your Name
-    email: your.email@example.com
+  - name: rkd
+    email: a@rkd.pw
 sources:
   - https://github.com/rkd-pw/rkd-apps-chart
 icon: https://raw.githubusercontent.com/kubernetes/kubernetes/master/logo/logo.png
@@ -26,9 +26,7 @@ dependencies:
   - name: reloader
     version: "2.2.7"
     repository: "https://stakater.github.io/stakater-charts"
-    condition: reloader.enabled
   - name: jitsi-meet
     version: "2.1.3"
     repository: "https://jitsi-contrib.github.io/jitsi-helm/"
-    condition: jitsi-meet.enabled
 
