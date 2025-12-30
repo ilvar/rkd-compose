@@ -387,6 +387,8 @@ bugsink:
   environment:
     CREATE_SUPERUSER: "admin:admin"
     PORT: "8000"
+    BEHIND_HTTPS_PROXY: "true"
+    BASE_URL: https://bugsink.rkd.pw
   secrets:
     secretKey: ""
   storage:
