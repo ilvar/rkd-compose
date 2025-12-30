@@ -395,6 +395,7 @@ bugsink:
     enabled: true
     hosts:
       - bugsink.k.rkd.pw
+      - bugsink.rkd.pw
     servicePort: 8000
 
 itTools:
