@@ -554,7 +554,7 @@ irishSchools:
     limits:
       memory: 64Mi
   ingress:
-    enabled: false
+    enabled: true
     hosts: 
       - irish-schools.k.rkd.pw
       - irish-schools.rkd.pw
