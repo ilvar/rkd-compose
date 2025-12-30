@@ -24,7 +24,7 @@ annotations:
   catalog.cattle.io/release-name: "rkd-apps-chart"
 dependencies:
   - name: reloader
-    version: "1.0.0"
+    version: "2.2.7"
     repository: "https://stakater.github.io/stakater-charts"
     condition: reloader.enabled
 
