@@ -265,7 +265,7 @@ compote:
       - compote.k.rkd.pw
       - compote.docker.z85
       - c.h.rkd.pw
-    servicePort: 3000
+    servicePort: 9000
 
 paperless:
   enabled: true
@@ -422,7 +422,7 @@ immich:
       tag: 14-vectorchord0.3.0-pgvectors0.2.0
     resources:
       limits:
-        memory: 512Mi
+        memory: 1Gi
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: immich

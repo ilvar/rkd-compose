@@ -73,8 +73,8 @@ metadata:
     app: compote
 spec:
   ports:
-  - port: 3000
-    targetPort: 3000
+  - port: {{ .Values.compote.ingress.servicePort }}
+    targetPort: {{ .Values.compote.ingress.servicePort }}
     protocol: TCP
   selector:
     app: compote
@@ -121,4 +121,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-
