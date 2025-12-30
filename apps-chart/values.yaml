@@ -637,6 +637,7 @@ termix:
 
 jitsi-meet:
   enabled: true
+  publicURL: https://jitsi.h.rkd.pw
   web:
     replicaCount: 1
     resources:
