@@ -429,6 +429,7 @@ immich:
       POSTGRES_INITDB_ARGS: --data-checksums
     storage:
       size: 20Gi
+      hostPath: /home/rkd/.docker/immich/postgres
   ingress:
     enabled: true
     hosts:

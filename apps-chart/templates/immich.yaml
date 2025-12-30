@@ -79,15 +79,11 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /var/lib/postgresql/data
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: {{ .Values.immich.database.storage.size | default "20Gi" }}
+      volumes:
+      - name: data
+        hostPath:
+          path: {{ .Values.immich.database.storage.hostPath | quote }}
+          type: DirectoryOrCreate
 ---
 apiVersion: apps/v1
 kind: Deployment
