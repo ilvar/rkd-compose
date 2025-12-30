@@ -1,0 +1,110 @@
+{{- if .Values.ytdlSub.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ytdl-sub
+  labels:
+    app: ytdl-sub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ytdl-sub
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ytdl-sub
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
+      containers:
+      - name: ytdl-sub
+        image: "{{ .Values.ytdlSub.image.repository }}:{{ .Values.ytdlSub.image.tag }}"
+        env:
+        - name: TZ
+          value: {{ .Values.ytdlSub.environment.TZ | quote }}
+        - name: PUID
+          value: {{ .Values.ytdlSub.environment.PUID | quote }}
+        - name: PGID
+          value: {{ .Values.ytdlSub.environment.PGID | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.ytdlSub.resources.limits.memory }}
+        ports:
+        - containerPort: {{ .Values.ytdlSub.ports.http }}
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: youtube
+          mountPath: /youtube
+      securityContext:
+        runAsUser: {{ include "apps-chart.userID" .Values.ytdlSub.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.ytdlSub.user | int }}
+      volumes:
+      - name: config
+        hostPath:
+          path: /home/rkd/.docker/ytdl-sub/config
+          type: DirectoryOrCreate
+      - name: youtube
+        hostPath:
+          path: /home/rkd/.nas/Youtube
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ytdl-sub
+  labels:
+    app: ytdl-sub
+spec:
+  ports:
+  - port: {{ .Values.ytdlSub.ports.http }}
+    targetPort: {{ .Values.ytdlSub.ports.http }}
+    protocol: TCP
+  selector:
+    app: ytdl-sub
+{{- if and .Values.ytdlSub.enabled .Values.ytdlSub.ingress.enabled (gt (len .Values.ytdlSub.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ytdl-sub
+  labels:
+    app: ytdl-sub
+spec:
+{{- if gt (len .Values.ytdlSub.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+{{- range .Values.ytdlSub.ingress.hosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
+  rules:
+  {{- range .Values.ytdlSub.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ytdl-sub
+            port:
+              number: {{ $.Values.ytdlSub.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
