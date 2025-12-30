@@ -216,6 +216,8 @@ spec:
           value: {{ .Values.immich.server.environment.DB_DATABASE_NAME | quote }}
         - name: DB_HOSTNAME
           value: {{ .Values.immich.server.environment.DB_HOSTNAME | quote }}
+        - name: REDIS_HOSTNAME
+          value: {{ .Values.immich.server.environment.REDIS_HOSTNAME | quote }}
         resources:
           {{- if .Values.immich.server.resources }}
           {{- toYaml .Values.immich.server.resources | nindent 10 }}
@@ -324,4 +326,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

@@ -393,6 +393,7 @@ immich:
       DB_USERNAME: postgres
       DB_DATABASE_NAME: immich
       DB_HOSTNAME: immich-database
+      REDIS_HOSTNAME: immich-redis
     storage:
       upload: immich-upload
   secrets:
@@ -591,4 +592,3 @@ reloader:
       requests:
         memory: 32Mi
         cpu: 50m
-
