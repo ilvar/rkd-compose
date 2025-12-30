@@ -32,6 +32,10 @@ spec:
           value: {{ .Values.bugsink.environment.CREATE_SUPERUSER | quote }}
         - name: PORT
           value: {{ .Values.bugsink.environment.PORT | quote }}
+        - name: BEHIND_HTTPS_PROXY
+          value: {{ .Values.bugsink.environment.BEHIND_HTTPS_PROXY | quote }}
+        - name: BASE_URL
+          value: {{ .Values.bugsink.environment.BASE_URL | quote }}
         resources:
           limits:
             memory: {{ .Values.bugsink.resources.limits.memory }}
@@ -102,4 +106,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-
