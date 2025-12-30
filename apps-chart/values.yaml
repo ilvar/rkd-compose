@@ -193,7 +193,7 @@ hoarder:
 compote:
   enabled: true
   image:
-    repository: r.c.rkd.pw/compote2
+    repository: ilvar/compote
     tag: latest
   resources:
     limits:
@@ -469,7 +469,7 @@ miniflux:
 blog:
   enabled: true
   image:
-    repository: r.c.rkd.pw/captain_blog
+    repository: ilvar/blog
     tag: latest
   resources:
     limits:
