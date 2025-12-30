@@ -1,0 +1,4 @@
+helm:
+  chart: ./apps-chart
+  valuesFiles:
+    - apps-chart/values.yaml
