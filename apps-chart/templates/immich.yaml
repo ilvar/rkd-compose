@@ -32,7 +32,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: k3s.io/hostname
+              - key: kubernetes.io/hostname
                 operator: In
                 values:
                 - rkd-um560
@@ -129,7 +129,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: k3s.io/hostname
+              - key: kubernetes.io/hostname
                 operator: In
                 values:
                 - rkd-um560
@@ -167,7 +167,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: k3s.io/hostname
+              - key: kubernetes.io/hostname
                 operator: In
                 values:
                 - rkd-um560
