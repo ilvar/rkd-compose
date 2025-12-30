@@ -25,7 +25,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - rkd-um560
+                - hm60
       containers:
       - name: frigate
         image: "{{ .Values.frigate.image.repository }}:{{ .Values.frigate.image.tag }}"

@@ -72,15 +72,11 @@ spec:
       securityContext:
         runAsUser: {{ include "apps-chart.userID" .Values.nextcloud.db.user | int }}
         runAsGroup: {{ include "apps-chart.groupID" .Values.nextcloud.db.user | int }}
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: {{ .Values.nextcloud.db.storage.size | default "10Gi" }}
+      volumes:
+      - name: data
+        hostPath:
+          path: /home/rkd/.docker/nextcloud/db
+          type: DirectoryOrCreate
 ---
 apiVersion: apps/v1
 kind: Deployment

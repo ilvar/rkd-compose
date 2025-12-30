@@ -13,8 +13,8 @@ blocky:
 portainer:
   enabled: true
   image:
-    repository: portainer/portainer-ee
-    tag: lts
+    repository: portainer/portainer-ce
+    tag: latest
   resources:
     limits:
       memory: 512Mi

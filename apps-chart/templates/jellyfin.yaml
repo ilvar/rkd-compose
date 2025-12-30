@@ -17,6 +17,15 @@ spec:
       labels:
         app: jellyfin
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: jellyfin
         image: "{{ .Values.jellyfin.image.repository }}:{{ .Values.jellyfin.image.tag }}"
@@ -41,14 +50,17 @@ spec:
         runAsGroup: {{ include "apps-chart.groupID" .Values.jellyfin.user | int }}
       volumes:
       - name: config
-        persistentVolumeClaim:
-          claimName: {{ .Values.jellyfin.storage.config }}
+        hostPath:
+          path: /home/rkd/.docker/jellyfin/config
+          type: DirectoryOrCreate
       - name: cache
-        persistentVolumeClaim:
-          claimName: {{ .Values.jellyfin.storage.cache }}
+        hostPath:
+          path: /home/rkd/.docker/jellyfin/cache
+          type: DirectoryOrCreate
       - name: nas
-        persistentVolumeClaim:
-          claimName: {{ .Values.jellyfin.storage.nas }}
+        hostPath:
+          path: /home/rkd/.nas
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -63,39 +75,6 @@ spec:
     protocol: TCP
   selector:
     app: jellyfin
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.jellyfin.storage.config }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.jellyfin.storage.cache }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.jellyfin.storage.nas }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
 {{- if and .Values.jellyfin.enabled .Values.jellyfin.ingress.enabled (gt (len .Values.jellyfin.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1

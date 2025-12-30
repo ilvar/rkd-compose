@@ -27,6 +27,15 @@ spec:
       labels:
         app: compote
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       containers:
       - name: compote
         image: "{{ .Values.compote.image.repository }}:{{ .Values.compote.image.tag }}"
