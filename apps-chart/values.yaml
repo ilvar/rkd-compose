@@ -576,3 +576,19 @@ changes:
       - changes.k.rkd.pw
     servicePort: 5000
 
+reloader:
+  enabled: true
+  reloader:
+    watchGlobally: true
+    ignoreNamespaces: ""
+    ignoreSecrets: false
+    ignoreConfigMaps: false
+    logFormat: "json"
+    resources:
+      limits:
+        memory: 64Mi
+        cpu: 100m
+      requests:
+        memory: 32Mi
+        cpu: 50m
+

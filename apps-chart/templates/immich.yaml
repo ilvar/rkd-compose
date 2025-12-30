@@ -51,9 +51,29 @@ spec:
           value: {{ .Values.immich.database.environment.POSTGRES_DB | quote }}
         - name: POSTGRES_INITDB_ARGS
           value: {{ .Values.immich.database.environment.POSTGRES_INITDB_ARGS | quote }}
+        resources:
+          {{- if .Values.immich.database.resources }}
+          {{- toYaml .Values.immich.database.resources | nindent 10 }}
+          {{- end }}
         ports:
         - containerPort: 5432
           protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - {{ .Values.immich.database.environment.POSTGRES_USER | quote }}
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - {{ .Values.immich.database.environment.POSTGRES_USER | quote }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
         volumeMounts:
         - name: data
           mountPath: /var/lib/postgresql/data
@@ -88,6 +108,10 @@ spec:
       containers:
       - name: immich-redis
         image: "{{ .Values.immich.redis.image.repository }}:{{ .Values.immich.redis.image.tag }}@{{ .Values.immich.redis.image.digest }}"
+        resources:
+          {{- if .Values.immich.redis.resources }}
+          {{- toYaml .Values.immich.redis.resources | nindent 10 }}
+          {{- end }}
         ports:
         - containerPort: 6379
           protocol: TCP
@@ -188,6 +212,10 @@ spec:
           value: {{ .Values.immich.server.environment.DB_DATABASE_NAME | quote }}
         - name: DB_HOSTNAME
           value: {{ .Values.immich.server.environment.DB_HOSTNAME | quote }}
+        resources:
+          {{- if .Values.immich.server.resources }}
+          {{- toYaml .Values.immich.server.resources | nindent 10 }}
+          {{- end }}
         ports:
         - containerPort: 2283
           protocol: TCP

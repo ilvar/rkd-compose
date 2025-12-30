@@ -2,7 +2,7 @@ apiVersion: v2
 name: rkd-apps-chart
 description: A comprehensive Helm chart for deploying multiple self-hosted applications including media servers, productivity tools, development utilities, and monitoring solutions.
 type: application
-version: 0.1.16
+version: 0.1.17
 appVersion: "1.0"
 keywords:
   - self-hosted
@@ -22,4 +22,9 @@ annotations:
   catalog.cattle.io/certified: "false"
   catalog.cattle.io/namespace: "default"
   catalog.cattle.io/release-name: "rkd-apps-chart"
+dependencies:
+  - name: reloader
+    version: "1.0.0"
+    repository: "https://stakater.github.io/stakater-charts"
+    condition: reloader.enabled
 
