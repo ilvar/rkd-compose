@@ -46,6 +46,7 @@ spec:
       securityContext:
         runAsUser: {{ include "apps-chart.userID" .Values.pinchflat.user | int }}
         runAsGroup: {{ include "apps-chart.groupID" .Values.pinchflat.user | int }}
+        fsGroup: {{ include "apps-chart.groupID" .Values.pinchflat.user | int }}
       volumes:
       - name: config
         hostPath:

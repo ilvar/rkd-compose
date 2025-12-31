@@ -652,7 +652,7 @@ tubearchivist:
   enabled: true
   image:
     repository: bbilly1/tubearchivist
-    tag: latest
+    tag: v0.5.8
   resources:
     limits:
       memory: 1Gi
@@ -673,16 +673,16 @@ tubearchivist:
   es:
     image:
       repository: bbilly1/tubearchivist-es
-      tag: latest
+      tag: 8.18.2
     resources:
       limits:
-        memory: 1Gi
+        memory: 1536Mi
     environment:
-      ES_JAVA_OPTS: -Xms1g -Xmx1g
+      ES_JAVA_OPTS: -Xms768m -Xmx768m
   redis:
     image:
       repository: redis
-      tag: latest
+      tag: 7.4.0-alpine
     resources:
       limits:
         memory: 256Mi
