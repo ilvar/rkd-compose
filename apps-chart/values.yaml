@@ -641,18 +641,20 @@ pinchflat:
       memory: 512Mi
   user: 1000:1000
   environment:
-    TZ: America/New_York
+    TZ: Europe/Dublin
   ports:
     http: 8945
   ingress:
-    enabled: false
-    hosts: []
+    enabled: true
+    hosts: 
+    - pinchflat.h.rkd.pw
+    - pinchflat.k.rkd.pw
     servicePort: 8945
 tubearchivist:
   enabled: true
   image:
     repository: bbilly1/tubearchivist
-    tag: v0.5.8
+    tag: v0.5.7
   resources:
     limits:
       memory: 1Gi
@@ -663,7 +665,7 @@ tubearchivist:
     HOST_UID: '1000'
     HOST_GID: '1000'
     TA_HOST: http://tubearchivist.local:8000
-    TZ: America/New_York
+    TZ: Europe/Dublin
   ports:
     http: 8000
   secrets:
@@ -687,8 +689,10 @@ tubearchivist:
       limits:
         memory: 256Mi
   ingress:
-    enabled: false
-    hosts: []
+    enabled: true
+    hosts: 
+    - tubearchivist.h.rkd.pw
+    - tubearchivist.k.rkd.pw
     servicePort: 8000
 jitsi-meet:
   enabled: true

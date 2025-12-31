@@ -37,9 +37,13 @@ spec:
           - |
             chown -R 1000:1000 /config
             chmod -R 755 /config
+            chown -R 1000:1000 /downloads
+            chmod -R 775 /downloads
         volumeMounts:
         - name: config
           mountPath: /config
+        - name: downloads
+          mountPath: /downloads
       containers:
       - name: pinchflat
         image: "{{ .Values.pinchflat.image.repository }}:{{ .Values.pinchflat.image.tag }}"
