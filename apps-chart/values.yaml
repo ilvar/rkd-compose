@@ -496,7 +496,7 @@ minifluxDb:
   enabled: true
   image:
     repository: postgres
-    tag: 9.6.18-alpine
+    tag: 9.6.24-alpine
   resources:
     limits:
       memory: 128Mi
