@@ -729,7 +729,6 @@ kube-prometheus-stack:
         - grafana.k.rkd.pw
       annotations:
         cert-manager.io/cluster-issuer: "letsencrypt-prod"
-        traefik.ingress.kubernetes.io/redirect-to-https: "true"
       tls:
         - secretName: homelab-wildcard-h-tls
           hosts:
