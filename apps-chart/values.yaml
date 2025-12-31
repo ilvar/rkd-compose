@@ -709,3 +709,41 @@ jitsi-meet:
       hosts:
       - jitsi.h.rkd.pw
       - jitsi.k.rkd.pw
+
+kube-prometheus-stack:
+  enabled: true
+  grafana:
+    enabled: true
+    adminPassword: "CHANGE_ME"
+    persistence:
+      enabled: true
+      size: 5Gi
+  alertmanager:
+    enabled: false
+  prometheus:
+    prometheusSpec:
+      scrapeInterval: 10m
+      evaluationInterval: 10m
+      retention: 14d
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 10Gi
+  kubeStateMetrics:
+    enabled: true
+  nodeExporter:
+    enabled: true
+  # k3s often doesn't expose these like kubeadm does; disable to avoid failing targets
+  kubeEtcd:
+    enabled: false
+  kubeControllerManager:
+    enabled: false
+  kubeScheduler:
+    enabled: false
