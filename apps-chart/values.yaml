@@ -513,7 +513,7 @@ miniflux:
   enabled: true
   image:
     repository: miniflux/miniflux
-    tag: 2.2.1
+    tag: 2.2.15
   resources:
     limits:
       memory: 64Mi
