@@ -50,27 +50,37 @@ func getK3sIngresses() ([]Application, error) {
 	}
 
 	var apps []Application
+	appsMap := make(map[string]Application) // Deduplicate by URL
+	
 	for _, ingress := range ingresses.Items {
 		for _, rule := range ingress.Spec.Rules {
-			for _, path := range rule.HTTP.Paths {
-				scheme := "https"
-				if len(ingress.Spec.TLS) == 0 {
-					scheme = "http"
-				}
-				url := fmt.Sprintf("%s://%s%s", scheme, rule.Host, path.Path)
-				if path.Path == "/" {
-					url = fmt.Sprintf("%s://%s", scheme, rule.Host)
-				}
-				appName := ingress.Name
-				if appName == "" {
-					appName = rule.Host
-				}
-				apps = append(apps, Application{
+			if rule.Host == "" {
+				continue
+			}
+			scheme := "https"
+			if len(ingress.Spec.TLS) == 0 {
+				scheme = "http"
+			}
+			// Use the first host for each ingress (most ingresses have one host)
+			url := fmt.Sprintf("%s://%s", scheme, rule.Host)
+			appName := ingress.Name
+			if appName == "" {
+				appName = rule.Host
+			}
+			// Deduplicate by URL - use first name found
+			if _, exists := appsMap[url]; !exists {
+				appsMap[url] = Application{
 					Name: appName,
 					URL:  url,
-				})
+				}
 			}
 		}
+	}
+	
+	// Convert map to slice
+	apps = make([]Application, 0, len(appsMap))
+	for _, app := range appsMap {
+		apps = append(apps, app)
 	}
 
 	return apps, nil

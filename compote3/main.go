@@ -35,16 +35,9 @@ func main() {
 		c.JSON(http.StatusOK, data)
 	})
 
-	// Frontend page
+	// Frontend page (data loaded via JavaScript)
 	r.GET("/", func(c *gin.Context) {
-		data, err := getData(cfg)
-		if err != nil {
-			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		c.HTML(http.StatusOK, "index.html", data)
+		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
 	// Static files (if needed)

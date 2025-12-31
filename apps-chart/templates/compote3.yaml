@@ -1,5 +1,42 @@
 {{- if .Values.compote3.enabled }}
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: compote3
+  labels:
+    app: compote3
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: compote3
+  labels:
+    app: compote3
+rules:
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - list
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: compote3
+  labels:
+    app: compote3
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: compote3
+subjects:
+- kind: ServiceAccount
+  name: compote3
+  namespace: default
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: compote3-config
@@ -29,6 +66,7 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      serviceAccountName: compote3
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
