@@ -638,6 +638,8 @@ pinchflat:
     tag: latest
   resources:
     limits:
+      memory: 2Gi
+    requests:
       memory: 512Mi
   user: 1000:1000
   environment:
