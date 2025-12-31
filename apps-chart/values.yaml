@@ -682,7 +682,7 @@ tubearchivist:
   redis:
     image:
       repository: redis
-      tag: 7.4.0-alpine
+      tag: 7.4.7-alpine
     resources:
       limits:
         memory: 256Mi
