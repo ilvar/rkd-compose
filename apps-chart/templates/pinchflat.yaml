@@ -1,0 +1,104 @@
+{{- if .Values.pinchflat.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pinchflat
+  labels:
+    app: pinchflat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pinchflat
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: pinchflat
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
+      containers:
+      - name: pinchflat
+        image: "{{ .Values.pinchflat.image.repository }}:{{ .Values.pinchflat.image.tag }}"
+        env:
+        - name: TZ
+          value: {{ .Values.pinchflat.environment.TZ | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.pinchflat.resources.limits.memory }}
+        ports:
+        - containerPort: {{ .Values.pinchflat.ports.http }}
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: downloads
+          mountPath: /downloads
+      securityContext:
+        runAsUser: {{ include "apps-chart.userID" .Values.pinchflat.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.pinchflat.user | int }}
+      volumes:
+      - name: config
+        hostPath:
+          path: /home/rkd/.docker/pinchflat/config
+          type: DirectoryOrCreate
+      - name: downloads
+        hostPath:
+          path: /home/rkd/.nas/YouTube
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pinchflat
+  labels:
+    app: pinchflat
+spec:
+  ports:
+  - port: {{ .Values.pinchflat.ports.http }}
+    targetPort: {{ .Values.pinchflat.ports.http }}
+    protocol: TCP
+  selector:
+    app: pinchflat
+{{- if and .Values.pinchflat.enabled .Values.pinchflat.ingress.enabled (gt (len .Values.pinchflat.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pinchflat
+  labels:
+    app: pinchflat
+spec:
+{{- if gt (len .Values.pinchflat.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+{{- range .Values.pinchflat.ingress.hosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
+  rules:
+  {{- range .Values.pinchflat.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pinchflat
+            port:
+              number: {{ $.Values.pinchflat.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
