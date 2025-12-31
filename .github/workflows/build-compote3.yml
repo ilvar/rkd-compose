@@ -8,8 +8,6 @@ on:
     paths:
       - 'compote3/**'
       - '.github/workflows/build-compote3.yml'
-    paths-ignore:
-      - 'compote3/VERSION'  # Don't trigger on VERSION file changes alone
   workflow_dispatch:
     inputs:
       version:
@@ -33,6 +31,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch full history for version calculation
+
+      - name: Check if should skip (only VERSION changed)
+        id: skip_check
+        if: github.event_name == 'push'
+        run: |
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep "^compote3/" || true)
+          if [ -z "$CHANGED_FILES" ] || [ "$CHANGED_FILES" == "compote3/VERSION" ]; then
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+            echo "Only VERSION file changed, skipping build"
+          else
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Skip workflow if only VERSION changed
+        if: steps.skip_check.outputs.should_skip == 'true'
+        run: exit 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
