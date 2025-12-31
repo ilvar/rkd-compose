@@ -582,7 +582,7 @@ changes:
   enabled: true
   image:
     repository: dgtlmoon/changedetection.io
-    tag: 0.42.2
+    tag: 0.51.4
   resources:
     limits:
       memory: 512Mi
