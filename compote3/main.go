@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -71,19 +73,60 @@ func getData(cfg *Config) (*APIResponse, error) {
 		})
 	}
 
-	// Combine applications (deduplicate by URL)
+	// Combine applications (deduplicate by app name, prefer certain domains)
 	appsMap := make(map[string]Application)
-	for _, app := range k3sApps {
-		appsMap[app.URL] = app
+	
+	// Helper function to get domain priority (lower number = higher priority)
+	getDomainPriority := func(url string) int {
+		// Check more specific domains first
+		if strings.Contains(url, ".k.rkd.pw") {
+			return 2 // *.k.rkd.pw has second priority
+		}
+		if strings.Contains(url, ".h.rkd.pw") {
+			return 3 // *.h.rkd.pw has third priority
+		}
+		if strings.Contains(url, ".rkd.pw") {
+			return 1 // *.rkd.pw has highest priority (but not .k or .h)
+		}
+		return 4 // Other domains have lowest priority
 	}
+	
+	// Add k3s apps first
+	for _, app := range k3sApps {
+		name := app.Name
+		if existing, exists := appsMap[name]; exists {
+			// Compare domain priorities - keep the one with higher priority (lower number)
+			if getDomainPriority(app.URL) < getDomainPriority(existing.URL) {
+				appsMap[name] = app
+			}
+		} else {
+			appsMap[name] = app
+		}
+	}
+	
+	// Add config apps (config apps take precedence if same name)
 	for _, app := range configApps {
-		appsMap[app.URL] = app
+		name := app.Name
+		if existing, exists := appsMap[name]; exists {
+			// Config apps have priority, but still respect domain preference
+			if getDomainPriority(app.URL) <= getDomainPriority(existing.URL) {
+				appsMap[name] = app
+			}
+		} else {
+			appsMap[name] = app
+		}
 	}
 
+	// Convert map to slice and sort by name
 	apps := make([]Application, 0, len(appsMap))
 	for _, app := range appsMap {
 		apps = append(apps, app)
 	}
+	
+	// Sort by app name
+	sort.Slice(apps, func(i, j int) bool {
+		return apps[i].Name < apps[j].Name
+	})
 
 	// Get GitHub trending daily
 	githubDaily, err := getGitHubTrending("daily")

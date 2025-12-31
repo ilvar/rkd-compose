@@ -25,6 +25,9 @@ jobs:
     permissions:
       contents: write  # Needed to commit VERSION file
       packages: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      image-tag: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
     
     steps:
       - name: Checkout code
@@ -115,9 +118,75 @@ jobs:
           git commit -m "chore: update compote3 version to ${{ steps.version.outputs.version }}"
           git push
 
+      - name: Output current version
+        run: |
+          echo "::notice title=Compote3 Version::Built version: ${{ steps.version.outputs.version }}"
+          echo "Current version: ${{ steps.version.outputs.version }}"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}"
+      
       - name: Output image tags
         run: |
           echo "Built and pushed images:"
           echo "${{ steps.meta.outputs.tags }}"
           echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}"
+
+      - name: Update values.yaml
+        run: |
+          # Update compote3 image tag in values.yaml using Python
+          python3 << 'PYEOF'
+          import re
+          import sys
+          import os
+          
+          version = os.environ['VERSION']
+          values_file = 'apps-chart/values.yaml'
+          
+          try:
+              with open(values_file, 'r') as f:
+                  lines = f.readlines()
+              
+              updated = False
+              in_compote3 = False
+              in_image = False
+              
+              for i, line in enumerate(lines):
+                  if line.strip().startswith('compote3:'):
+                      in_compote3 = True
+                  elif in_compote3 and line.strip().startswith('image:'):
+                      in_image = True
+                  elif in_image and line.strip().startswith('repository: ilvar/compote3'):
+                      # Next line should be tag
+                      if i + 1 < len(lines) and 'tag:' in lines[i + 1]:
+                          lines[i + 1] = re.sub(r'tag:\s*[^\n]+', f'tag: {version}', lines[i + 1])
+                          updated = True
+                          break
+                  elif in_compote3 and not line.startswith(' ') and not line.startswith('\t') and line.strip() != '':
+                      # We've left the compote3 section
+                      break
+              
+              if updated:
+                  with open(values_file, 'w') as f:
+                      f.writelines(lines)
+                  print(f"✓ Updated compote3 tag to {version} in values.yaml")
+                  sys.exit(0)
+              else:
+                  print(f"✗ Could not find compote3 tag to update")
+                  sys.exit(1)
+          except Exception as e:
+              print(f"✗ Error updating values.yaml: {e}")
+              sys.exit(1)
+          PYEOF
+          
+          # Commit and push if changes were made
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apps-chart/values.yaml
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update compote3 version to ${{ steps.version.outputs.version }} in values.yaml"
+            git push
+          else
+            echo "No changes to values.yaml"
+          fi
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
 
