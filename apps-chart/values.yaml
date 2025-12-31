@@ -9,7 +9,6 @@ blocky:
       tcp: 53
       udp: 53
     http: 4000
-
 portainer:
   enabled: true
   image:
@@ -17,16 +16,17 @@ portainer:
     tag: latest
   resources:
     limits:
-      memory: 512Mi
+      memory: 64Mi
+    requests:
+      memory: 32Mi
   storage:
     data: portainer-data
   ingress:
     enabled: true
     hosts:
-      - portainer.h.rkd.pw
-      - portainer.k.rkd.pw
+    - portainer.h.rkd.pw
+    - portainer.k.rkd.pw
     servicePort: 9000
-
 jackett:
   enabled: true
   image:
@@ -35,21 +35,22 @@ jackett:
   resources:
     limits:
       memory: 512Mi
+    requests:
+      memory: 256Mi
   environment:
     PUID: 1000
     PGID: 1000
     TZ: Etc/UTC
-    AUTO_UPDATE: "true"
+    AUTO_UPDATE: 'true'
   storage:
     config: jackett-data
     downloads: jackett-downloads
   ingress:
     enabled: true
     hosts:
-      - jackett.h.rkd.pw
-      - jackett.k.rkd.pw
+    - jackett.h.rkd.pw
+    - jackett.k.rkd.pw
     servicePort: 9117
-
 radarr:
   enabled: true
   image:
@@ -57,6 +58,8 @@ radarr:
     tag: latest
   resources:
     limits:
+      memory: 768Mi
+    requests:
       memory: 512Mi
   environment:
     PUID: 1000
@@ -70,10 +73,9 @@ radarr:
   ingress:
     enabled: true
     hosts:
-      - radarr.h.rkd.pw
-      - radarr.k.rkd.pw
+    - radarr.h.rkd.pw
+    - radarr.k.rkd.pw
     servicePort: 7878
-
 jellyfin:
   enabled: true
   image:
@@ -81,7 +83,9 @@ jellyfin:
     tag: latest
   resources:
     limits:
-      memory: 2Gi
+      memory: 768Mi
+    requests:
+      memory: 512Mi
   user: 1000:1000
   environment:
     JELLYFIN_PublishedServerUrl: https://jf.h.rkd.pw
@@ -94,12 +98,11 @@ jellyfin:
   ingress:
     enabled: true
     hosts:
-      - jf.h.rkd.pw
-      - jellyfin.h.rkd.pw
-      - jellyfin.k.rkd.pw
-      - jellyfin.local
+    - jf.h.rkd.pw
+    - jellyfin.h.rkd.pw
+    - jellyfin.k.rkd.pw
+    - jellyfin.local
     servicePort: 8096
-
 deluge:
   enabled: true
   image:
@@ -108,6 +111,8 @@ deluge:
   resources:
     limits:
       memory: 512Mi
+    requests:
+      memory: 256Mi
   environment:
     PUID: 1000
     PGID: 1000
@@ -125,10 +130,9 @@ deluge:
   ingress:
     enabled: true
     hosts:
-      - deluge.h.rkd.pw
-      - deluge.k.rkd.pw
+    - deluge.h.rkd.pw
+    - deluge.k.rkd.pw
     servicePort: 8112
-
 homeassistant:
   enabled: true
   image:
@@ -136,6 +140,8 @@ homeassistant:
     tag: latest
   resources:
     limits:
+      memory: 1024Mi
+    requests:
       memory: 512Mi
   user: 0:0
   privileged: true
@@ -147,11 +153,10 @@ homeassistant:
   ingress:
     enabled: true
     hosts:
-      - ha.h.rkd.pw
-      - ha.k.rkd.pw
-      - ha.z85
+    - ha.h.rkd.pw
+    - ha.k.rkd.pw
+    - ha.z85
     servicePort: 8123
-
 frigate:
   enabled: true
   image:
@@ -161,7 +166,7 @@ frigate:
     limits:
       memory: 3Gi
     requests:
-      memory: 3Gi
+      memory: 1536Mi
   privileged: true
   ports:
     rtsp: 8554
@@ -176,9 +181,8 @@ frigate:
   ingress:
     enabled: true
     hosts:
-      - frigate.h.rkd.pw
+    - frigate.h.rkd.pw
     servicePort: 5000
-
 nodered:
   enabled: true
   image:
@@ -187,6 +191,8 @@ nodered:
   resources:
     limits:
       memory: 512Mi
+    requests:
+      memory: 256Mi
   user: 1000:1000
   privileged: true
   ports:
@@ -194,11 +200,10 @@ nodered:
   ingress:
     enabled: true
     hosts:
-      - nodered.h.rkd.pw
-      - n.h.rkd.pw
-      - nodered.z85
+    - nodered.h.rkd.pw
+    - n.h.rkd.pw
+    - nodered.z85
     servicePort: 1880
-
 hoarder:
   enabled: true
   web:
@@ -208,6 +213,8 @@ hoarder:
     resources:
       limits:
         memory: 512Mi
+      requests:
+        memory: 256Mi
     environment:
       MEILI_ADDR: http://hoarder-meilisearch:7700
       BROWSER_WEB_URL: http://hoarder-chrome:9222
@@ -221,52 +228,48 @@ hoarder:
   ingress:
     enabled: true
     hosts:
-      - hoarder.h.rkd.pw
-      - hoarder.k.rkd.pw
-      - hoarder.d.z85
+    - hoarder.h.rkd.pw
+    - hoarder.k.rkd.pw
+    - hoarder.d.z85
     servicePort: 3000
   chrome:
     image:
       repository: gcr.io/zenika-hub/alpine-chrome
-      tag: "123"
+      tag: '123'
     resources:
       limits:
         memory: 512Mi
+      requests:
+        memory: 256Mi
   meilisearch:
     image:
       repository: getmeili/meilisearch
       tag: v1.11.1
     resources:
       limits:
-        memory: 512Mi
+        memory: 128Mi
+      requests:
+        memory: 64Mi
     environment:
-      MEILI_NO_ANALYTICS: "true"
+      MEILI_NO_ANALYTICS: 'true'
     storage:
       data: hoarder-meilisearch-data
-
-compote:
+compote3:
   enabled: true
   image:
-    repository: ilvar/compote
+    repository: ilvar/compote3
     tag: latest
   resources:
     limits:
-      memory: 512Mi
-  environment:
-    CAPROVER_URL: https://captain.c.rkd.pw
+      memory: 32Mi
   secrets:
-    caproverPassword: ""
-  storage:
-    data: compote-data
+    githubToken: ''
+  config: "# Configuration for compote3\n\n# Additional application URLs (beyond k3s ingresses)\napplications:\n  - name: Gandi\n    url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records\n  - name: Tessie\n    url: https://dash.tessie.com\n  - name: Mailbox\n    url: https://app.mailbox.org/\n  - name: Trello\n    url: https://trello.com/b/YPlmZPom/personal\n\n\n# GitHub watched repositories\ngithub:\n  watcher: ilvar  # GitHub username to get watched repositories for\n"
   ingress:
     enabled: true
     hosts:
-      - compote.h.rkd.pw
-      - compote.k.rkd.pw
-      - compote.docker.z85
-      - c.h.rkd.pw
+    - c.h.rkd.pw
     servicePort: 9000
-
 paperless:
   enabled: true
   webserver:
@@ -275,19 +278,21 @@ paperless:
       tag: latest
     resources:
       limits:
-        memory: 512Mi
+        memory: 1536Mi
+      requests:
+        memory: 768Mi
     environment:
       PAPERLESS_OCR_LANGUAGES: eng
       TZ: Europe/Dublin
-      PAPERLESS_USE_SSL: "false"
-      PAPERLESS_FORGIVING_OCR: "true"
+      PAPERLESS_USE_SSL: 'false'
+      PAPERLESS_FORGIVING_OCR: 'true'
       PAPERLESS_REDIS: redis://paperless-redis:6379
       PAPERLESS_OCR_MODE: skip
-      PAPERLESS_CONSUMER_DISABLE: "true"
+      PAPERLESS_CONSUMER_DISABLE: 'true'
       PAPERLESS_WEBSERVER_WORKERS: 4
       PAPERLESS_URL: https://docs.h.rkd.pw
-      USE_X_FORWARD_HOST: "true"
-      USE_X_FORWARD_PORT: "true"
+      USE_X_FORWARD_HOST: 'true'
+      USE_X_FORWARD_PORT: 'true'
     storage:
       data: paperless-data
       media: paperless-media
@@ -298,19 +303,18 @@ paperless:
   redis:
     image:
       repository: redis
-      tag: "6.0"
+      tag: '6.0'
     resources:
       limits:
         memory: 256Mi
   ingress:
     enabled: true
     hosts:
-      - docs.h.rkd.pw
-      - docs.k.rkd.pw
-      - d.h.rkd.pw
-      - docs.z85
+    - docs.h.rkd.pw
+    - docs.k.rkd.pw
+    - d.h.rkd.pw
+    - docs.z85
     servicePort: 8000
-
 nextcloud:
   enabled: true
   app:
@@ -320,6 +324,8 @@ nextcloud:
     resources:
       limits:
         memory: 512Mi
+      requests:
+        memory: 256Mi
     user: 1000:1000
     environment:
       PUID: 1000
@@ -334,24 +340,26 @@ nextcloud:
     storage:
       data: nextcloud-data
   secrets:
-    adminPassword: ""
+    adminPassword: ''
     mysqlPassword: nextcloud
     mysqlRootPassword: nextcloud
   ingress:
     enabled: true
     hosts:
-      - nextcloud.h.rkd.pw
-      - nextcloud.k.rkd.pw
-      - nextcloud.z85
-      - nc.h.rkd.pw
+    - nextcloud.h.rkd.pw
+    - nextcloud.k.rkd.pw
+    - nextcloud.z85
+    - nc.h.rkd.pw
     servicePort: 80
   db:
     image:
       repository: mariadb
-      tag: "10.5"
+      tag: '10.5'
     resources:
       limits:
-        memory: 512Mi
+        memory: 256Mi
+      requests:
+        memory: 128Mi
     user: 1000:1000
     environment:
       MYSQL_DATABASE: nextcloud
@@ -360,7 +368,6 @@ nextcloud:
       PGID: 1000
     storage:
       size: 10Gi
-
 kuma:
   enabled: true
   image:
@@ -369,16 +376,17 @@ kuma:
   resources:
     limits:
       memory: 512Mi
+    requests:
+      memory: 256Mi
   storage:
     data: kuma-data
   ingress:
     enabled: true
     hosts:
-      - kuma.h.rkd.pw
-      - kuma.k.rkd.pw
-      - k.h.rkd.pw
+    - kuma.h.rkd.pw
+    - kuma.k.rkd.pw
+    - k.h.rkd.pw
     servicePort: 3001
-
 immich:
   enabled: true
   server:
@@ -387,7 +395,9 @@ immich:
       tag: release
     resources:
       limits:
-        memory: 1Gi
+        memory: 1024Mi
+      requests:
+        memory: 512Mi
     environment:
       TZ: Europe/Dublin
       DB_USERNAME: postgres
@@ -405,7 +415,9 @@ immich:
       tag: release
     resources:
       limits:
-        memory: 2Gi
+        memory: 512Mi
+      requests:
+        memory: 256Mi
     storage:
       modelCache: immich-model-cache
   redis:
@@ -415,14 +427,18 @@ immich:
       digest: sha256:ff21bc0f8194dc9c105b769aeabf9585fea6a8ed649c0781caeac5cb3c247884
     resources:
       limits:
-        memory: 256Mi
+        memory: 16Mi
+      requests:
+        memory: 16Mi
   database:
     image:
       repository: ghcr.io/immich-app/postgres
       tag: 14-vectorchord0.3.0-pgvectors0.2.0
     resources:
       limits:
-        memory: 1Gi
+        memory: 512Mi
+      requests:
+        memory: 256Mi
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: immich
@@ -433,10 +449,9 @@ immich:
   ingress:
     enabled: true
     hosts:
-      - immich.h.rkd.pw
-      - immich.k.rkd.pw
+    - immich.h.rkd.pw
+    - immich.k.rkd.pw
     servicePort: 2283
-
 bugsink:
   enabled: true
   image:
@@ -444,23 +459,24 @@ bugsink:
     tag: latest
   resources:
     limits:
+      memory: 768Mi
+    requests:
       memory: 512Mi
   environment:
-    CREATE_SUPERUSER: "admin:admin"
-    PORT: "8000"
-    BEHIND_HTTPS_PROXY: "true"
+    CREATE_SUPERUSER: admin:admin
+    PORT: '8000'
+    BEHIND_HTTPS_PROXY: 'true'
     BASE_URL: https://bugsink.rkd.pw
   secrets:
-    secretKey: ""
+    secretKey: ''
   storage:
     data: bugsink-data
   ingress:
     enabled: true
     hosts:
-      - bugsink.k.rkd.pw
-      - bugsink.rkd.pw
+    - bugsink.k.rkd.pw
+    - bugsink.rkd.pw
     servicePort: 8000
-
 itTools:
   enabled: true
   image:
@@ -468,13 +484,14 @@ itTools:
     tag: latest
   resources:
     limits:
-      memory: 256Mi
+      memory: 32Mi
+    requests:
+      memory: 16Mi
   ingress:
     enabled: true
     hosts:
-      - it-tools.k.rkd.pw
+    - it-tools.k.rkd.pw
     servicePort: 80
-
 minifluxDb:
   enabled: true
   image:
@@ -482,15 +499,16 @@ minifluxDb:
     tag: 9.6.18-alpine
   resources:
     limits:
-      memory: 512Mi
+      memory: 128Mi
+    requests:
+      memory: 64Mi
   environment:
     POSTGRES_USER: miniflux
     POSTGRES_DB: miniflux
   secrets:
-    postgresPassword: "066a04f209"
+    postgresPassword: 066a04f209
   storage:
     size: 1Gi
-
 miniflux:
   enabled: true
   image:
@@ -498,21 +516,22 @@ miniflux:
     tag: 2.2.1
   resources:
     limits:
-      memory: 512Mi
+      memory: 64Mi
+    requests:
+      memory: 32Mi
   environment:
     DATABASE_URL: postgres://miniflux:066a04f209@miniflux-db:5432/miniflux?sslmode=disable
-    RUN_MIGRATIONS: "1"
-    CREATE_ADMIN: "1"
+    RUN_MIGRATIONS: '1'
+    CREATE_ADMIN: '1'
     ADMIN_USERNAME: ilvar
   secrets:
-    adminPassword: "jedi8947"
+    adminPassword: jedi8947
   ingress:
     enabled: true
     hosts:
-      - miniflux.rkd.pw
-      - miniflux.k.rkd.pw
+    - miniflux.rkd.pw
+    - miniflux.k.rkd.pw
     servicePort: 8080
-
 blog:
   enabled: true
   image:
@@ -524,10 +543,9 @@ blog:
   ingress:
     enabled: true
     hosts:
-      - blog.rkd.pw
-      - blog.k.rkd.pw
+    - blog.rkd.pw
+    - blog.k.rkd.pw
     servicePort: 5000
-
 rkdPw:
   enabled: true
   image:
@@ -539,12 +557,11 @@ rkdPw:
   ingress:
     enabled: true
     hosts:
-      - rkd.pw
-      - rkd.k.rkd.pw
-      - rkdpw.k.rkd.pw
-      - www.rkd.pw
+    - rkd.pw
+    - rkd.k.rkd.pw
+    - rkdpw.k.rkd.pw
+    - www.rkd.pw
     servicePort: 5000
-
 irishSchools:
   enabled: true
   image:
@@ -553,13 +570,14 @@ irishSchools:
   resources:
     limits:
       memory: 64Mi
+    requests:
+      memory: 32Mi
   ingress:
     enabled: true
-    hosts: 
-      - irish-schools.k.rkd.pw
-      - irish-schools.rkd.pw
+    hosts:
+    - irish-schools.k.rkd.pw
+    - irish-schools.rkd.pw
     servicePort: 5000
-
 changes:
   enabled: true
   image:
@@ -568,6 +586,8 @@ changes:
   resources:
     limits:
       memory: 512Mi
+    requests:
+      memory: 256Mi
   environment:
     BASE_URL: http://changes.k.rkd.pw
   storage:
@@ -575,25 +595,22 @@ changes:
   ingress:
     enabled: true
     hosts:
-      - changes.k.rkd.pw
+    - changes.k.rkd.pw
     servicePort: 5000
-
 reloader:
   enabled: true
   reloader:
     watchGlobally: true
-    ignoreNamespaces: ""
+    ignoreNamespaces: ''
     ignoreSecrets: false
     ignoreConfigMaps: false
-    logFormat: "json"
+    logFormat: json
     resources:
       limits:
         memory: 64Mi
-        cpu: 100m
       requests:
         memory: 32Mi
         cpu: 50m
-
 termix:
   enabled: true
   image:
@@ -602,17 +619,18 @@ termix:
   resources:
     limits:
       memory: 256Mi
+    requests:
+      memory: 128Mi
   environment:
-    PORT: "8080"
+    PORT: '8080'
   ports:
     http: 8080
   ingress:
     enabled: true
     hosts:
-      - termix.h.rkd.pw
-      - termix.k.rkd.pw
+    - termix.h.rkd.pw
+    - termix.k.rkd.pw
     servicePort: 8080
-
 pinchflat:
   enabled: true
   image:
@@ -630,7 +648,6 @@ pinchflat:
     enabled: false
     hosts: []
     servicePort: 8945
-
 tubearchivist:
   enabled: true
   image:
@@ -643,8 +660,8 @@ tubearchivist:
   environment:
     ES_URL: http://archivist-es:9200
     REDIS_CON: redis://archivist-redis:6379
-    HOST_UID: "1000"
-    HOST_GID: "1000"
+    HOST_UID: '1000'
+    HOST_GID: '1000'
     TA_HOST: http://tubearchivist.local:8000
     TZ: America/New_York
   ports:
@@ -673,7 +690,6 @@ tubearchivist:
     enabled: false
     hosts: []
     servicePort: 8000
-
 jitsi-meet:
   enabled: true
   publicURL: https://jitsi.h.rkd.pw
@@ -684,7 +700,6 @@ jitsi-meet:
     resources:
       limits:
         memory: 512Mi
-        cpu: 500m
       requests:
         memory: 256Mi
         cpu: 250m
@@ -692,7 +707,6 @@ jitsi-meet:
     resources:
       limits:
         memory: 256Mi
-        cpu: 200m
       requests:
         memory: 128Mi
         cpu: 100m
@@ -703,7 +717,6 @@ jitsi-meet:
     resources:
       limits:
         memory: 512Mi
-        cpu: 500m
       requests:
         memory: 256Mi
         cpu: 250m
@@ -712,7 +725,6 @@ jitsi-meet:
     resources:
       limits:
         memory: 2Gi
-        cpu: 2000m
       requests:
         memory: 1Gi
         cpu: 1000m
@@ -720,18 +732,96 @@ jitsi-meet:
     useNodeIP: true
   ingress:
     enabled: true
-    className: ""
+    className: ''
     hosts:
-      - host: jitsi.h.rkd.pw
-        paths:
-          - path: /
-            pathType: Prefix
-      - host: jitsi.k.rkd.pw
-        paths:
-          - path: /
-            pathType: Prefix
+    - host: jitsi.h.rkd.pw
+      paths:
+      - path: /
+        pathType: Prefix
+    - host: jitsi.k.rkd.pw
+      paths:
+      - path: /
+        pathType: Prefix
     tls:
-      - secretName: homelab-wildcard-h-tls
+    - secretName: homelab-wildcard-h-tls
+      hosts:
+      - jitsi.h.rkd.pw
+      - jitsi.k.rkd.pw
+prometheus:
+  enabled: true
+  kube-prometheus-stack:
+    prometheus:
+      ingress:
+        enabled: true
+        ingressClassName: ''
         hosts:
-          - jitsi.h.rkd.pw
-          - jitsi.k.rkd.pw
+        - host: prometheus.h.rkd.pw
+          paths:
+          - path: /
+            pathType: Prefix
+        tls:
+        - secretName: homelab-wildcard-h-tls
+          hosts:
+          - prometheus.h.rkd.pw
+      serviceAccount:
+        create: true
+      prometheusSpec:
+        retention: 30d
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+    grafana:
+      enabled: true
+      adminUser: admin
+      adminPassword: admin
+      ingress:
+        enabled: true
+        ingressClassName: ''
+        hosts:
+        - grafana.h.rkd.pw
+        tls:
+        - secretName: homelab-wildcard-h-tls
+          hosts:
+          - grafana.h.rkd.pw
+      resources:
+        requests:
+          memory: 128Mi
+          cpu: 100m
+        limits:
+          memory: 512Mi
+      dashboardProviders:
+        dashboardproviders.yaml:
+          apiVersion: 1
+          providers:
+          - name: default
+            orgId: 1
+            folder: ''
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/default
+      dashboards:
+        default:
+          k8s-resources:
+            gnetId: 15758
+            revision: 1
+            datasource: Prometheus
+      service:
+        type: ClusterIP
+    alertmanager:
+      enabled: false
+    kubeStateMetrics:
+      enabled: true
+    nodeExporter:
+      enabled: true
+    prometheusOperator:
+      resources:
+        requests:
+          memory: 128Mi
+          cpu: 100m
+        limits:
+          memory: 256Mi

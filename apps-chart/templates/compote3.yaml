@@ -1,0 +1,112 @@
+{{- if .Values.compote3.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compote3-config
+  labels:
+    app: compote3
+data:
+  config.yaml: |
+{{ .Values.compote3.config | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compote3
+  labels:
+    app: compote3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compote3
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: compote3
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
+      containers:
+      - name: compote3
+        image: "{{ .Values.compote3.image.repository }}:{{ .Values.compote3.image.tag }}"
+        env:
+        - name: PORT
+          value: {{ .Values.compote3.ingress.servicePort | quote }}
+        {{- if .Values.compote3.secrets.githubToken }}
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.compote3.secrets.githubToken }}
+              key: github-token
+              optional: true
+        {{- end }}
+        resources:
+          limits:
+            memory: {{ .Values.compote3.resources.limits.memory }}
+        volumeMounts:
+        - name: config
+          mountPath: /root/config.yaml
+          subPath: config.yaml
+      volumes:
+      - name: config
+        configMap:
+          name: compote3-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: compote3
+  labels:
+    app: compote3
+spec:
+  ports:
+  - port: {{ .Values.compote3.ingress.servicePort }}
+    targetPort: {{ .Values.compote3.ingress.servicePort }}
+    protocol: TCP
+  selector:
+    app: compote3
+{{- if and .Values.compote3.enabled .Values.compote3.ingress.enabled (gt (len .Values.compote3.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: compote3
+  labels:
+    app: compote3
+spec:
+{{- if gt (len .Values.compote3.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+{{- range .Values.compote3.ingress.hosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
+  rules:
+  {{- range .Values.compote3.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: compote3
+            port:
+              number: {{ $.Values.compote3.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

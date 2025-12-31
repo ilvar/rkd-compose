@@ -1,0 +1,12 @@
+# Configuration for compote3
+
+# Additional application URLs (beyond k3s ingresses)
+applications:
+  - name: Other App
+    url: https://example.com
+  # Add more custom applications here
+
+# GitHub watched repositories
+github:
+  watcher: ilvar  # GitHub username to get watched repositories for
+

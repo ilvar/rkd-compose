@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  compote3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: compote3
+    ports:
+      - "9000:9000"
+    volumes:
+      # Mount config file
+      - ./config.yaml:/root/config.yaml:ro
+      # Mount kubeconfig for local testing (optional - comment out if not available)
+      # When running in k3s, in-cluster config is used automatically
+      # - ${HOME}/.kube/config:/root/.kube/config:ro
+    environment:
+      - PORT=9000
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      # KUBECONFIG is optional - only needed for local testing outside k3s
+      # - KUBECONFIG=/root/.kube/config
+    restart: unless-stopped
+    # For local testing, you might want to use host network mode to access k3s
+    # Uncomment the line below if needed:
+    # network_mode: host
+
