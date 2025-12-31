@@ -718,6 +718,10 @@ kube-prometheus-stack:
     persistence:
       enabled: true
       size: 5Gi
+    grafana.ini:
+      server:
+        root_url: https://grafana.k.rkd.pw
+        serve_from_sub_path: false
     ingress:
       enabled: true
       ingressClassName: ""
