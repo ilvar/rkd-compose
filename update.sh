@@ -7,11 +7,6 @@ fi
 
 SERVER_NAME=$1
 
-if [ "$SERVER_NAME" == "hm60" ]; then
-    cd ./compote2 && git pull && cd ..
-    docker compose build compote
-fi
-
 CURRENT_MD5_COMPOSE=$(md5sum docker-compose.yaml 2>/dev/null | awk '{print $1}' || echo "none")
 TEMP_FILE_COMPOSE=$(mktemp)
 

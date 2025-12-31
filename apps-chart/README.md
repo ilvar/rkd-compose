@@ -11,7 +11,6 @@ This chart includes the following applications, organized by category:
 
 ### Management & Monitoring
 - **Portainer** - Container management UI
-- **Compote** - Docker management dashboard with CapRover integration
 - **Kuma (Uptime Kuma)** - Uptime monitoring dashboard
 - **Changes** - Website change detection and monitoring
 
