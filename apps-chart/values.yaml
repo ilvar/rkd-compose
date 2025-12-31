@@ -718,6 +718,17 @@ kube-prometheus-stack:
     persistence:
       enabled: true
       size: 5Gi
+    ingress:
+      enabled: true
+      ingressClassName: ""
+      hosts:
+        - grafana.k.rkd.pw
+      annotations:
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      tls:
+        - secretName: homelab-wildcard-h-tls
+          hosts:
+            - grafana.k.rkd.pw
   alertmanager:
     enabled: false
   prometheus:
