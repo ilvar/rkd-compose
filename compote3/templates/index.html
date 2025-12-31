@@ -348,11 +348,11 @@
             
             apps.forEach((app, index) => {
                 const card = document.createElement('a');
-                card.href = app.URL;
+                card.href = app.url;
                 card.className = 'link-card';
                 card.innerHTML = `
-                    <h3>${escapeHtml(app.Name)}</h3>
-                    <p class="url">${escapeHtml(app.URL)}</p>
+                    <h3>${escapeHtml(app.name)}</h3>
+                    <p class="url">${escapeHtml(app.url)}</p>
                 `;
                 container.appendChild(card);
             });
@@ -365,15 +365,15 @@
             
             repos.forEach((repo, index) => {
                 const card = document.createElement('a');
-                card.href = repo.HTMLURL;
+                card.href = repo.html_url;
                 card.className = 'repo-card';
                 card.target = '_blank';
                 card.innerHTML = `
-                    <h3>${escapeHtml(repo.FullName)}</h3>
-                    <p class="description">${escapeHtml(repo.Description || '')}</p>
+                    <h3>${escapeHtml(repo.full_name)}</h3>
+                    <p class="description">${escapeHtml(repo.description || '')}</p>
                     <div class="meta">
-                        ${repo.StarCount ? `<span class="stars">⭐ ${repo.StarCount}</span>` : ''}
-                        ${repo.Language ? `<span class="language">${escapeHtml(repo.Language)}</span>` : ''}
+                        ${repo.stargazers_count ? `<span class="stars">⭐ ${repo.stargazers_count}</span>` : ''}
+                        ${repo.language ? `<span class="language">${escapeHtml(repo.language)}</span>` : ''}
                     </div>
                 `;
                 container.appendChild(card);
@@ -389,10 +389,10 @@
         // Load and render cached data immediately
         const cachedData = loadCachedData();
         if (cachedData) {
-            renderApplications(cachedData.Applications || [], 'applications');
-            renderRepos(cachedData.GitHubDaily || [], 'github-daily');
-            renderRepos(cachedData.GitHubWeekly || [], 'github-weekly');
-            renderRepos(cachedData.GitHubWatched || [], 'github-watched');
+            renderApplications(cachedData.applications || [], 'applications');
+            renderRepos(cachedData.github_daily || [], 'github-daily');
+            renderRepos(cachedData.github_weekly || [], 'github-weekly');
+            renderRepos(cachedData.github_watched || [], 'github-watched');
         }
 
         // Fetch fresh data asynchronously
@@ -405,10 +405,10 @@
                 const data = await response.json();
                 
                 // Update UI with fresh data
-                renderApplications(data.Applications || [], 'applications');
-                renderRepos(data.GitHubDaily || [], 'github-daily');
-                renderRepos(data.GitHubWeekly || [], 'github-weekly');
-                renderRepos(data.GitHubWatched || [], 'github-watched');
+                renderApplications(data.applications || [], 'applications');
+                renderRepos(data.github_daily || [], 'github-daily');
+                renderRepos(data.github_weekly || [], 'github-weekly');
+                renderRepos(data.github_watched || [], 'github-watched');
                 
                 // Cache the fresh data
                 saveCachedData(data);

@@ -7,6 +7,7 @@ metadata:
     app: pinchflat
 spec:
   replicas: 1
+  progressDeadlineSeconds: 600
   selector:
     matchLabels:
       app: pinchflat
@@ -26,6 +27,19 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+      initContainers:
+      - name: fix-permissions
+        image: busybox:latest
+        securityContext:
+          runAsUser: 0
+        command: ['sh', '-c']
+        args:
+          - |
+            chown -R 1000:1000 /config
+            chmod -R 755 /config
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: pinchflat
         image: "{{ .Values.pinchflat.image.repository }}:{{ .Values.pinchflat.image.tag }}"
