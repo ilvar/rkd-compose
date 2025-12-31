@@ -720,7 +720,7 @@ kube-prometheus-stack:
       size: 5Gi
     grafana.ini:
       server:
-        root_url: https://grafana.k.rkd.pw
+        root_url: https://grafana.k.rkd.pw/
         serve_from_sub_path: false
     ingress:
       enabled: true
@@ -729,6 +729,7 @@ kube-prometheus-stack:
         - grafana.k.rkd.pw
       annotations:
         cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        traefik.ingress.kubernetes.io/redirect-to-https: "true"
       tls:
         - secretName: homelab-wildcard-h-tls
           hosts:
