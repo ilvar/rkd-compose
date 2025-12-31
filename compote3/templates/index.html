@@ -351,7 +351,7 @@
                 card.href = app.url;
                 card.className = 'link-card';
                 card.innerHTML = `
-                    <h3>${escapeHtml(app.name)}</h3>
+                    <h3>${escapeHtml(app.name.toLowerCase())}</h3>
                     <p class="url">${escapeHtml(app.url)}</p>
                 `;
                 container.appendChild(card);

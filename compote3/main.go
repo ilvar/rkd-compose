@@ -75,7 +75,7 @@ func getData(cfg *Config) (*APIResponse, error) {
 
 	// Combine applications (deduplicate by app name, prefer certain domains)
 	appsMap := make(map[string]Application)
-	
+
 	// Helper function to get domain priority (lower number = higher priority)
 	getDomainPriority := func(url string) int {
 		// Check more specific domains first
@@ -90,7 +90,7 @@ func getData(cfg *Config) (*APIResponse, error) {
 		}
 		return 4 // Other domains have lowest priority
 	}
-	
+
 	// Add k3s apps first
 	for _, app := range k3sApps {
 		name := app.Name
@@ -103,7 +103,7 @@ func getData(cfg *Config) (*APIResponse, error) {
 			appsMap[name] = app
 		}
 	}
-	
+
 	// Add config apps (config apps take precedence if same name)
 	for _, app := range configApps {
 		name := app.Name
@@ -117,13 +117,14 @@ func getData(cfg *Config) (*APIResponse, error) {
 		}
 	}
 
-	// Convert map to slice and sort by name
+	// Convert map to slice, lowercase names, and sort by name
 	apps := make([]Application, 0, len(appsMap))
 	for _, app := range appsMap {
+		app.Name = strings.ToLower(app.Name)
 		apps = append(apps, app)
 	}
-	
-	// Sort by app name
+
+	// Sort by app name (already lowercased)
 	sort.Slice(apps, func(i, j int) bool {
 		return apps[i].Name < apps[j].Name
 	})
@@ -156,4 +157,3 @@ func getData(cfg *Config) (*APIResponse, error) {
 		GitHubWatched: githubWatched,
 	}, nil
 }
-
