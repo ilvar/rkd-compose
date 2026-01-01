@@ -56,9 +56,18 @@ func main() {
 	}
 }
 
+// Function types for dependency injection (for testing)
+type k8sIngressGetter func() ([]Application, error)
+type githubTrendingGetter func(period string) ([]GitHubRepo, error)
+type githubWatchedGetter func(username string) ([]GitHubRepo, error)
+
 func getData(cfg *Config) (*APIResponse, error) {
+	return getDataWithDeps(cfg, getK3sIngresses, getGitHubTrending, getGitHubWatchedRepos)
+}
+
+func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTrending githubTrendingGetter, getGitHubWatched githubWatchedGetter) (*APIResponse, error) {
 	// Get applications from k3s ingresses
-	k3sApps, err := getK3sIngresses()
+	k3sApps, err := getK8sIngresses()
 	if err != nil {
 		log.Printf("Warning: failed to get k3s ingresses: %v", err)
 		k3sApps = []Application{}
@@ -144,7 +153,7 @@ func getData(cfg *Config) (*APIResponse, error) {
 	}
 
 	// Get watched repos
-	githubWatched, err := getGitHubWatchedRepos(cfg.GitHub.Watcher)
+	githubWatched, err := getGitHubWatched(cfg.GitHub.Watcher)
 	if err != nil {
 		log.Printf("Warning: failed to get watched repos: %v", err)
 		githubWatched = []GitHubRepo{}

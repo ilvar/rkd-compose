@@ -16,4 +16,18 @@ repos:
         files: ^apps-chart/
         pass_filenames: false
         always_run: false
+      - id: compote-build
+        name: Compote Build
+        entry: bash -c 'cd compote3 && go build -o /dev/null .'
+        language: system
+        files: ^compote3/
+        pass_filenames: false
+        always_run: false
+      - id: compote-test
+        name: Compote Tests
+        entry: bash -c 'cd compote3 && go test -v ./...'
+        language: system
+        files: ^compote3/
+        pass_filenames: false
+        always_run: false
 
