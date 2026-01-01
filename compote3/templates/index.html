@@ -20,8 +20,9 @@
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
+            width: 100%;
+            margin: 0;
+            padding: 0 1rem;
         }
 
         .section {
@@ -39,7 +40,7 @@
 
         .links-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, 200px);
             gap: 0.75rem;
         }
 
@@ -254,12 +255,12 @@
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 0.5rem;
+            .container {
+                padding: 0 0.5rem;
             }
 
             .links-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, 150px);
                 gap: 0.5rem;
             }
 
