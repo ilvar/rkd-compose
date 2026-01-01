@@ -2,13 +2,16 @@
 """
 Pre-commit hook to automatically bump Compote version
 Bumps the patch version when any files in compote3/ are changed
+Usage: ./scripts/bump_compote_version.py [--force]
 """
 
+import argparse
 import re
 import sys
 from pathlib import Path
 
 VERSION_FILE = Path("compote3/VERSION")
+VALUES_FILE = Path("apps-chart/values.yaml")
 
 
 def get_current_version():
@@ -46,55 +49,111 @@ def bump_version(version):
 def update_version_file(new_version):
     """Update version in VERSION file (with 'v' prefix)"""
     VERSION_FILE.write_text(f"v{new_version}\n")
+    print(f"Updated {VERSION_FILE} to v{new_version}")
+
+
+def update_values_file(new_version):
+    """Update version tag in values.yaml file"""
+    if not VALUES_FILE.exists():
+        print(f"Warning: {VALUES_FILE} not found")
+        return False
+    
+    content = VALUES_FILE.read_text()
+    
+    # Pattern to match the tag line after "repository: ilvar/compote3"
+    # Matches the tag line in compote3 section specifically
+    pattern = r'(repository: ilvar/compote3\n\s+tag:\s+)(v?\d+\.\d+\.\d+)'
+    match = re.search(pattern, content)
+    
+    if not match:
+        print(f"Warning: Could not find compote3 tag line to update in {VALUES_FILE}")
+        return False
+    
+    old_tag = match.group(2)
+    replacement = rf'\1v{new_version}'
+    new_content = re.sub(pattern, replacement, content)
+    
+    if new_content == content:
+        print(f"Warning: Could not update compote3 tag line in {VALUES_FILE}")
+        return False
+    
+    VALUES_FILE.write_text(new_content)
+    print(f"Updated {VALUES_FILE} tag from {old_tag} to v{new_version}")
+    return True
 
 
 def main():
     """Main function"""
+    parser = argparse.ArgumentParser(description='Bump Compote version')
+    parser.add_argument('--force', action='store_true', 
+                       help='Force version bump even if no compote3 files are staged')
+    args = parser.parse_args()
+    
     # Check if any files in compote3 are staged (excluding VERSION itself)
     import subprocess
-    try:
-        result = subprocess.run(
-            ['git', 'diff', '--cached', '--name-only'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        staged_files = [f for f in result.stdout.strip().split('\n') if f]
-        
-        # Check if any compote3 files are staged (excluding VERSION itself)
-        compote_files_staged = any(
-            f.startswith('compote3/') and not f.endswith('VERSION')
-            for f in staged_files
-        )
-        
-        if not compote_files_staged:
-            # No compote files changed (other than VERSION), skip version bump
-            return 0
-    except subprocess.CalledProcessError:
-        # If git command fails, continue anyway
-        pass
+    compote_files_staged = False
+    if not args.force:
+        try:
+            result = subprocess.run(
+                ['git', 'diff', '--cached', '--name-only'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            staged_files = [f for f in result.stdout.strip().split('\n') if f]
+            
+            if staged_files:
+                print(f"Checking staged files: {', '.join(staged_files)}")
+            
+            # Check if any compote3 files are staged (excluding VERSION itself)
+            compote_files_staged = any(
+                f.startswith('compote3/') and not f.endswith('VERSION')
+                for f in staged_files
+            )
+            
+            if not compote_files_staged:
+                # No compote files changed (other than VERSION), skip version bump
+                print("No compote3 files staged (excluding VERSION). Skipping version bump.")
+                print("Use --force to bump version anyway.")
+                return 0
+        except subprocess.CalledProcessError:
+            # If git command fails, continue anyway (might be run outside git context)
+            print("Note: Could not check git staged files. Continuing anyway...")
+            pass
+    else:
+        print("Force flag enabled. Bumping version regardless of staged files.")
     
+    if compote_files_staged:
+        print("Compote3 files detected. Bumping version...")
+    else:
+        print("Bumping version...")
     current_version = get_current_version()
     if not current_version:
-        return 0
+        print("Error: Could not read current version from VERSION file")
+        return 1
     
+    print(f"Current version: v{current_version}")
     new_version = bump_version(current_version)
     if not new_version:
-        return 0
+        print("Error: Could not bump version")
+        return 1
     
+    print(f"New version: v{new_version}")
     update_version_file(new_version)
+    update_values_file(new_version)
     
-    # Stage the updated VERSION file
-    import subprocess
+    # Stage the updated files
     try:
         subprocess.run(
-            ['git', 'add', str(VERSION_FILE)],
+            ['git', 'add', str(VERSION_FILE), str(VALUES_FILE)],
             check=True,
             capture_output=True
         )
-        print(f"Bumped compote version from v{current_version} to v{new_version}")
+        print(f"✓ Staged {VERSION_FILE} and {VALUES_FILE}")
+        print(f"✓ Successfully bumped compote version from v{current_version} to v{new_version}")
     except subprocess.CalledProcessError as e:
-        print(f"Warning: Could not stage {VERSION_FILE}: {e}")
+        print(f"Warning: Could not stage files: {e}")
+        print(f"Note: Files were updated but not staged. You may need to stage them manually.")
     
     return 0
 
