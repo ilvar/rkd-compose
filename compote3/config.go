@@ -10,9 +10,15 @@ import (
 type Config struct {
 	Applications []ApplicationConfig `yaml:"applications"`
 	GitHub       GitHubConfig        `yaml:"github"`
+	Links        []LinkConfig        `yaml:"links"`
 }
 
 type ApplicationConfig struct {
+	Name string `yaml:"name"`
+	URL  string `yaml:"url"`
+}
+
+type LinkConfig struct {
 	Name string `yaml:"name"`
 	URL  string `yaml:"url"`
 }

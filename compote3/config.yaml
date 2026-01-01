@@ -6,6 +6,16 @@ applications:
     url: https://example.com
   # Add more custom applications here
 
+# Additional links
+links:
+  - name: RuTracker
+    url: https://rutracker.org/forum/viewforum.php?f=635
+  - name: Meduza
+    url: https://meduza.io
+  # Add more links here
+  # - name: Example
+  #   url: https://example.com
+
 # GitHub watched repositories
 github:
   watcher: ilvar  # GitHub username to get watched repositories for

@@ -264,7 +264,7 @@ compote3:
       memory: 32Mi
   secrets:
     githubToken: ''
-  config: "# Configuration for compote3\n\n# Additional application URLs (beyond k3s ingresses)\napplications:\n  - name: Gandi\n    url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records\n  - name: Tessie\n    url: https://dash.tessie.com\n  - name: Mailbox\n    url: https://app.mailbox.org/\n  - name: Trello\n    url: https://trello.com/b/YPlmZPom/personal\n\n\n# GitHub watched repositories\ngithub:\n  watcher: ilvar  # GitHub username to get watched repositories for\n"
+  config: "# Configuration for compote3\n\n# Additional application URLs (beyond k3s ingresses)\napplications:\n  - name: Gandi\n    url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records\n  - name: Tessie\n    url: https://dash.tessie.com\n  - name: Mailbox\n    url: https://app.mailbox.org/\n  - name: Trello\n    url: https://trello.com/b/YPlmZPom/personal\n\n# Additional links\nlinks:\n  - name: RuTracker\n    url: https://rutracker.org/forum/viewforum.php?f=635\n  - name: Meduza\n    url: https://meduza.io\n  # Add more links here\n  # - name: Example\n  #   url: https://example.com\n\n# GitHub watched repositories\ngithub:\n  watcher: ilvar  # GitHub username to get watched repositories for\n"
   ingress:
     enabled: true
     hosts:

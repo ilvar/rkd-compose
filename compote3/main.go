@@ -150,8 +150,23 @@ func getData(cfg *Config) (*APIResponse, error) {
 		githubWatched = []GitHubRepo{}
 	}
 
+	// Build links list from config
+	links := []Application{}
+	for _, linkCfg := range cfg.Links {
+		links = append(links, Application{
+			Name: linkCfg.Name,
+			URL:  linkCfg.URL,
+		})
+	}
+
+	// Sort links by name
+	sort.Slice(links, func(i, j int) bool {
+		return strings.ToLower(links[i].Name) < strings.ToLower(links[j].Name)
+	})
+
 	return &APIResponse{
 		Applications:  apps,
+		Links:         links,
 		GitHubDaily:   githubDaily,
 		GitHubWeekly:  githubWeekly,
 		GitHubWatched: githubWatched,

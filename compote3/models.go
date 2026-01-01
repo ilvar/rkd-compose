@@ -22,6 +22,7 @@ type GitHubRepo struct {
 // APIResponse contains all data for the frontend
 type APIResponse struct {
 	Applications   []Application `json:"applications"`
+	Links          []Application `json:"links"`
 	GitHubDaily    []GitHubRepo  `json:"github_daily"`
 	GitHubWeekly   []GitHubRepo  `json:"github_weekly"`
 	GitHubWatched  []GitHubRepo  `json:"github_watched"`

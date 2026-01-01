@@ -284,6 +284,14 @@
             </div>
         </div>
 
+        <!-- Links Section -->
+        <div class="section">
+            <h2 class="section-title">Links</h2>
+            <div class="links-grid" id="links">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
         <!-- GitHub Trending Daily -->
         <div class="section">
             <h2 class="section-title">Github Trending (Daily)</h2>
@@ -311,19 +319,13 @@
 
     <script>
         const STORAGE_KEY = 'compote3_data';
-        const STORAGE_TIMESTAMP_KEY = 'compote3_data_timestamp';
-        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-        // Load cached data from localStorage
+        // Load cached data from localStorage (always return if available, regardless of age)
         function loadCachedData() {
             try {
                 const cached = localStorage.getItem(STORAGE_KEY);
-                const timestamp = localStorage.getItem(STORAGE_TIMESTAMP_KEY);
-                if (cached && timestamp) {
-                    const age = Date.now() - parseInt(timestamp, 10);
-                    if (age < CACHE_DURATION) {
-                        return JSON.parse(cached);
-                    }
+                if (cached) {
+                    return JSON.parse(cached);
                 }
             } catch (e) {
                 console.warn('Failed to load cached data:', e);
@@ -335,7 +337,6 @@
         function saveCachedData(data) {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                localStorage.setItem(STORAGE_TIMESTAMP_KEY, Date.now().toString());
             } catch (e) {
                 console.warn('Failed to save cached data:', e);
             }
@@ -344,6 +345,7 @@
         // Render applications
         function renderApplications(apps, containerId) {
             const container = document.getElementById(containerId);
+            if (!container) return;
             container.innerHTML = '';
             
             apps.forEach((app, index) => {
@@ -361,6 +363,7 @@
         // Render GitHub repos
         function renderRepos(repos, containerId) {
             const container = document.getElementById(containerId);
+            if (!container) return;
             container.innerHTML = '';
             
             repos.forEach((repo, index) => {
@@ -386,16 +389,23 @@
             return div.innerHTML;
         }
 
-        // Load and render cached data immediately
-        const cachedData = loadCachedData();
-        if (cachedData) {
-            renderApplications(cachedData.applications || [], 'applications');
-            renderRepos(cachedData.github_daily || [], 'github-daily');
-            renderRepos(cachedData.github_weekly || [], 'github-weekly');
-            renderRepos(cachedData.github_watched || [], 'github-watched');
+        // Render all data
+        function renderAllData(data) {
+            if (!data) return;
+            renderApplications(data.applications || [], 'applications');
+            renderApplications(data.links || [], 'links');
+            renderRepos(data.github_daily || [], 'github-daily');
+            renderRepos(data.github_weekly || [], 'github-weekly');
+            renderRepos(data.github_watched || [], 'github-watched');
         }
 
-        // Fetch fresh data asynchronously
+        // Load and render cached data immediately (synchronously, before any async operations)
+        const cachedData = loadCachedData();
+        if (cachedData) {
+            renderAllData(cachedData);
+        }
+
+        // Fetch fresh data asynchronously and update when it arrives
         async function fetchFreshData() {
             try {
                 const response = await fetch('/api/data');
@@ -405,20 +415,17 @@
                 const data = await response.json();
                 
                 // Update UI with fresh data
-                renderApplications(data.applications || [], 'applications');
-                renderRepos(data.github_daily || [], 'github-daily');
-                renderRepos(data.github_weekly || [], 'github-weekly');
-                renderRepos(data.github_watched || [], 'github-watched');
+                renderAllData(data);
                 
-                // Cache the fresh data
+                // Cache the fresh data for next time
                 saveCachedData(data);
             } catch (error) {
                 console.error('Failed to fetch fresh data:', error);
-                // Keep cached data on error
+                // Keep cached data on error - it's already displayed
             }
         }
 
-        // Fetch fresh data after page load
+        // Fetch fresh data after page load (runs in background)
         fetchFreshData();
     </script>
 </body>
