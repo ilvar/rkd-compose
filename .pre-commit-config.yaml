@@ -16,6 +16,14 @@ repos:
         files: ^apps-chart/
         pass_filenames: false
         always_run: false
+      - id: bump-compote-version
+        name: Bump Compote Version
+        entry: python3 scripts/bump_compote_version.py
+        language: system
+        files: ^compote3/
+        exclude: ^compote3/VERSION$
+        pass_filenames: false
+        always_run: false
       - id: compote-build
         name: Compote Build
         entry: bash -c 'cd compote3 && go build -o /dev/null .'

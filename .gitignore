@@ -2,3 +2,8 @@
 local.yaml
 .tmp
 apps-chart/charts/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
