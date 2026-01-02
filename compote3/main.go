@@ -73,17 +73,50 @@ func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTre
 		k3sApps = []Application{}
 	}
 
-	// Process k3s apps: lowercase names, add descriptions, and sort
-	apps := make([]Application, 0, len(k3sApps))
+	// Helper function to get domain priority (lower number = higher priority)
+	getDomainPriority := func(url string) int {
+		// Check more specific domains first
+		if strings.Contains(url, ".k.rkd.pw") {
+			return 2 // *.k.rkd.pw has second priority
+		}
+		if strings.Contains(url, ".h.rkd.pw") {
+			return 3 // *.h.rkd.pw has third priority
+		}
+		if strings.Contains(url, ".rkd.pw") {
+			return 1 // *.rkd.pw has highest priority (but not .k or .h)
+		}
+		return 4 // Other domains have lowest priority
+	}
+
+	// Deduplicate by app name (lowercase), prefer higher priority domains
+	appsMap := make(map[string]Application)
 	for _, app := range k3sApps {
-		app.Name = strings.ToLower(app.Name)
+		name := strings.ToLower(app.Name)
+		if existing, exists := appsMap[name]; exists {
+			// Compare domain priorities - keep the one with higher priority (lower number)
+			if getDomainPriority(app.URL) < getDomainPriority(existing.URL) {
+				appsMap[name] = app
+			}
+		} else {
+			appsMap[name] = app
+		}
+	}
+
+	// Convert map to slice, add descriptions, and sort
+	apps := make([]Application, 0, len(appsMap))
+	for name, app := range appsMap {
+		// Create new app with lowercased name
+		newApp := Application{
+			Name: name, // Already lowercased
+			URL:  app.URL,
+		}
 		// Look up description from config (case-insensitive)
 		if cfg.Descriptions != nil {
-			if desc, exists := cfg.Descriptions[app.Name]; exists {
-				app.Description = desc
+			if desc, exists := cfg.Descriptions[name]; exists {
+				newApp.Description = desc
 			}
 		}
-		apps = append(apps, app)
+		apps = append(apps, newApp)
 	}
 
 	// Sort by app name (already lowercased)
