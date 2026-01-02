@@ -20,7 +20,6 @@ func TestGitHubDataInGetData(t *testing.T) {
 	// Test that GitHub data is properly included in getData
 	cfg := &Config{
 		Links:         []LinkConfig{},
-		Applications: []ApplicationConfig{},
 		GitHub:        GitHubConfig{Watcher: "testuser"},
 	}
 	

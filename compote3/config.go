@@ -8,14 +8,9 @@ import (
 )
 
 type Config struct {
-	Applications []ApplicationConfig `yaml:"applications"`
-	GitHub       GitHubConfig        `yaml:"github"`
-	Links        []LinkConfig        `yaml:"links"`
-}
-
-type ApplicationConfig struct {
-	Name string `yaml:"name"`
-	URL  string `yaml:"url"`
+	Descriptions map[string]string      `yaml:"descriptions"` // Map of app name -> description
+	GitHub       GitHubConfig           `yaml:"github"`
+	Links        []LinkConfig           `yaml:"links"`
 }
 
 type LinkConfig struct {

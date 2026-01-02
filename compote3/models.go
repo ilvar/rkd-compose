@@ -4,8 +4,9 @@ import "time"
 
 // Application represents a single application with its URL
 type Application struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
+	Name        string `json:"name"`
+	URL         string `json:"url"`
+	Description string `json:"description,omitempty"`
 }
 
 // GitHubRepo represents a GitHub repository

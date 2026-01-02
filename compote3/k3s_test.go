@@ -15,7 +15,6 @@ func TestK3sAppsInGetData(t *testing.T) {
 	// Test that k8s apps are properly included in getData
 	cfg := &Config{
 		Links:         []LinkConfig{},
-		Applications: []ApplicationConfig{},
 		GitHub:        GitHubConfig{Watcher: ""},
 	}
 	

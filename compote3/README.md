@@ -4,7 +4,8 @@ A dashboard application that displays your k3s ingresses and GitHub trending rep
 
 ## Features
 
-- **Applications**: Automatically discovers applications from k3s ingresses + custom URLs from config
+- **Applications**: Automatically discovers applications from k3s ingresses
+- **Links**: Custom links and bookmarks
 - **GitHub Trending**: Shows trending repositories for day and week
 - **GitHub Watched**: Displays your watched repositories from config
 
@@ -13,14 +14,18 @@ A dashboard application that displays your k3s ingresses and GitHub trending rep
 Create a `config.yaml` file:
 
 ```yaml
-# Additional application URLs (beyond k3s ingresses)
-applications:
-  - name: Other App
+# Additional links
+links:
+  - name: Example Link
     url: https://example.com
 
 # GitHub watched repositories (uses starred repos)
 github:
   watcher: your-username
+
+# Application descriptions (optional)
+descriptions:
+  appname: "Description of the app"
 ```
 
 ## Environment Variables

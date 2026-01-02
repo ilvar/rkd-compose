@@ -28,8 +28,7 @@ func TestLoadConfigWithLinks(t *testing.T) {
 	}
 	defer os.Remove(tmpFile.Name())
 	
-	configContent := `applications: []
-links:
+	configContent := `links:
   - name: Test Link
     url: https://test.com
 github:
@@ -62,7 +61,6 @@ github:
 func TestConfigStructure(t *testing.T) {
 	// Test that Config struct has all required fields
 	cfg := &Config{
-		Applications: []ApplicationConfig{},
 		Links:         []LinkConfig{},
 		GitHub:        GitHubConfig{},
 	}
@@ -72,7 +70,6 @@ func TestConfigStructure(t *testing.T) {
 	}
 	
 	// Verify fields exist
-	_ = cfg.Applications
 	_ = cfg.Links
 	_ = cfg.GitHub
 }

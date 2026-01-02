@@ -258,13 +258,59 @@ compote3:
   enabled: true
   image:
     repository: ilvar/compote3
-    tag: v0.3.3
+    tag: v0.3.4
   resources:
     limits:
       memory: 32Mi
   secrets:
     githubToken: ''
-  config: "# Configuration for compote3\n\n# Additional application URLs (beyond k3s ingresses)\napplications:\n  - name: Gandi\n    url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records\n  - name: Tessie\n    url: https://dash.tessie.com\n  - name: Mailbox\n    url: https://app.mailbox.org/\n  - name: Trello\n    url: https://trello.com/b/YPlmZPom/personal\n\n# Additional links\nlinks:\n  - name: RuTracker\n    url: https://rutracker.org/forum/viewforum.php?f=635\n  - name: Meduza\n    url: https://meduza.io\n  # Add more links here\n  # - name: Example\n  #   url: https://example.com\n\n# GitHub watched repositories\ngithub:\n  watcher: ilvar  # GitHub username to get watched repositories for\n"
+  config: "applications: []
+links:
+- name: RuTracker
+  url: https://rutracker.org/forum/viewforum.php?f=635
+- name: Meduza
+  url: https://meduza.io
+- name: Gandi
+  url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records
+- name: Mailbox
+  url: https://app.mailbox.org/
+- name: Tessie
+  url: https://dash.tessie.com
+- name: Trello
+  url: https://trello.com/b/YPlmZPom/personal
+github:
+  watcher: ilvar
+descriptions:
+  portainer: Container management and Docker GUI
+  jackett: Torrent tracker proxy and API aggregator
+  radarr: Movie collection manager and downloader
+  jellyfin: Media server and streaming platform
+  deluge: BitTorrent client
+  homeassistant: Home automation and IoT platform
+  frigate: NVR with real-time AI object detection
+  nodered: Flow-based programming for IoT
+  hoarder: Web archive and bookmark manager
+  compote3: Dashboard and application launcher
+  paperless: Document management system
+  nextcloud: File hosting and collaboration platform
+  kuma: Uptime monitoring and status page
+  immich: Self-hosted photo and video backup
+  bugsink: Bug tracking and project management
+  it-tools: Collection of IT tools and utilities
+  miniflux: Minimalist RSS feed reader
+  blog: Personal blog and website
+  rkd-pw: Password manager
+  irish-schools: Irish schools information and lookup
+  changes: Website change detection and monitoring
+  termix: Terminal emulator for web
+  pinchflat: YouTube subscription manager
+  jitsi: Video conferencing and meetings
+  grafana: Analytics and monitoring dashboards
+  gandi: Domain and DNS management
+  tessie: Tesla vehicle management
+  mailbox: Email hosting and management
+  trello: Project management and task boards
+"
   ingress:
     enabled: true
     hosts:

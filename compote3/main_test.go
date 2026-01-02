@@ -50,7 +50,6 @@ func TestGetDataLinksIntegration(t *testing.T) {
 		Links: []LinkConfig{
 			{Name: "Test Link", URL: "https://test.com"},
 		},
-		Applications: []ApplicationConfig{},
 		GitHub:        GitHubConfig{Watcher: "testuser"},
 	}
 	
@@ -92,7 +91,6 @@ func TestGetDataWithEmptyConfig(t *testing.T) {
 	// Test getData with empty config
 	cfg := &Config{
 		Links:         []LinkConfig{},
-		Applications: []ApplicationConfig{},
 		GitHub:        GitHubConfig{Watcher: ""},
 	}
 	
@@ -119,7 +117,6 @@ func TestGetDataWithK8sError(t *testing.T) {
 		Links: []LinkConfig{
 			{Name: "Test Link", URL: "https://test.com"},
 		},
-		Applications: []ApplicationConfig{},
 		GitHub:        GitHubConfig{Watcher: ""},
 	}
 	

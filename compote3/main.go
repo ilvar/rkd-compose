@@ -73,63 +73,16 @@ func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTre
 		k3sApps = []Application{}
 	}
 
-	// Get applications from config
-	configApps := []Application{}
-	for _, appCfg := range cfg.Applications {
-		configApps = append(configApps, Application{
-			Name: appCfg.Name,
-			URL:  appCfg.URL,
-		})
-	}
-
-	// Combine applications (deduplicate by app name, prefer certain domains)
-	appsMap := make(map[string]Application)
-
-	// Helper function to get domain priority (lower number = higher priority)
-	getDomainPriority := func(url string) int {
-		// Check more specific domains first
-		if strings.Contains(url, ".k.rkd.pw") {
-			return 2 // *.k.rkd.pw has second priority
-		}
-		if strings.Contains(url, ".h.rkd.pw") {
-			return 3 // *.h.rkd.pw has third priority
-		}
-		if strings.Contains(url, ".rkd.pw") {
-			return 1 // *.rkd.pw has highest priority (but not .k or .h)
-		}
-		return 4 // Other domains have lowest priority
-	}
-
-	// Add k3s apps first
+	// Process k3s apps: lowercase names, add descriptions, and sort
+	apps := make([]Application, 0, len(k3sApps))
 	for _, app := range k3sApps {
-		name := app.Name
-		if existing, exists := appsMap[name]; exists {
-			// Compare domain priorities - keep the one with higher priority (lower number)
-			if getDomainPriority(app.URL) < getDomainPriority(existing.URL) {
-				appsMap[name] = app
-			}
-		} else {
-			appsMap[name] = app
-		}
-	}
-
-	// Add config apps (config apps take precedence if same name)
-	for _, app := range configApps {
-		name := app.Name
-		if existing, exists := appsMap[name]; exists {
-			// Config apps have priority, but still respect domain preference
-			if getDomainPriority(app.URL) <= getDomainPriority(existing.URL) {
-				appsMap[name] = app
-			}
-		} else {
-			appsMap[name] = app
-		}
-	}
-
-	// Convert map to slice, lowercase names, and sort by name
-	apps := make([]Application, 0, len(appsMap))
-	for _, app := range appsMap {
 		app.Name = strings.ToLower(app.Name)
+		// Look up description from config (case-insensitive)
+		if cfg.Descriptions != nil {
+			if desc, exists := cfg.Descriptions[app.Name]; exists {
+				app.Description = desc
+			}
+		}
 		apps = append(apps, app)
 	}
 
