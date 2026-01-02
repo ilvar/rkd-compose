@@ -258,59 +258,88 @@ compote3:
   enabled: true
   image:
     repository: ilvar/compote3
-    tag: v0.3.5
+    tag: v0.3.7
   resources:
     limits:
       memory: 32Mi
   secrets:
     githubToken: ''
-  config: "applications: []
-links:
-- name: RuTracker
-  url: https://rutracker.org/forum/viewforum.php?f=635
-- name: Meduza
-  url: https://meduza.io
-- name: Gandi
-  url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records
-- name: Mailbox
-  url: https://app.mailbox.org/
-- name: Tessie
-  url: https://dash.tessie.com
-- name: Trello
-  url: https://trello.com/b/YPlmZPom/personal
-github:
-  watcher: ilvar
-descriptions:
-  portainer: Container management and Docker GUI
-  jackett: Torrent tracker proxy and API aggregator
-  radarr: Movie collection manager and downloader
-  jellyfin: Media server and streaming platform
-  deluge: BitTorrent client
-  homeassistant: Home automation and IoT platform
-  frigate: NVR with real-time AI object detection
-  nodered: Flow-based programming for IoT
-  hoarder: Web archive and bookmark manager
-  compote3: Dashboard and application launcher
-  paperless: Document management system
-  nextcloud: File hosting and collaboration platform
-  kuma: Uptime monitoring and status page
-  immich: Self-hosted photo and video backup
-  bugsink: Bug tracking and project management
-  it-tools: Collection of IT tools and utilities
-  miniflux: Minimalist RSS feed reader
-  blog: Personal blog and website
-  rkd-pw: Password manager
-  irish-schools: Irish schools information and lookup
-  changes: Website change detection and monitoring
-  termix: Terminal emulator for web
-  pinchflat: YouTube subscription manager
-  jitsi: Video conferencing and meetings
-  grafana: Analytics and monitoring dashboards
-  gandi: Domain and DNS management
-  tessie: Tesla vehicle management
-  mailbox: Email hosting and management
-  trello: Project management and task boards
-"
+  config: |
+    links:
+    - name: RuTracker
+      url: https://rutracker.org/forum/viewforum.php?f=635
+    - name: Meduza
+      url: https://meduza.io
+    - name: Gandi
+      url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records
+    - name: Mailbox
+      url: https://app.mailbox.org/
+    - name: Tessie
+      url: https://dash.tessie.com
+    - name: Trello
+      url: https://trello.com/b/YPlmZPom/personal
+    github:
+      watcher: ilvar
+    descriptions:
+    - name: blog
+      description: Personal blog and website
+    - name: bugsink
+      description: Bug tracking and project management
+    - name: changes
+      description: Website change detection and monitoring
+    - name: compote3
+      description: Dashboard and application launcher
+    - name: deluge
+      description: BitTorrent client
+    - name: frigate
+      description: NVR with real-time AI object detection
+    - name: gandi
+      description: Domain and DNS management
+    - name: grafana
+      description: Analytics and monitoring dashboards
+    - name: hoarder
+      description: Web archive and bookmark manager
+    - name: homeassistant
+      description: Home automation and IoT platform
+    - name: immich
+      description: Self-hosted photo and video backup
+    - name: irish-schools
+      description: Irish schools information and lookup
+    - name: it-tools
+      description: Collection of IT tools and utilities
+    - name: jackett
+      description: Torrent tracker proxy and API aggregator
+    - name: jellyfin
+      description: Media server and streaming platform
+    - name: jitsi
+      description: Video conferencing and meetings
+    - name: kuma
+      description: Uptime monitoring and status page
+    - name: mailbox
+      description: Email hosting and management
+    - name: miniflux
+      description: Minimalist RSS feed reader
+    - name: nextcloud
+      description: File hosting and collaboration platform
+    - name: nodered
+      description: Flow-based programming for IoT
+    - name: paperless
+      description: Document management system
+    - name: pinchflat
+      description: YouTube subscription manager
+    - name: portainer
+      description: Container management and Docker GUI
+    - name: radarr
+      description: Movie collection manager and downloader
+    - name: rkd-pw
+      description: Password manager
+    - name: termix
+      description: Terminal emulator for web
+    - name: tessie
+      description: Tesla vehicle management
+    - name: trello
+      description: Project management and task boards
+
   ingress:
     enabled: true
     hosts:
@@ -754,8 +783,7 @@ jitsi-meet:
     - secretName: homelab-wildcard-h-tls
       hosts:
       - jitsi.h.rkd.pw
-      - jitsi.k.rkd.pw
-
+      - jitsi.k.rkd.pw  
 kube-prometheus-stack:
   enabled: true
   grafana:

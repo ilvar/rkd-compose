@@ -102,6 +102,15 @@ func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTre
 		}
 	}
 
+	// Build descriptions map for lookup
+	descriptionsMap := make(map[string]string)
+	if cfg.Descriptions != nil {
+		for _, descCfg := range cfg.Descriptions {
+			name := strings.ToLower(descCfg.Name)
+			descriptionsMap[name] = descCfg.Description
+		}
+	}
+
 	// Convert map to slice, add descriptions, and sort
 	apps := make([]Application, 0, len(appsMap))
 	for name, app := range appsMap {
@@ -111,10 +120,8 @@ func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTre
 			URL:  app.URL,
 		}
 		// Look up description from config (case-insensitive)
-		if cfg.Descriptions != nil {
-			if desc, exists := cfg.Descriptions[name]; exists {
-				newApp.Description = desc
-			}
+		if desc, exists := descriptionsMap[name]; exists {
+			newApp.Description = desc
 		}
 		apps = append(apps, newApp)
 	}

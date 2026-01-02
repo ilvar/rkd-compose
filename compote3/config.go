@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Descriptions map[string]string      `yaml:"descriptions"` // Map of app name -> description
+	Descriptions []DescriptionConfig    `yaml:"descriptions"` // List of app name -> description pairs
 	GitHub       GitHubConfig           `yaml:"github"`
 	Links        []LinkConfig           `yaml:"links"`
 }
@@ -16,6 +16,11 @@ type Config struct {
 type LinkConfig struct {
 	Name string `yaml:"name"`
 	URL  string `yaml:"url"`
+}
+
+type DescriptionConfig struct {
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
 }
 
 type GitHubConfig struct {

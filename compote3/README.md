@@ -25,7 +25,8 @@ github:
 
 # Application descriptions (optional)
 descriptions:
-  appname: "Description of the app"
+  - name: appname
+    description: "Description of the app"
 ```
 
 ## Environment Variables
