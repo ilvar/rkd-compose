@@ -44,8 +44,7 @@ spec:
       containers:
       - name: nextcloud-db
         image: "{{ .Values.nextcloud.db.image.repository }}:{{ .Values.nextcloud.db.image.tag }}"
-        command:
-        - mysqld
+        args:
         - --transaction-isolation=READ-COMMITTED
         - --binlog-format=ROW
         env:

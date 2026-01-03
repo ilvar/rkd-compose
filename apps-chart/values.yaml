@@ -512,7 +512,7 @@ immich:
   database:
     image:
       repository: ghcr.io/immich-app/postgres
-      tag: 16-vectorchord0.3.0-pgvectors0.2.0
+      tag: 15-vectorchord0.5.3-pgvector0.8.1
     resources:
       limits:
         memory: 512Mi
