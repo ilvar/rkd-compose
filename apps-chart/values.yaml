@@ -380,7 +380,7 @@ paperless:
   redis:
     image:
       repository: redis
-      tag: '6.2'
+      tag: '8.4'
     resources:
       limits:
         memory: 256Mi
