@@ -750,7 +750,7 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: 0.3.58
+      tag: 0.3.59
     resources:
       limits:
         memory: 512Mi
@@ -762,6 +762,9 @@ kosmos:
       jwtSecret:
         name: kosmos-jwt-secret
         key: jwt-secret
+      openaiApiKey:
+        name: kosmos-openai-secret
+        key: openai-api-key
     storage:
       media: kosmos-media
       static: kosmos-static

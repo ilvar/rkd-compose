@@ -142,6 +142,13 @@ spec:
               key: {{ .Values.kosmos.backend.secrets.jwtSecret.key | default "jwt-secret" | quote }}
         - name: DATABASE_URL
           value: postgresql://{{ .Values.kosmos.db.environment.POSTGRES_USER }}:{{ .Values.kosmos.db.secrets.postgresPassword | default "postgres" }}@kosmos-db:5432/{{ .Values.kosmos.db.environment.POSTGRES_DB }}
+        {{- if .Values.kosmos.backend.secrets.openaiApiKey }}
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.kosmos.backend.secrets.openaiApiKey.name | default "kosmos-openai-secret" | quote }}
+              key: {{ .Values.kosmos.backend.secrets.openaiApiKey.key | default "openai-api-key" | quote }}
+        {{- end }}
         resources:
           {{- if .Values.kosmos.backend.resources }}
           {{- toYaml .Values.kosmos.backend.resources | nindent 10 }}
