@@ -71,7 +71,7 @@ spec:
                   print(f"ERROR: Path {videos_path} does not exist")
                   exit(1)
               
-              print(f"Scanning: {videos_path}")
+              print(f"Scanning top-level items in: {videos_path}")
               print("=" * 80)
               print("Files and directories that do NOT match pattern ^.*\\(\\d+\\)$:")
               print("=" * 80)
@@ -79,40 +79,30 @@ spec:
               non_matching_items = []
               total_size = 0
               
-              # Track directories we've processed to avoid double-counting
-              processed_dirs = set()
+              # Only check top-level children
+              try:
+                  top_level_items = sorted(os.listdir(videos_path))
+              except OSError as e:
+                  print(f"ERROR: Cannot list directory {videos_path}: {e}")
+                  exit(1)
               
-              # Walk through the directory
-              for root, dirs, files in os.walk(videos_path):
-                  # Skip if this directory was already processed as a non-matching item
-                  if root in processed_dirs:
-                      dirs[:] = []  # Don't recurse into subdirectories
+              for item_name in top_level_items:
+                  item_path = os.path.join(videos_path, item_name)
+                  
+                  # Check if this top-level item matches the pattern
+                  if pattern.match(item_name):
+                      # Matches pattern, skip it
                       continue
                   
-                  # Check directories - if they don't match, add them and skip recursing
-                  dirs_to_remove = []
-                  for dirname in dirs:
-                      dirpath = os.path.join(root, dirname)
-                      rel_path = os.path.relpath(dirpath, videos_path)
-                      if not pattern.match(rel_path):
-                          size = get_size(dirpath)
-                          non_matching_items.append((rel_path, size, 'DIR'))
-                          total_size += size
-                          processed_dirs.add(dirpath)
-                          dirs_to_remove.append(dirname)
-                  
-                  # Remove processed directories from dirs list to skip recursion
-                  for dirname in dirs_to_remove:
-                      dirs.remove(dirname)
-                  
-                  # Check files
-                  for filename in files:
-                      filepath = os.path.join(root, filename)
-                      rel_path = os.path.relpath(filepath, videos_path)
-                      if not pattern.match(rel_path):
-                          size = get_size(filepath)
-                          non_matching_items.append((rel_path, size, 'FILE'))
-                          total_size += size
+                  # Doesn't match pattern - add it (including all contents if it's a directory)
+                  if os.path.isdir(item_path):
+                      size = get_size(item_path)
+                      non_matching_items.append((item_name, size, 'DIR'))
+                      total_size += size
+                  elif os.path.isfile(item_path):
+                      size = get_size(item_path)
+                      non_matching_items.append((item_name, size, 'FILE'))
+                      total_size += size
               
               # Sort by size (largest first)
               non_matching_items.sort(key=lambda x: x[1], reverse=True)
