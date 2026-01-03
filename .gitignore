@@ -1,6 +1,7 @@
 .env
 local.yaml
 .tmp
+tmp/
 apps-chart/charts/
 
 # Python
