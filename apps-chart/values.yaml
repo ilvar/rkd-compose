@@ -91,9 +91,9 @@ jellyfin:
     tag: latest
   resources:
     limits:
-      memory: 670Mi
+      memory: 1024Mi
     requests:
-      memory: 670Mi
+      memory: 1024Mi
       cpu: 500m
   user: 1000:1000
   environment:
