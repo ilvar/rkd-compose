@@ -208,6 +208,9 @@ spec:
       containers:
       - name: kosmos-frontend
         image: "{{ .Values.kosmos.frontend.image.repository }}:{{ .Values.kosmos.frontend.image.tag }}"
+        env:
+        - name: BACKEND_URL
+          value: {{ .Values.kosmos.frontend.environment.BACKEND_URL | default (printf "https://%s" (index .Values.kosmos.backend.ingress.hosts 0)) | quote }}
         resources:
           {{- if .Values.kosmos.frontend.resources }}
           {{- toYaml .Values.kosmos.frontend.resources | nindent 10 }}
