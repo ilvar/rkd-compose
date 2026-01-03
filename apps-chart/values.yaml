@@ -225,9 +225,9 @@ hoarder:
       tag: release
     resources:
       limits:
-        memory: 512Mi
+        memory: 512M
       requests:
-        memory: 512Mi
+        memory: 512M
         cpu: 200m
     environment:
       MEILI_ADDR: http://hoarder-meilisearch:7700
