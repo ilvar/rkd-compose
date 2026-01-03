@@ -225,9 +225,9 @@ hoarder:
       tag: release
     resources:
       limits:
-        memory: 329Mi
+        memory: 512Mi
       requests:
-        memory: 329Mi
+        memory: 512Mi
         cpu: 200m
     environment:
       MEILI_ADDR: http://hoarder-meilisearch:7700
@@ -578,6 +578,8 @@ blog:
       memory: 100Mi
     requests:
       cpu: 100m
+  nodeSelector:
+    kubernetes.io/arch: amd64
   ingress:
     enabled: true
     hosts:

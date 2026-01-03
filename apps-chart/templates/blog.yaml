@@ -17,6 +17,10 @@ spec:
       labels:
         app: blog
     spec:
+      {{- if .Values.blog.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.blog.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - name: blog
         image: "{{ .Values.blog.image.repository }}:{{ .Values.blog.image.tag }}"
