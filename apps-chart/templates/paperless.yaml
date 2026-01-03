@@ -9,6 +9,19 @@ type: Opaque
 stringData:
   secret-key: {{ .Values.paperless.secrets.secretKey | default "ilvar" | quote }}
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-redis-data
+  labels:
+    app: paperless-redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.paperless.redis.storage.size | default "1Gi" }}
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -60,15 +73,10 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: {{ .Values.paperless.redis.storage.size | default "1Gi" }}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: paperless-redis-data
 ---
 apiVersion: apps/v1
 kind: Deployment
