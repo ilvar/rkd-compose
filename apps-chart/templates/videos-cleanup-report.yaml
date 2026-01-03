@@ -37,6 +37,9 @@ spec:
               python3 << 'EOF'
               import os
               import re
+              import shutil
+              import time
+              from datetime import datetime, timedelta
               from pathlib import Path
               
               def get_size(path):
@@ -115,6 +118,67 @@ spec:
                       print(f"{item_type:4} | {format_size(size):>12} | {rel_path}")
                   print("-" * 80)
                   print(f"TOTAL SIZE: {format_size(total_size)}")
+                  
+                  # Delete non-matching items older than 14 days
+                  print("\n" + "=" * 80)
+                  print("Deleting non-matching items older than 14 days...")
+                  print("=" * 80)
+                  
+                  deleted_count = 0
+                  deleted_size = 0
+                  skipped_count = 0
+                  skipped_size = 0
+                  errors = []
+                  
+                  # Calculate cutoff time (14 days ago)
+                  cutoff_time = time.time() - (14 * 24 * 60 * 60)
+                  
+                  for item_name, size, item_type in non_matching_items:
+                      item_path = os.path.join(videos_path, item_name)
+                      
+                      # Check if item is older than 14 days
+                      try:
+                          item_mtime = os.path.getmtime(item_path)
+                          if item_mtime > cutoff_time:
+                              # Item is newer than 14 days, skip deletion
+                              age_days = (time.time() - item_mtime) / (24 * 60 * 60)
+                              print(f"SKIPPED {item_type:4} | {format_size(size):>12} | {item_name} (age: {age_days:.1f} days)")
+                              skipped_count += 1
+                              skipped_size += size
+                              continue
+                      except OSError as e:
+                          error_msg = f"ERROR checking age of {item_name}: {e}"
+                          errors.append(error_msg)
+                          print(error_msg)
+                          continue
+                      
+                      # Item is old enough, proceed with deletion
+                      try:
+                          if item_type == 'DIR':
+                              shutil.rmtree(item_path)
+                              age_days = (time.time() - item_mtime) / (24 * 60 * 60)
+                              print(f"DELETED DIR  | {format_size(size):>12} | {item_name} (age: {age_days:.1f} days)")
+                          else:
+                              os.remove(item_path)
+                              age_days = (time.time() - item_mtime) / (24 * 60 * 60)
+                              print(f"DELETED FILE | {format_size(size):>12} | {item_name} (age: {age_days:.1f} days)")
+                          deleted_count += 1
+                          deleted_size += size
+                      except Exception as e:
+                          error_msg = f"ERROR deleting {item_name}: {e}"
+                          errors.append(error_msg)
+                          print(error_msg)
+                  
+                  print("-" * 80)
+                  print(f"Successfully deleted: {deleted_count}/{len(non_matching_items)} items")
+                  print(f"Total size deleted: {format_size(deleted_size)}")
+                  if skipped_count > 0:
+                      print(f"\nSkipped (newer than 14 days): {skipped_count} items")
+                      print(f"Total size skipped: {format_size(skipped_size)}")
+                  if errors:
+                      print(f"\nErrors encountered: {len(errors)}")
+                      for error in errors:
+                          print(f"  - {error}")
               else:
                   print("\nNo items found that don't match the pattern.")
               
@@ -132,7 +196,7 @@ spec:
             volumeMounts:
             - name: videos
               mountPath: /videos
-              readOnly: true
+              readOnly: false
           volumes:
           - name: videos
             hostPath:
