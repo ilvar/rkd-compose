@@ -19,6 +19,8 @@ metadata:
 spec:
   serviceName: immich-database
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: immich-database

@@ -18,6 +18,8 @@ metadata:
 spec:
   serviceName: miniflux-db
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: miniflux-db

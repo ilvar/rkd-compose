@@ -18,6 +18,8 @@ metadata:
 spec:
   serviceName: kosmos-db
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: kosmos-db

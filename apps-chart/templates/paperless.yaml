@@ -18,6 +18,8 @@ metadata:
 spec:
   serviceName: paperless-redis
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: paperless-redis
@@ -55,6 +57,18 @@ spec:
             - ping
           initialDelaySeconds: 30
           periodSeconds: 10
+        volumeMounts:
+        - name: data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.paperless.redis.storage.size | default "1Gi" }}
 ---
 apiVersion: apps/v1
 kind: Deployment

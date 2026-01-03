@@ -20,6 +20,8 @@ metadata:
 spec:
   serviceName: nextcloud-db
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: nextcloud-db
