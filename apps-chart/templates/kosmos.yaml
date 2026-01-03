@@ -149,6 +149,22 @@ spec:
         ports:
         - containerPort: {{ .Values.kosmos.backend.ingress.servicePort }}
           protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.kosmos.backend.ingress.servicePort }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.kosmos.backend.ingress.servicePort }}
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
         volumeMounts:
         - name: media
           mountPath: /app/media
@@ -220,6 +236,14 @@ spec:
         ports:
         - containerPort: 80
           protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
