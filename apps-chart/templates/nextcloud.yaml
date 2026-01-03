@@ -45,6 +45,7 @@ spec:
       - name: nextcloud-db
         image: "{{ .Values.nextcloud.db.image.repository }}:{{ .Values.nextcloud.db.image.tag }}"
         args:
+        - mariadbd
         - --transaction-isolation=READ-COMMITTED
         - --binlog-format=ROW
         env:
