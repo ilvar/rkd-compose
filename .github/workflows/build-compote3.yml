@@ -100,7 +100,7 @@ jobs:
 
       - name: Build and push Docker image
         if: github.event_name == 'workflow_dispatch' || steps.version_check.outputs.version_changed == 'true'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./compote3
           file: ./compote3/Dockerfile
