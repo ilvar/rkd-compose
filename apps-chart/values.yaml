@@ -750,7 +750,7 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: rc-0.156.0
+      tag: rc-0.157.0
     resources:
       limits:
         memory: 512Mi
@@ -776,7 +776,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: rc-0.156.0
+      tag: rc-0.157.0
     resources:
       limits:
         memory: 128Mi
