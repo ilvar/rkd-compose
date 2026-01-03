@@ -1,0 +1,316 @@
+{{- if .Values.kosmos.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kosmos-secrets
+  labels:
+    app: kosmos
+type: Opaque
+stringData:
+  postgres-password: {{ .Values.kosmos.db.secrets.postgresPassword | default "postgres" | quote }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kosmos-db
+  labels:
+    app: kosmos-db
+spec:
+  serviceName: kosmos-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kosmos-db
+  template:
+    metadata:
+      labels:
+        app: kosmos-db
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
+      containers:
+      - name: kosmos-db
+        image: "{{ .Values.kosmos.db.image.repository }}:{{ .Values.kosmos.db.image.tag }}"
+        env:
+        - name: POSTGRES_USER
+          value: {{ .Values.kosmos.db.environment.POSTGRES_USER | quote }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kosmos-secrets
+              key: postgres-password
+        - name: POSTGRES_DB
+          value: {{ .Values.kosmos.db.environment.POSTGRES_DB | quote }}
+        resources:
+          {{- if .Values.kosmos.db.resources }}
+          {{- toYaml .Values.kosmos.db.resources | nindent 10 }}
+          {{- end }}
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - {{ .Values.kosmos.db.environment.POSTGRES_USER | quote }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - {{ .Values.kosmos.db.environment.POSTGRES_USER | quote }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.kosmos.db.storage.size | default "10Gi" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kosmos-db
+  labels:
+    app: kosmos-db
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: kosmos-db
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kosmos-backend
+  labels:
+    app: kosmos-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kosmos-backend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: kosmos-backend
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
+      containers:
+      - name: kosmos-backend
+        image: "{{ .Values.kosmos.backend.image.repository }}:{{ .Values.kosmos.backend.image.tag }}"
+        env:
+        - name: DEBUG
+          value: {{ .Values.kosmos.backend.environment.DEBUG | default "False" | quote }}
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.kosmos.backend.secrets.jwtSecret.name | default "kosmos-jwt-secret" | quote }}
+              key: {{ .Values.kosmos.backend.secrets.jwtSecret.key | default "jwt-secret" | quote }}
+        - name: DATABASE_URL
+          value: postgresql://{{ .Values.kosmos.db.environment.POSTGRES_USER }}:{{ .Values.kosmos.db.secrets.postgresPassword | default "postgres" }}@kosmos-db:5432/{{ .Values.kosmos.db.environment.POSTGRES_DB }}
+        resources:
+          {{- if .Values.kosmos.backend.resources }}
+          {{- toYaml .Values.kosmos.backend.resources | nindent 10 }}
+          {{- end }}
+        ports:
+        - containerPort: {{ .Values.kosmos.backend.ingress.servicePort }}
+          protocol: TCP
+        volumeMounts:
+        - name: media
+          mountPath: /app/media
+        - name: static
+          mountPath: /app/static
+      volumes:
+      - name: media
+        persistentVolumeClaim:
+          claimName: {{ .Values.kosmos.backend.storage.media }}
+      - name: static
+        persistentVolumeClaim:
+          claimName: {{ .Values.kosmos.backend.storage.static }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kosmos-backend
+  labels:
+    app: kosmos-backend
+spec:
+  ports:
+  - port: {{ .Values.kosmos.backend.ingress.servicePort }}
+    targetPort: {{ .Values.kosmos.backend.ingress.servicePort }}
+    protocol: TCP
+  selector:
+    app: kosmos-backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kosmos-frontend
+  labels:
+    app: kosmos-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kosmos-frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: kosmos-frontend
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
+      containers:
+      - name: kosmos-frontend
+        image: "{{ .Values.kosmos.frontend.image.repository }}:{{ .Values.kosmos.frontend.image.tag }}"
+        resources:
+          {{- if .Values.kosmos.frontend.resources }}
+          {{- toYaml .Values.kosmos.frontend.resources | nindent 10 }}
+          {{- end }}
+        ports:
+        - containerPort: 80
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kosmos-frontend
+  labels:
+    app: kosmos-frontend
+spec:
+  ports:
+  - port: {{ .Values.kosmos.frontend.ingress.servicePort }}
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: kosmos-frontend
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.kosmos.backend.storage.media }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.kosmos.backend.storage.mediaSize | default "10Gi" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.kosmos.backend.storage.static }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.kosmos.backend.storage.staticSize | default "1Gi" }}
+---
+{{- if and .Values.kosmos.enabled .Values.kosmos.backend.ingress.enabled (gt (len .Values.kosmos.backend.ingress.hosts) 0) }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kosmos-backend
+  labels:
+    app: kosmos-backend
+spec:
+{{- if gt (len .Values.kosmos.backend.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+{{- range .Values.kosmos.backend.ingress.hosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
+  rules:
+  {{- range .Values.kosmos.backend.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kosmos-backend
+            port:
+              number: {{ $.Values.kosmos.backend.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+---
+{{- if and .Values.kosmos.enabled .Values.kosmos.frontend.ingress.enabled (gt (len .Values.kosmos.frontend.ingress.hosts) 0) }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kosmos-frontend
+  labels:
+    app: kosmos-frontend
+spec:
+{{- if gt (len .Values.kosmos.frontend.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+{{- range .Values.kosmos.frontend.ingress.hosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
+  rules:
+  {{- range .Values.kosmos.frontend.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kosmos-frontend
+            port:
+              number: {{ $.Values.kosmos.frontend.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
