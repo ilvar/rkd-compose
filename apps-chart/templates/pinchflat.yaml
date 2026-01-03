@@ -55,6 +55,9 @@ spec:
             memory: {{ .Values.pinchflat.resources.limits.memory }}
           requests:
             memory: {{ .Values.pinchflat.resources.requests.memory | default .Values.pinchflat.resources.limits.memory }}
+            {{- if .Values.pinchflat.resources.requests.cpu }}
+            cpu: {{ .Values.pinchflat.resources.requests.cpu }}
+            {{- end }}
         ports:
         - containerPort: {{ .Values.pinchflat.ports.http }}
           protocol: TCP

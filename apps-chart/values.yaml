@@ -12,6 +12,8 @@ blocky:
   resources:
     limits:
       memory: 216Mi
+    requests:
+      cpu: 100m
 portainer:
   enabled: true
   image:
@@ -22,6 +24,7 @@ portainer:
       memory: 100Mi
     requests:
       memory: 100Mi
+      cpu: 100m
   storage:
     data: portainer-data
   ingress:
@@ -40,6 +43,7 @@ jackett:
       memory: 248Mi
     requests:
       memory: 248Mi
+      cpu: 250m
   environment:
     PUID: 1000
     PGID: 1000
@@ -64,6 +68,7 @@ radarr:
       memory: 530Mi
     requests:
       memory: 530Mi
+      cpu: 300m
   environment:
     PUID: 1000
     PGID: 1000
@@ -89,6 +94,7 @@ jellyfin:
       memory: 670Mi
     requests:
       memory: 670Mi
+      cpu: 500m
   user: 1000:1000
   environment:
     JELLYFIN_PublishedServerUrl: https://jf.h.rkd.pw
@@ -116,6 +122,7 @@ deluge:
       memory: 352Mi
     requests:
       memory: 352Mi
+      cpu: 200m
   environment:
     PUID: 1000
     PGID: 1000
@@ -146,6 +153,7 @@ homeassistant:
       memory: 644Mi
     requests:
       memory: 644Mi
+      cpu: 300m
   user: 0:0
   privileged: true
   ports:
@@ -170,6 +178,7 @@ frigate:
       memory: 1676Mi
     requests:
       memory: 1676Mi
+      cpu: 800m
   privileged: true
   ports:
     rtsp: 8554
@@ -196,6 +205,7 @@ nodered:
       memory: 154Mi
     requests:
       memory: 154Mi
+      cpu: 150m
   user: 1000:1000
   privileged: true
   ports:
@@ -218,6 +228,7 @@ hoarder:
         memory: 329Mi
       requests:
         memory: 329Mi
+        cpu: 200m
     environment:
       MEILI_ADDR: http://hoarder-meilisearch:7700
       BROWSER_WEB_URL: http://hoarder-chrome:9222
@@ -244,6 +255,7 @@ hoarder:
         memory: 100Mi
       requests:
         memory: 100Mi
+        cpu: 150m
   meilisearch:
     image:
       repository: getmeili/meilisearch
@@ -253,6 +265,7 @@ hoarder:
         memory: 100Mi
       requests:
         memory: 100Mi
+        cpu: 100m
     environment:
       MEILI_NO_ANALYTICS: 'true'
     storage:
@@ -265,6 +278,8 @@ compote3:
   resources:
     limits:
       memory: 100Mi
+    requests:
+      cpu: 50m
   secrets:
     githubToken: ''
   config: "links:\n- name: AIB\n  url: https://onlinebanking.aib.ie/inet/roi/login.htm\n- name: Gandi\n  url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records\n- name: Mailbox\n  url: https://app.mailbox.org/\n- name: Meduza\n  url: https://meduza.io\n- name: RuTracker\n  url: https://rutracker.org/forum/viewforum.php?f=635\n- name: Tessie\n  url: https://dash.tessie.com\n- name: Trello\n  url: https://trello.com/b/YPlmZPom/personal\ngithub:\n  watcher: ilvar\ndescriptions:\n- name: blog\n  description: Personal blog and website\n- name: bugsink\n  description: Bug tracking and project management\n- name: changes\n  description: Website change detection and monitoring\n- name: compote3\n  description: Dashboard and application launcher\n- name: deluge\n  description: BitTorrent client\n- name: frigate\n  description: NVR with real-time AI object detection\n- name: gandi\n  description: Domain and DNS management\n- name: grafana\n  description: Analytics\
@@ -286,6 +301,7 @@ paperless:
         memory: 900Mi
       requests:
         memory: 900Mi
+        cpu: 400m
     environment:
       PAPERLESS_OCR_LANGUAGES: eng
       TZ: Europe/Dublin
@@ -312,6 +328,8 @@ paperless:
     resources:
       limits:
         memory: 100Mi
+      requests:
+        cpu: 100m
     storage:
       size: 1Gi
   ingress:
@@ -333,6 +351,7 @@ nextcloud:
         memory: 422Mi
       requests:
         memory: 422Mi
+        cpu: 300m
     user: 1000:1000
     environment:
       PUID: 1000
@@ -367,6 +386,7 @@ nextcloud:
         memory: 163Mi
       requests:
         memory: 163Mi
+        cpu: 300m
     user: 1000:1000
     environment:
       MYSQL_DATABASE: nextcloud
@@ -385,6 +405,7 @@ kuma:
       memory: 182Mi
     requests:
       memory: 182Mi
+      cpu: 100m
   storage:
     data: kuma-data
   ingress:
@@ -405,6 +426,7 @@ immich:
         memory: 918Mi
       requests:
         memory: 918Mi
+        cpu: 400m
     environment:
       TZ: Europe/Dublin
       DB_USERNAME: postgres
@@ -425,6 +447,7 @@ immich:
         memory: 277Mi
       requests:
         memory: 277Mi
+        cpu: 500m
     storage:
       modelCache: immich-model-cache
   redis:
@@ -437,6 +460,7 @@ immich:
         memory: 100Mi
       requests:
         memory: 100Mi
+        cpu: 100m
   database:
     image:
       repository: ghcr.io/immich-app/postgres
@@ -446,6 +470,7 @@ immich:
         memory: 244Mi
       requests:
         memory: 244Mi
+        cpu: 300m
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: immich
@@ -469,6 +494,7 @@ bugsink:
       memory: 393Mi
     requests:
       memory: 393Mi
+      cpu: 300m
   environment:
     CREATE_SUPERUSER: admin:admin
     PORT: '8000'
@@ -494,6 +520,7 @@ itTools:
       memory: 100Mi
     requests:
       memory: 100Mi
+      cpu: 100m
   ingress:
     enabled: true
     hosts:
@@ -509,6 +536,7 @@ minifluxDb:
       memory: 100Mi
     requests:
       memory: 100Mi
+      cpu: 200m
   environment:
     POSTGRES_USER: miniflux
     POSTGRES_DB: miniflux
@@ -526,6 +554,7 @@ miniflux:
       memory: 100Mi
     requests:
       memory: 100Mi
+      cpu: 100m
   environment:
     DATABASE_URL: postgres://miniflux:066a04f209@miniflux-db:5432/miniflux?sslmode=disable
     RUN_MIGRATIONS: '1'
@@ -547,6 +576,8 @@ blog:
   resources:
     limits:
       memory: 100Mi
+    requests:
+      cpu: 100m
   ingress:
     enabled: true
     hosts:
@@ -561,6 +592,8 @@ rkdPw:
   resources:
     limits:
       memory: 100Mi
+    requests:
+      cpu: 100m
   ingress:
     enabled: true
     hosts:
@@ -579,6 +612,7 @@ irishSchools:
       memory: 100Mi
     requests:
       memory: 100Mi
+      cpu: 50m
   ingress:
     enabled: true
     hosts:
@@ -595,6 +629,7 @@ changes:
       memory: 121Mi
     requests:
       memory: 121Mi
+      cpu: 150m
   environment:
     BASE_URL: http://changes.k.rkd.pw
   storage:
@@ -628,6 +663,7 @@ termix:
       memory: 129Mi
     requests:
       memory: 129Mi
+      cpu: 100m
   environment:
     PORT: '8080'
   ports:
@@ -648,6 +684,7 @@ pinchflat:
       memory: 1709Mi
     requests:
       memory: 1709Mi
+      cpu: 500m
   user: 1000:1000
   environment:
     TZ: Europe/Dublin
@@ -670,6 +707,7 @@ kosmos:
         memory: 100Mi
       requests:
         memory: 100Mi
+        cpu: 300m
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: crm
@@ -686,6 +724,7 @@ kosmos:
         memory: 162Mi
       requests:
         memory: 162Mi
+        cpu: 300m
     environment:
       DEBUG: 'False'
     secrets:
@@ -718,6 +757,7 @@ kosmos:
         memory: 100Mi
       requests:
         memory: 100Mi
+        cpu: 100m
     ingress:
       enabled: true
       hosts:

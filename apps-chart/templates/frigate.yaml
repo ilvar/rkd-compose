@@ -39,6 +39,9 @@ spec:
             memory: {{ .Values.frigate.resources.limits.memory }}
           requests:
             memory: {{ .Values.frigate.resources.requests.memory }}
+            {{- if .Values.frigate.resources.requests.cpu }}
+            cpu: {{ .Values.frigate.resources.requests.cpu }}
+            {{- end }}
         ports:
         - containerPort: {{ .Values.frigate.ports.rtsp }}
           protocol: TCP
