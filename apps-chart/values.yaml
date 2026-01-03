@@ -9,6 +9,9 @@ blocky:
       tcp: 53
       udp: 53
     http: 4000
+  resources:
+    limits:
+      memory: 216Mi
 portainer:
   enabled: true
   image:
@@ -16,9 +19,9 @@ portainer:
     tag: latest
   resources:
     limits:
-      memory: 64Mi
+      memory: 100Mi
     requests:
-      memory: 32Mi
+      memory: 100Mi
   storage:
     data: portainer-data
   ingress:
@@ -34,9 +37,9 @@ jackett:
     tag: latest
   resources:
     limits:
-      memory: 512Mi
+      memory: 248Mi
     requests:
-      memory: 256Mi
+      memory: 248Mi
   environment:
     PUID: 1000
     PGID: 1000
@@ -58,9 +61,9 @@ radarr:
     tag: latest
   resources:
     limits:
-      memory: 768Mi
+      memory: 530Mi
     requests:
-      memory: 512Mi
+      memory: 530Mi
   environment:
     PUID: 1000
     PGID: 1000
@@ -83,9 +86,9 @@ jellyfin:
     tag: latest
   resources:
     limits:
-      memory: 768Mi
+      memory: 670Mi
     requests:
-      memory: 512Mi
+      memory: 670Mi
   user: 1000:1000
   environment:
     JELLYFIN_PublishedServerUrl: https://jf.h.rkd.pw
@@ -110,9 +113,9 @@ deluge:
     tag: latest
   resources:
     limits:
-      memory: 512Mi
+      memory: 352Mi
     requests:
-      memory: 256Mi
+      memory: 352Mi
   environment:
     PUID: 1000
     PGID: 1000
@@ -140,9 +143,9 @@ homeassistant:
     tag: latest
   resources:
     limits:
-      memory: 1024Mi
+      memory: 644Mi
     requests:
-      memory: 512Mi
+      memory: 644Mi
   user: 0:0
   privileged: true
   ports:
@@ -164,9 +167,9 @@ frigate:
     tag: latest-rocm
   resources:
     limits:
-      memory: 3Gi
+      memory: 1676Mi
     requests:
-      memory: 1536Mi
+      memory: 1676Mi
   privileged: true
   ports:
     rtsp: 8554
@@ -190,9 +193,9 @@ nodered:
     tag: latest
   resources:
     limits:
-      memory: 512Mi
+      memory: 154Mi
     requests:
-      memory: 256Mi
+      memory: 154Mi
   user: 1000:1000
   privileged: true
   ports:
@@ -212,9 +215,9 @@ hoarder:
       tag: release
     resources:
       limits:
-        memory: 512Mi
+        memory: 329Mi
       requests:
-        memory: 256Mi
+        memory: 329Mi
     environment:
       MEILI_ADDR: http://hoarder-meilisearch:7700
       BROWSER_WEB_URL: http://hoarder-chrome:9222
@@ -238,18 +241,18 @@ hoarder:
       tag: '124'
     resources:
       limits:
-        memory: 512Mi
+        memory: 100Mi
       requests:
-        memory: 256Mi
+        memory: 100Mi
   meilisearch:
     image:
       repository: getmeili/meilisearch
       tag: v1.11.1
     resources:
       limits:
-        memory: 128Mi
+        memory: 100Mi
       requests:
-        memory: 64Mi
+        memory: 100Mi
     environment:
       MEILI_NO_ANALYTICS: 'true'
     storage:
@@ -261,87 +264,12 @@ compote3:
     tag: v0.3.7
   resources:
     limits:
-      memory: 32Mi
+      memory: 100Mi
   secrets:
     githubToken: ''
-  config: |
-    links:
-    - name: AIB
-      url: https://onlinebanking.aib.ie/inet/roi/login.htm
-    - name: Gandi
-      url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records
-    - name: Mailbox
-      url: https://app.mailbox.org/
-    - name: Meduza
-      url: https://meduza.io
-    - name: RuTracker
-      url: https://rutracker.org/forum/viewforum.php?f=635
-    - name: Tessie
-      url: https://dash.tessie.com
-    - name: Trello
-      url: https://trello.com/b/YPlmZPom/personal
-    github:
-      watcher: ilvar
-    descriptions:
-    - name: blog
-      description: Personal blog and website
-    - name: bugsink
-      description: Bug tracking and project management
-    - name: changes
-      description: Website change detection and monitoring
-    - name: compote3
-      description: Dashboard and application launcher
-    - name: deluge
-      description: BitTorrent client
-    - name: frigate
-      description: NVR with real-time AI object detection
-    - name: gandi
-      description: Domain and DNS management
-    - name: grafana
-      description: Analytics and monitoring dashboards
-    - name: hoarder
-      description: Web archive and bookmark manager
-    - name: homeassistant
-      description: Home automation and IoT platform
-    - name: immich
-      description: Self-hosted photo and video backup
-    - name: irish-schools
-      description: Irish schools information and lookup
-    - name: it-tools
-      description: Collection of IT tools and utilities
-    - name: jackett
-      description: Torrent tracker proxy and API aggregator
-    - name: jellyfin
-      description: Media server and streaming platform
-    - name: jitsi
-      description: Video conferencing and meetings
-    - name: kuma
-      description: Uptime monitoring and status page
-    - name: mailbox
-      description: Email hosting and management
-    - name: miniflux
-      description: Minimalist RSS feed reader
-    - name: nextcloud
-      description: File hosting and collaboration platform
-    - name: nodered
-      description: Flow-based programming for IoT
-    - name: paperless
-      description: Document management system
-    - name: pinchflat
-      description: YouTube subscription manager
-    - name: portainer
-      description: Container management and Docker GUI
-    - name: radarr
-      description: Movie collection manager and downloader
-    - name: rkd-pw
-      description: Password manager
-    - name: termix
-      description: Terminal emulator for web
-    - name: tessie
-      description: Tesla vehicle management
-    - name: trello
-      description: Project management and task boards
-
+  config: "links:\n- name: AIB\n  url: https://onlinebanking.aib.ie/inet/roi/login.htm\n- name: Gandi\n  url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records\n- name: Mailbox\n  url: https://app.mailbox.org/\n- name: Meduza\n  url: https://meduza.io\n- name: RuTracker\n  url: https://rutracker.org/forum/viewforum.php?f=635\n- name: Tessie\n  url: https://dash.tessie.com\n- name: Trello\n  url: https://trello.com/b/YPlmZPom/personal\ngithub:\n  watcher: ilvar\ndescriptions:\n- name: blog\n  description: Personal blog and website\n- name: bugsink\n  description: Bug tracking and project management\n- name: changes\n  description: Website change detection and monitoring\n- name: compote3\n  description: Dashboard and application launcher\n- name: deluge\n  description: BitTorrent client\n- name: frigate\n  description: NVR with real-time AI object detection\n- name: gandi\n  description: Domain and DNS management\n- name: grafana\n  description: Analytics\
+    \ and monitoring dashboards\n- name: hoarder\n  description: Web archive and bookmark manager\n- name: homeassistant\n  description: Home automation and IoT platform\n- name: immich\n  description: Self-hosted photo and video backup\n- name: irish-schools\n  description: Irish schools information and lookup\n- name: it-tools\n  description: Collection of IT tools and utilities\n- name: jackett\n  description: Torrent tracker proxy and API aggregator\n- name: jellyfin\n  description: Media server and streaming platform\n- name: jitsi\n  description: Video conferencing and meetings\n- name: kuma\n  description: Uptime monitoring and status page\n- name: mailbox\n  description: Email hosting and management\n- name: miniflux\n  description: Minimalist RSS feed reader\n- name: nextcloud\n  description: File hosting and collaboration platform\n- name: nodered\n  description: Flow-based programming for IoT\n- name: paperless\n  description: Document management system\n- name: pinchflat\n  description:\
+    \ YouTube subscription manager\n- name: portainer\n  description: Container management and Docker GUI\n- name: radarr\n  description: Movie collection manager and downloader\n- name: rkd-pw\n  description: Password manager\n- name: termix\n  description: Terminal emulator for web\n- name: tessie\n  description: Tesla vehicle management\n- name: trello\n  description: Project management and task boards\n"
   ingress:
     enabled: true
     hosts:
@@ -355,9 +283,9 @@ paperless:
       tag: latest
     resources:
       limits:
-        memory: 1536Mi
+        memory: 900Mi
       requests:
-        memory: 768Mi
+        memory: 900Mi
     environment:
       PAPERLESS_OCR_LANGUAGES: eng
       TZ: Europe/Dublin
@@ -383,7 +311,7 @@ paperless:
       tag: '6.2'
     resources:
       limits:
-        memory: 256Mi
+        memory: 100Mi
     storage:
       size: 1Gi
   ingress:
@@ -402,9 +330,9 @@ nextcloud:
       tag: latest
     resources:
       limits:
-        memory: 512Mi
+        memory: 422Mi
       requests:
-        memory: 256Mi
+        memory: 422Mi
     user: 1000:1000
     environment:
       PUID: 1000
@@ -436,9 +364,9 @@ nextcloud:
       tag: '12.1'
     resources:
       limits:
-        memory: 256Mi
+        memory: 163Mi
       requests:
-        memory: 128Mi
+        memory: 163Mi
     user: 1000:1000
     environment:
       MYSQL_DATABASE: nextcloud
@@ -454,9 +382,9 @@ kuma:
     tag: latest
   resources:
     limits:
-      memory: 512Mi
+      memory: 182Mi
     requests:
-      memory: 256Mi
+      memory: 182Mi
   storage:
     data: kuma-data
   ingress:
@@ -474,9 +402,9 @@ immich:
       tag: release
     resources:
       limits:
-        memory: 1024Mi
+        memory: 918Mi
       requests:
-        memory: 512Mi
+        memory: 918Mi
     environment:
       TZ: Europe/Dublin
       DB_USERNAME: postgres
@@ -494,9 +422,9 @@ immich:
       tag: release
     resources:
       limits:
-        memory: 512Mi
+        memory: 277Mi
       requests:
-        memory: 256Mi
+        memory: 277Mi
     storage:
       modelCache: immich-model-cache
   redis:
@@ -506,18 +434,18 @@ immich:
       digest: sha256:ff21bc0f8194dc9c105b769aeabf9585fea6a8ed649c0781caeac5cb3c247884
     resources:
       limits:
-        memory: 16Mi
+        memory: 100Mi
       requests:
-        memory: 16Mi
+        memory: 100Mi
   database:
     image:
       repository: ghcr.io/immich-app/postgres
       tag: 14-vectorchord0.5.3-pgvector0.8.1
     resources:
       limits:
-        memory: 512Mi
+        memory: 244Mi
       requests:
-        memory: 256Mi
+        memory: 244Mi
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: immich
@@ -538,9 +466,9 @@ bugsink:
     tag: latest
   resources:
     limits:
-      memory: 768Mi
+      memory: 393Mi
     requests:
-      memory: 512Mi
+      memory: 393Mi
   environment:
     CREATE_SUPERUSER: admin:admin
     PORT: '8000'
@@ -563,9 +491,9 @@ itTools:
     tag: latest
   resources:
     limits:
-      memory: 32Mi
+      memory: 100Mi
     requests:
-      memory: 16Mi
+      memory: 100Mi
   ingress:
     enabled: true
     hosts:
@@ -578,9 +506,9 @@ minifluxDb:
     tag: 9.6.24-alpine
   resources:
     limits:
-      memory: 128Mi
+      memory: 100Mi
     requests:
-      memory: 64Mi
+      memory: 100Mi
   environment:
     POSTGRES_USER: miniflux
     POSTGRES_DB: miniflux
@@ -595,9 +523,9 @@ miniflux:
     tag: 2.2.15
   resources:
     limits:
-      memory: 64Mi
+      memory: 100Mi
     requests:
-      memory: 32Mi
+      memory: 100Mi
   environment:
     DATABASE_URL: postgres://miniflux:066a04f209@miniflux-db:5432/miniflux?sslmode=disable
     RUN_MIGRATIONS: '1'
@@ -618,7 +546,7 @@ blog:
     tag: latest
   resources:
     limits:
-      memory: 512Mi
+      memory: 100Mi
   ingress:
     enabled: true
     hosts:
@@ -632,7 +560,7 @@ rkdPw:
     tag: latest
   resources:
     limits:
-      memory: 512Mi
+      memory: 100Mi
   ingress:
     enabled: true
     hosts:
@@ -648,9 +576,9 @@ irishSchools:
     tag: latest
   resources:
     limits:
-      memory: 64Mi
+      memory: 100Mi
     requests:
-      memory: 32Mi
+      memory: 100Mi
   ingress:
     enabled: true
     hosts:
@@ -664,9 +592,9 @@ changes:
     tag: 0.51.4
   resources:
     limits:
-      memory: 512Mi
+      memory: 121Mi
     requests:
-      memory: 256Mi
+      memory: 121Mi
   environment:
     BASE_URL: http://changes.k.rkd.pw
   storage:
@@ -697,9 +625,9 @@ termix:
     tag: latest
   resources:
     limits:
-      memory: 256Mi
+      memory: 129Mi
     requests:
-      memory: 128Mi
+      memory: 129Mi
   environment:
     PORT: '8080'
   ports:
@@ -717,9 +645,9 @@ pinchflat:
     tag: latest
   resources:
     limits:
-      memory: 2Gi
+      memory: 1709Mi
     requests:
-      memory: 512Mi
+      memory: 1709Mi
   user: 1000:1000
   environment:
     TZ: Europe/Dublin
@@ -727,7 +655,7 @@ pinchflat:
     http: 8945
   ingress:
     enabled: true
-    hosts: 
+    hosts:
     - pinchflat.h.rkd.pw
     - pinchflat.k.rkd.pw
     servicePort: 8945
@@ -736,12 +664,12 @@ kosmos:
   db:
     image:
       repository: postgres
-      tag: "14"
+      tag: '14'
     resources:
       limits:
-        memory: 512Mi
+        memory: 100Mi
       requests:
-        memory: 256Mi
+        memory: 100Mi
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: crm
@@ -755,11 +683,11 @@ kosmos:
       tag: 0.3.59
     resources:
       limits:
-        memory: 512Mi
+        memory: 162Mi
       requests:
-        memory: 256Mi
+        memory: 162Mi
     environment:
-      DEBUG: "False"
+      DEBUG: 'False'
     secrets:
       jwtSecret:
         name: kosmos-jwt-secret
@@ -783,13 +711,13 @@ kosmos:
       repository: ilvar/kosmos-frontend
       tag: 1.0.3
     environment:
-      BACKEND_URL: "http://kosmos-backend.default.svc.cluster.local:8000"
-      DNS_RESOLVER: "10.43.0.10"
+      BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
+      DNS_RESOLVER: 10.43.0.10
     resources:
       limits:
-        memory: 128Mi
+        memory: 100Mi
       requests:
-        memory: 64Mi
+        memory: 100Mi
     ingress:
       enabled: true
       hosts:
@@ -852,12 +780,12 @@ jitsi-meet:
     - secretName: homelab-wildcard-h-tls
       hosts:
       - jitsi.h.rkd.pw
-      - jitsi.k.rkd.pw  
+      - jitsi.k.rkd.pw
 kube-prometheus-stack:
   enabled: true
   grafana:
     enabled: true
-    adminPassword: "CHANGE_ME"
+    adminPassword: CHANGE_ME
     securityContext:
       runAsUser: 472
       runAsGroup: 472
@@ -873,15 +801,15 @@ kube-prometheus-stack:
         serve_from_sub_path: false
     ingress:
       enabled: true
-      ingressClassName: ""
+      ingressClassName: ''
       hosts:
-        - grafana.k.rkd.pw
+      - grafana.k.rkd.pw
       annotations:
-        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        cert-manager.io/cluster-issuer: letsencrypt-prod
       tls:
-        - secretName: homelab-wildcard-h-tls
-          hosts:
-            - grafana.k.rkd.pw
+      - secretName: homelab-wildcard-h-tls
+        hosts:
+        - grafana.k.rkd.pw
   alertmanager:
     enabled: false
   prometheus:
@@ -896,7 +824,8 @@ kube-prometheus-stack:
       storageSpec:
         volumeClaimTemplate:
           spec:
-            accessModes: ["ReadWriteOnce"]
+            accessModes:
+            - ReadWriteOnce
             resources:
               requests:
                 storage: 10Gi
@@ -904,7 +833,6 @@ kube-prometheus-stack:
     enabled: true
   nodeExporter:
     enabled: true
-  # k3s often doesn't expose these like kubeadm does; disable to avoid failing targets
   kubeEtcd:
     enabled: false
   kubeControllerManager:
@@ -913,10 +841,10 @@ kube-prometheus-stack:
     enabled: false
 videosCleanupReport:
   enabled: true
-  schedule: "0 2 * * *"  # Run daily at 2 AM
+  schedule: 0 2 * * *
   image:
     repository: python
-    tag: "3-alpine"
+    tag: 3-alpine
   resources:
     limits:
       memory: 256Mi
