@@ -1,0 +1,151 @@
+{{- if .Values.videosCleanupReport.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: videos-cleanup-report
+  labels:
+    app: videos-cleanup-report
+spec:
+  schedule: {{ .Values.videosCleanupReport.schedule | default "0 2 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: videos-cleanup-report
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - rkd-um560
+          restartPolicy: OnFailure
+          containers:
+          - name: videos-cleanup-report
+            image: "{{ .Values.videosCleanupReport.image.repository }}:{{ .Values.videosCleanupReport.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              python3 << 'EOF'
+              import os
+              import re
+              from pathlib import Path
+              
+              def get_size(path):
+                  """Get total size of a file or directory in bytes."""
+                  if os.path.isfile(path):
+                      return os.path.getsize(path)
+                  elif os.path.isdir(path):
+                      total = 0
+                      for dirpath, dirnames, filenames in os.walk(path):
+                          for filename in filenames:
+                              filepath = os.path.join(dirpath, filename)
+                              try:
+                                  total += os.path.getsize(filepath)
+                              except (OSError, FileNotFoundError):
+                                  pass
+                      return total
+                  return 0
+              
+              def format_size(size_bytes):
+                  """Format size in human-readable format."""
+                  for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+                      if size_bytes < 1024.0:
+                          return f"{size_bytes:.2f} {unit}"
+                      size_bytes /= 1024.0
+                  return f"{size_bytes:.2f} PB"
+              
+              # Pattern to match: anything ending with (number)
+              pattern = re.compile(r'^.*\(\d+\)$')
+              
+              videos_path = Path('/videos')
+              if not videos_path.exists():
+                  print(f"ERROR: Path {videos_path} does not exist")
+                  exit(1)
+              
+              print(f"Scanning: {videos_path}")
+              print("=" * 80)
+              print("Files and directories that do NOT match pattern ^.*\\(\\d+\\)$:")
+              print("=" * 80)
+              
+              non_matching_items = []
+              total_size = 0
+              
+              # Track directories we've processed to avoid double-counting
+              processed_dirs = set()
+              
+              # Walk through the directory
+              for root, dirs, files in os.walk(videos_path):
+                  # Skip if this directory was already processed as a non-matching item
+                  if root in processed_dirs:
+                      dirs[:] = []  # Don't recurse into subdirectories
+                      continue
+                  
+                  # Check directories - if they don't match, add them and skip recursing
+                  dirs_to_remove = []
+                  for dirname in dirs:
+                      dirpath = os.path.join(root, dirname)
+                      rel_path = os.path.relpath(dirpath, videos_path)
+                      if not pattern.match(rel_path):
+                          size = get_size(dirpath)
+                          non_matching_items.append((rel_path, size, 'DIR'))
+                          total_size += size
+                          processed_dirs.add(dirpath)
+                          dirs_to_remove.append(dirname)
+                  
+                  # Remove processed directories from dirs list to skip recursion
+                  for dirname in dirs_to_remove:
+                      dirs.remove(dirname)
+                  
+                  # Check files
+                  for filename in files:
+                      filepath = os.path.join(root, filename)
+                      rel_path = os.path.relpath(filepath, videos_path)
+                      if not pattern.match(rel_path):
+                          size = get_size(filepath)
+                          non_matching_items.append((rel_path, size, 'FILE'))
+                          total_size += size
+              
+              # Sort by size (largest first)
+              non_matching_items.sort(key=lambda x: x[1], reverse=True)
+              
+              # Print results
+              if non_matching_items:
+                  print(f"\nFound {len(non_matching_items)} items:")
+                  print("-" * 80)
+                  for rel_path, size, item_type in non_matching_items:
+                      print(f"{item_type:4} | {format_size(size):>12} | {rel_path}")
+                  print("-" * 80)
+                  print(f"TOTAL SIZE: {format_size(total_size)}")
+              else:
+                  print("\nNo items found that don't match the pattern.")
+              
+              print("=" * 80)
+              EOF
+            resources:
+              {{- if .Values.videosCleanupReport.resources }}
+              {{- toYaml .Values.videosCleanupReport.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 256Mi
+              requests:
+                memory: 128Mi
+              {{- end }}
+            volumeMounts:
+            - name: videos
+              mountPath: /videos
+              readOnly: true
+          volumes:
+          - name: videos
+            hostPath:
+              path: /home/rkd/.nas/Videos
+              type: Directory
+{{- end }}

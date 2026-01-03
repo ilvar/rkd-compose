@@ -905,3 +905,14 @@ kube-prometheus-stack:
     enabled: false
   kubeScheduler:
     enabled: false
+videosCleanupReport:
+  enabled: true
+  schedule: "0 2 * * *"  # Run daily at 2 AM
+  image:
+    repository: python
+    tag: "3-alpine"
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      memory: 128Mi
