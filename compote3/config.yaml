@@ -26,5 +26,5 @@ overrides:
     new_name: kosmos
   - name: rkd-compose-grafana
     new_name: grafana
-    url: https://grafana.k.rkd.pw/d/e0057f60-1041-4bff-9c0b-72b409765227/main?orgId=1&from=now-6h&to=now&timezone=browser&refresh=1m
-
+    url: |
+      https://grafana.k.rkd.pw/d/e0057f60-1041-4bff-9c0b-72b409765227/main?orgId=1&from=now-6h&to=now&timezone=browser&refresh=1m

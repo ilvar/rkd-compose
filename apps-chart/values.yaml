@@ -275,7 +275,7 @@ compote3:
   enabled: true
   image:
     repository: ilvar/compote3
-    tag: v0.3.8
+    tag: v0.3.9
   resources:
     limits:
       memory: 100Mi
@@ -283,9 +283,94 @@ compote3:
       cpu: 50m
   secrets:
     githubToken: ''
-  config: "links:\n- name: AIB\n  url: https://onlinebanking.aib.ie/inet/roi/login.htm\n- name: Gandi\n  url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records\n- name: Mailbox\n  url: https://app.mailbox.org/\n- name: Meduza\n  url: https://meduza.io\n- name: RuTracker\n  url: https://rutracker.org/forum/viewforum.php?f=635\n- name: Tessie\n  url: https://dash.tessie.com\n- name: Trello\n  url: https://trello.com/b/YPlmZPom/personal\ngithub:\n  watcher: ilvar\ndescriptions:\n- name: blog\n  description: Personal blog and website\n- name: bugsink\n  description: Bug tracking and project management\n- name: changes\n  description: Website change detection and monitoring\n- name: compote3\n  description: Dashboard and application launcher\n- name: deluge\n  description: BitTorrent client\n- name: frigate\n  description: NVR with real-time AI object detection\n- name: gandi\n  description: Domain and DNS management\n- name: grafana\n  description: Analytics\
-    \ and monitoring dashboards\n- name: hoarder\n  description: Web archive and bookmark manager\n- name: homeassistant\n  description: Home automation and IoT platform\n- name: immich\n  description: Self-hosted photo and video backup\n- name: irish-schools\n  description: Irish schools information and lookup\n- name: it-tools\n  description: Collection of IT tools and utilities\n- name: jackett\n  description: Torrent tracker proxy and API aggregator\n- name: jellyfin\n  description: Media server and streaming platform\n- name: jitsi\n  description: Video conferencing and meetings\n- name: kuma\n  description: Uptime monitoring and status page\n- name: mailbox\n  description: Email hosting and management\n- name: miniflux\n  description: Minimalist RSS feed reader\n- name: nextcloud\n  description: File hosting and collaboration platform\n- name: nodered\n  description: Flow-based programming for IoT\n- name: paperless\n  description: Document management system\n- name: pinchflat\n  description:\
-    \ YouTube subscription manager\n- name: portainer\n  description: Container management and Docker GUI\n- name: radarr\n  description: Movie collection manager and downloader\n- name: rkd-pw\n  description: Password manager\n- name: termix\n  description: Terminal emulator for web\n- name: tessie\n  description: Tesla vehicle management\n- name: trello\n  description: Project management and task boards\n"
+  config: |
+    links:
+    - name: AIB
+      url: https://onlinebanking.aib.ie/inet/roi/login.htm
+    - name: Gandi
+      url: https://admin.gandi.net/domain/08458030-153d-11ea-b8e3-00163e108e85/rkd.pw/records
+    - name: Mailbox
+      url: https://app.mailbox.org/
+    - name: Meduza
+      url: https://meduza.io
+    - name: RuTracker
+      url: https://rutracker.org/forum/viewforum.php?f=635
+    - name: Tessie
+      url: https://dash.tessie.com
+    - name: Trello
+      url: https://trello.com/b/YPlmZPom/personal
+    github:
+      watcher: ilvar
+    descriptions:
+    - name: blog
+      description: Personal blog and website
+    - name: bugsink
+      description: Bug tracking and project management
+    - name: changes
+      description: Website change detection and monitoring
+    - name: compote3
+      description: Dashboard and application launcher
+    - name: deluge
+      description: BitTorrent client
+    - name: frigate
+      description: NVR with real-time AI object detection
+    - name: gandi
+      description: Domain and DNS management
+    - name: grafana
+      description: Analytics and monitoring dashboards
+    - name: hoarder
+      description: Web archive and bookmark manager
+    - name: homeassistant
+      description: Home automation and IoT platform
+    - name: immich
+      description: Self-hosted photo and video backup
+    - name: irish-schools
+      description: Irish schools information and lookup
+    - name: it-tools
+      description: Collection of IT tools and utilities
+    - name: jackett
+      description: Torrent tracker proxy and API aggregator
+    - name: jellyfin
+      description: Media server and streaming platform
+    - name: jitsi
+      description: Video conferencing and meetings
+    - name: kuma
+      description: Uptime monitoring and status page
+    - name: mailbox
+      description: Email hosting and management
+    - name: miniflux
+      description: Minimalist RSS feed reader
+    - name: nextcloud
+      description: File hosting and collaboration platform
+    - name: nodered
+      description: Flow-based programming for IoT
+    - name: paperless
+      description: Document management system
+    - name: pinchflat
+      description: YouTube subscription manager
+    - name: portainer
+      description: Container management and Docker GUI
+    - name: radarr
+      description: Movie collection manager and downloader
+    - name: rkd-pw
+      description: Password manager
+    - name: termix
+      description: Terminal emulator for web
+    - name: tessie
+      description: Tesla vehicle management
+    - name: trello
+      description: Project management and task boards
+    exclusions:
+      - compote3
+      - rkd-pw
+      - kosmos-backend
+    overrides:
+      - name: kosmos-frontend
+        new_name: kosmos
+      - name: rkd-compose-grafana
+        new_name: grafana
+        url: |
+          https://grafana.k.rkd.pw/d/e0057f60-1041-4bff-9c0b-72b409765227/main?orgId=1&from=now-6h&to=now&timezone=browser&refresh=1m
   ingress:
     enabled: true
     hosts:
