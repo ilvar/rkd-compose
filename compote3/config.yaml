@@ -14,3 +14,17 @@ links:
 github:
   watcher: ilvar  # GitHub username to get watched repositories for
 
+# Exclude apps from the list (case-insensitive)
+exclusions:
+  - compote3
+  - rkd-pw
+  - kosmos-backend
+
+# Override app names and URLs
+overrides:
+  - name: kosmos-frontend
+    new_name: kosmos
+  - name: rkd-compose-grafana
+    new_name: grafana
+    url: https://grafana.k.rkd.pw/d/e0057f60-1041-4bff-9c0b-72b409765227/main?orgId=1&from=now-6h&to=now&timezone=browser&refresh=1m
+

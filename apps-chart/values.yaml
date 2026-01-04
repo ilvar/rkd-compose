@@ -275,7 +275,7 @@ compote3:
   enabled: true
   image:
     repository: ilvar/compote3
-    tag: v0.3.7
+    tag: v0.3.8
   resources:
     limits:
       memory: 100Mi
@@ -657,7 +657,7 @@ reloader:
         memory: 32Mi
         cpu: 50m
 termix:
-  enabled: true
+  enabled: false
   image:
     repository: ghcr.io/lukegus/termix
     tag: latest

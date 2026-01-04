@@ -102,6 +102,23 @@ func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTre
 		}
 	}
 
+	// Build exclusions map (case-insensitive)
+	exclusionsMap := make(map[string]bool)
+	if cfg.Exclusions != nil {
+		for _, excludedName := range cfg.Exclusions {
+			exclusionsMap[strings.ToLower(excludedName)] = true
+		}
+	}
+
+	// Build overrides map (case-insensitive)
+	overridesMap := make(map[string]AppOverride)
+	if cfg.Overrides != nil {
+		for _, override := range cfg.Overrides {
+			key := strings.ToLower(override.Name)
+			overridesMap[key] = override
+		}
+	}
+
 	// Build descriptions map for lookup
 	descriptionsMap := make(map[string]string)
 	if cfg.Descriptions != nil {
@@ -111,14 +128,33 @@ func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTre
 		}
 	}
 
-	// Convert map to slice, add descriptions, and sort
+	// Convert map to slice, apply exclusions, overrides, and add descriptions
 	apps := make([]Application, 0, len(appsMap))
 	for name, app := range appsMap {
+		// Check if app is excluded
+		if exclusionsMap[name] {
+			continue
+		}
+
 		// Create new app with lowercased name
 		newApp := Application{
 			Name: name, // Already lowercased
 			URL:  app.URL,
 		}
+
+		// Apply overrides (case-insensitive match)
+		if override, exists := overridesMap[name]; exists {
+			if override.NewName != "" {
+				newApp.Name = strings.ToLower(override.NewName)
+			}
+			if override.URL != "" {
+				newApp.URL = override.URL
+			}
+		}
+
+		// Replace dashes with spaces in name
+		newApp.Name = strings.ReplaceAll(newApp.Name, "-", " ")
+
 		// Look up description from config (case-insensitive)
 		if desc, exists := descriptionsMap[name]; exists {
 			newApp.Description = desc

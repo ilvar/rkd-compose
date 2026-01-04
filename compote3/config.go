@@ -11,6 +11,14 @@ type Config struct {
 	Descriptions []DescriptionConfig    `yaml:"descriptions"` // List of app name -> description pairs
 	GitHub       GitHubConfig           `yaml:"github"`
 	Links        []LinkConfig           `yaml:"links"`
+	Exclusions   []string               `yaml:"exclusions"`   // List of app names to exclude
+	Overrides    []AppOverride          `yaml:"overrides"`     // List of app name/URL overrides
+}
+
+type AppOverride struct {
+	Name string `yaml:"name"` // Original app name (case-insensitive match)
+	NewName string `yaml:"new_name,omitempty"` // New display name (optional)
+	URL   string `yaml:"url,omitempty"`      // Override URL (optional)
 }
 
 type LinkConfig struct {
