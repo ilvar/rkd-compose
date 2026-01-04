@@ -11,8 +11,9 @@ blocky:
     http: 4000
   resources:
     limits:
-      memory: 216Mi
+      memory: 256Mi
     requests:
+      memory: 128Mi
       cpu: 100m
 portainer:
   enabled: true
@@ -21,9 +22,9 @@ portainer:
     tag: latest
   resources:
     limits:
-      memory: 100Mi
+      memory: 256Mi
     requests:
-      memory: 100Mi
+      memory: 128Mi
       cpu: 100m
   storage:
     data: portainer-data
@@ -298,9 +299,9 @@ paperless:
       tag: latest
     resources:
       limits:
-        memory: 900Mi
+        memory: 1.2Gi
       requests:
-        memory: 900Mi
+        memory: 1Gi
         cpu: 400m
     environment:
       PAPERLESS_OCR_LANGUAGES: eng
@@ -423,9 +424,9 @@ immich:
       tag: release
     resources:
       limits:
-        memory: 918Mi
+        memory: 1024Mi
       requests:
-        memory: 918Mi
+        memory: 512Mi
         cpu: 400m
     environment:
       TZ: Europe/Dublin
@@ -444,9 +445,9 @@ immich:
       tag: release
     resources:
       limits:
-        memory: 277Mi
+        memory: 350Mi
       requests:
-        memory: 277Mi
+        memory: 350Mi
         cpu: 500m
     storage:
       modelCache: immich-model-cache
@@ -775,9 +776,9 @@ jitsi-meet:
     replicaCount: 1
     resources:
       limits:
-        memory: 512Mi
+        memory: 128Mi
       requests:
-        memory: 256Mi
+        memory: 64Mi
         cpu: 250m
   prosody:
     resources:
@@ -873,6 +874,11 @@ kube-prometheus-stack:
                 storage: 10Gi
   kubeStateMetrics:
     enabled: true
+    resources:
+      limits:
+        memory: 64Mi
+      requests:
+        memory: 32Mi
   nodeExporter:
     enabled: true
   kubeEtcd:
