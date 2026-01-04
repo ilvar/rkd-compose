@@ -156,8 +156,21 @@ func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTre
 		newApp.Name = strings.ReplaceAll(newApp.Name, "-", " ")
 
 		// Look up description from config (case-insensitive)
+		// Try original name first, then new name after override (before dash replacement)
 		if desc, exists := descriptionsMap[name]; exists {
 			newApp.Description = desc
+		} else {
+			// If name was changed by override, try looking up by new name
+			// Get the new name before dash replacement for lookup
+			var lookupName string
+			if override, exists := overridesMap[name]; exists && override.NewName != "" {
+				lookupName = strings.ToLower(override.NewName)
+			} else {
+				lookupName = name
+			}
+			if desc, exists := descriptionsMap[lookupName]; exists {
+				newApp.Description = desc
+			}
 		}
 		apps = append(apps, newApp)
 	}
@@ -191,10 +204,16 @@ func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTre
 	// Build links list from config
 	links := []Application{}
 	for _, linkCfg := range cfg.Links {
-		links = append(links, Application{
+		link := Application{
 			Name: linkCfg.Name,
 			URL:  linkCfg.URL,
-		})
+		}
+		// Look up description for link (case-insensitive)
+		linkNameKey := strings.ToLower(linkCfg.Name)
+		if desc, exists := descriptionsMap[linkNameKey]; exists {
+			link.Description = desc
+		}
+		links = append(links, link)
 	}
 
 	// Sort links by name

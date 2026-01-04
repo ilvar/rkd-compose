@@ -275,7 +275,7 @@ compote3:
   enabled: true
   image:
     repository: ilvar/compote3
-    tag: v0.3.9
+    tag: v0.3.10
   resources:
     limits:
       memory: 100Mi
@@ -318,6 +318,8 @@ compote3:
       description: Domain and DNS management
     - name: grafana
       description: Analytics and monitoring dashboards
+    - name: rkd-compose-grafana
+      description: Analytics and monitoring dashboards
     - name: hoarder
       description: Web archive and bookmark manager
     - name: homeassistant
@@ -334,6 +336,10 @@ compote3:
       description: Media server and streaming platform
     - name: jitsi
       description: Video conferencing and meetings
+    - name: jitsi-meet
+      description: Video conferencing and meetings
+    - name: kosmos
+      description: Kosmos CRM qa
     - name: kuma
       description: Uptime monitoring and status page
     - name: mailbox
@@ -352,6 +358,8 @@ compote3:
       description: Container management and Docker GUI
     - name: radarr
       description: Movie collection manager and downloader
+    - name: rancher
+      description: Kubernetes cluster management platform
     - name: rkd-pw
       description: Password manager
     - name: termix
