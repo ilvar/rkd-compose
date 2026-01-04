@@ -814,7 +814,7 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: 1.0.2
+      tag: 1.0.3
     resources:
       limits:
         memory: 162Mi
