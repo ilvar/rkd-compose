@@ -823,6 +823,7 @@ kosmos:
         cpu: 300m
     environment:
       DEBUG: 'False'
+      SENTRY_DSN_TOKEN: "https://f23b0b360c484ad6919cb9a10d51fd71@bugsink.rkd.pw/1"
     secrets:
       jwtSecret:
         name: kosmos-jwt-secret
