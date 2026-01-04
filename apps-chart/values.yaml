@@ -349,9 +349,9 @@ nextcloud:
       tag: latest
     resources:
       limits:
-        memory: 422Mi
+        memory: 1024Mi
       requests:
-        memory: 422Mi
+        memory: 512Mi
         cpu: 300m
     user: 1000:1000
     environment:
@@ -445,9 +445,9 @@ immich:
       tag: release
     resources:
       limits:
-        memory: 350Mi
+        memory: 1024Mi
       requests:
-        memory: 350Mi
+        memory: 512Mi
         cpu: 500m
     storage:
       modelCache: immich-model-cache
