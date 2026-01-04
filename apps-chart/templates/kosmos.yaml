@@ -151,6 +151,13 @@ spec:
               name: {{ .Values.kosmos.backend.secrets.openaiApiKey.name | default "kosmos-openai-secret" | quote }}
               key: {{ .Values.kosmos.backend.secrets.openaiApiKey.key | default "openai-api-key" | quote }}
         {{- end }}
+        {{- if .Values.kosmos.backend.secrets.sentryDsnToken }}
+        - name: SENTRY_DSN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.kosmos.backend.secrets.sentryDsnToken.name | default "kosmos-sentry-secret" | quote }}
+              key: {{ .Values.kosmos.backend.secrets.sentryDsnToken.key | default "sentry-dsn-token" | quote }}
+        {{- end }}
         resources:
           {{- if .Values.kosmos.backend.resources }}
           {{- toYaml .Values.kosmos.backend.resources | nindent 10 }}
