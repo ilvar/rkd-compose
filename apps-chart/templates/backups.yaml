@@ -116,8 +116,22 @@ spec:
               set -e
               echo "Installing rclone if needed..."
               if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip
-                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+                apk add --no-cache curl unzip || true
+                # Download and install rclone manually (works with sh, no bash needed)
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                # Cleanup
+                rm -rf /tmp/rclone* 2>/dev/null || true
               fi
               
               echo "Starting etcd backup..."
@@ -230,8 +244,22 @@ spec:
               set -e
               echo "Installing rclone if needed..."
               if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip
-                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+                apk add --no-cache curl unzip || true
+                # Download and install rclone manually (works with sh, no bash needed)
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                # Cleanup
+                rm -rf /tmp/rclone* 2>/dev/null || true
               fi
               
               echo "Starting PostgreSQL backup for {{ .name }}..."
@@ -435,18 +463,38 @@ spec:
             instance: {{ .name }}
         spec:
           restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
           containers:
           - name: meilisearch-backup
             image: "{{ $.Values.backups.meilisearch.image.repository }}:{{ $.Values.backups.meilisearch.image.tag }}"
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
             command:
             - /bin/sh
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
+              echo "Installing rclone and curl if needed..."
               if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip
-                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+                apk add --no-cache curl unzip || true
+                # Download and install rclone manually (works with sh, no bash needed)
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                # Cleanup
+                rm -rf /tmp/rclone* 2>/dev/null || true
               fi
               
               echo "Starting Meilisearch backup for {{ .name }}..."
@@ -456,7 +504,7 @@ spec:
               
               # Trigger Meilisearch dump
               MEILI_URL="http://{{ .host }}:{{ .port | default "7700" }}"
-              MEILI_KEY="{{ .masterKey }}"
+              MEILI_KEY="$MEILI_MASTER_KEY"
               
               # Create a snapshot/dump using Meilisearch API
               curl -X POST "$MEILI_URL/snapshots" \
@@ -550,9 +598,15 @@ spec:
             instance: {{ .name }}
         spec:
           restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
           containers:
           - name: redis-backup
             image: "{{ $.Values.backups.redis.image.repository }}:{{ $.Values.backups.redis.image.tag }}"
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
             command:
             - /bin/sh
             - -c
@@ -560,8 +614,16 @@ spec:
               set -e
               echo "Installing rclone if needed..."
               if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip
-                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+                apk add --no-cache curl unzip || true
+                # Download and install rclone manually (works with sh, no bash needed)
+                curl -O https://downloads.rclone.org/rclone-current-linux-amd64.zip 2>/dev/null || \
+                curl -O https://downloads.rclone.org/rclone-current-linux-arm64.zip 2>/dev/null || \
+                echo "Failed to download rclone"
+                unzip -q rclone-*-linux-*.zip 2>/dev/null || echo "Failed to unzip rclone"
+                cp rclone-*-linux-*/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                # Cleanup
+                rm -rf rclone-* 2>/dev/null || true
               fi
               
               echo "Starting Redis backup for {{ .name }}..."
@@ -667,8 +729,22 @@ spec:
               set -e
               echo "Installing rclone if needed..."
               if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip
-                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+                apk add --no-cache curl unzip || true
+                # Download and install rclone manually (works with sh, no bash needed)
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                # Cleanup
+                rm -rf /tmp/rclone* 2>/dev/null || true
               fi
               
               echo "Starting Immich data directory backup..."
@@ -728,6 +804,112 @@ spec:
               type: Directory
 {{- end }}
 
+{{- if .Values.backups.nextcloudData.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-nextcloud-data
+  labels:
+    app: backup-nextcloud-data
+spec:
+  schedule: {{ .Values.backups.nextcloudData.schedule | default "0 10 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-nextcloud-data
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: nextcloud-data-backup
+            image: "{{ .Values.backups.nextcloudData.image.repository }}:{{ .Values.backups.nextcloudData.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip || true
+                # Download and install rclone manually (works with sh, no bash needed)
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                # Cleanup
+                rm -rf /tmp/rclone* 2>/dev/null || true
+              fi
+              
+              echo "Starting Nextcloud data directory backup..."
+              
+              # Setup rclone config
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              
+              # Sync Nextcloud data directory to Backblaze (incremental)
+              # Using sync instead of copy to only transfer new/changed files
+              echo "Syncing Nextcloud data directory to Backblaze..."
+              rclone sync /nextcloud-data b2:{{ .Values.backups.backblaze.bucket }}/nextcloud-data/ \
+                --transfers={{ .Values.backups.nextcloudData.transfers | default "4" }} \
+                --checkers={{ .Values.backups.nextcloudData.checkers | default "8" }} \
+                --log-level=INFO \
+                --stats=1m \
+                --stats-log-level=INFO
+              
+              echo "Nextcloud data backup completed"
+            env:
+            {{- if .Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
+            resources:
+              {{- if .Values.backups.nextcloudData.resources }}
+              {{- toYaml .Values.backups.nextcloudData.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 2Gi
+                cpu: 1000m
+              requests:
+                memory: 512Mi
+                cpu: 500m
+              {{- end }}
+            volumeMounts:
+            - name: nextcloud-data
+              mountPath: /nextcloud-data
+              readOnly: true
+          volumes:
+          - name: nextcloud-data
+            hostPath:
+              path: {{ .Values.backups.nextcloudData.sourcePath }}
+              type: Directory
+{{- end }}
+
 {{- if .Values.backups.cleanup.enabled }}
 ---
 apiVersion: batch/v1
@@ -759,8 +941,22 @@ spec:
               set -e
               echo "Installing rclone if needed..."
               if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip
-                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+                apk add --no-cache curl unzip || true
+                # Download and install rclone manually (works with sh, no bash needed)
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                # Cleanup
+                rm -rf /tmp/rclone* 2>/dev/null || true
               fi
               
               echo "Installing Python if needed..."

@@ -1094,7 +1094,7 @@ backups:
   meilisearch:
     enabled: true
     image:
-      repository: curlimages/curl
+      repository: alpine
       tag: latest
     instances:
       - name: hoarder
@@ -1138,6 +1138,22 @@ backups:
     enabled: true
     schedule: "0 9 * * *"
     sourcePath: /home/rkd/.docker/immich/upload
+    image:
+      repository: alpine
+      tag: latest
+    transfers: 4
+    checkers: 8
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+      requests:
+        memory: 512Mi
+        cpu: 500m
+  nextcloudData:
+    enabled: true
+    schedule: "0 10 * * *"
+    sourcePath: /home/rkd/.docker/nextcloud/data
     image:
       repository: alpine
       tag: latest
