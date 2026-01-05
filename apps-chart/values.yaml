@@ -994,3 +994,144 @@ videosCleanupReport:
       memory: 256Mi
     requests:
       memory: 128Mi
+
+backups:
+  enabled: true
+  serviceAccountName: backup
+  backblaze:
+    enabled: true
+    bucket: rkd-backups
+    secretName: backblaze-credentials
+    accountIdKey: account-id
+    applicationKeyKey: application-key
+  velero:
+    enabled: false
+    schedule: "0 2 * * *"
+    image:
+      repository: velero/velero
+      tag: v1.13.0
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 200m
+  etcd:
+    enabled: true
+    schedule: "0 3 * * *"
+    image:
+      repository: bitnami/etcd
+      tag: 3.5.9
+    endpoints: "https://127.0.0.1:2379"
+    ca: "/var/lib/rancher/k3s/server/tls/etcd/server-ca.crt"
+    cert: "/var/lib/rancher/k3s/server/tls/etcd/server-client.crt"
+    key: "/var/lib/rancher/k3s/server/tls/etcd/server-client.key"
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 200m
+  postgres:
+    enabled: true
+    image:
+      repository: postgres
+      tag: 14-alpine
+    databases:
+      - name: immich
+        host: immich-database
+        port: 5432
+        user: postgres
+        database: immich
+        secretName: immich-secrets
+        passwordKey: postgres-password
+        schedule: "0 4 * * *"
+      - name: miniflux
+        host: miniflux-db
+        port: 5432
+        user: miniflux
+        database: miniflux
+        secretName: miniflux-db-secrets
+        passwordKey: postgres-password
+        schedule: "0 4 * * *"
+      - name: kosmos
+        host: kosmos-db
+        port: 5432
+        user: postgres
+        database: crm
+        secretName: kosmos-secrets
+        passwordKey: postgres-password
+        schedule: "0 4 * * *"
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 200m
+  mysql:
+    enabled: true
+    image:
+      repository: mariadb
+      tag: 12.1
+    databases:
+      - name: nextcloud
+        host: nextcloud-db
+        port: 3306
+        user: root
+        database: nextcloud
+        secretName: nextcloud-secrets
+        passwordKey: mysql-root-password
+        schedule: "0 5 * * *"
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 200m
+  meilisearch:
+    enabled: true
+    image:
+      repository: curlimages/curl
+      tag: latest
+    instances:
+      - name: hoarder
+        host: hoarder-meilisearch
+        port: 7700
+        masterKeySecret:
+          name: hoarder-secrets
+          key: meili-master-key
+        schedule: "0 6 * * *"
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 200m
+  redis:
+    enabled: true
+    image:
+      repository: redis
+      tag: 6.2-alpine
+    instances:
+      - name: paperless
+        host: paperless-redis
+        port: 6379
+        password: false
+        schedule: "0 7 * * *"
+      - name: immich
+        host: immich-redis
+        port: 6379
+        password: false
+        schedule: "0 7 * * *"
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 200m

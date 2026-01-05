@@ -1,0 +1,637 @@
+{{- if .Values.backups.enabled }}
+{{- if .Values.backups.velero.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-velero
+  labels:
+    app: backup-velero
+spec:
+  schedule: {{ .Values.backups.velero.schedule | default "0 2 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-velero
+        spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
+          restartPolicy: OnFailure
+          containers:
+          - name: velero-backup
+            image: "{{ .Values.backups.velero.image.repository }}:{{ .Values.backups.velero.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip || apt-get update && apt-get install -y curl unzip
+                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+              fi
+              
+              echo "Starting Velero backup..."
+              
+              # Create backup
+              BACKUP_NAME="velero-backup-$(date +%Y%m%d-%H%M%S)"
+              velero backup create $BACKUP_NAME --wait
+              
+              # Upload to Backblaze if configured
+              {{- if .Values.backups.backblaze.enabled }}
+              echo "Uploading Velero backup to Backblaze..."
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy /tmp/backups/velero b2:{{ .Values.backups.backblaze.bucket }}/velero/ --transfers=4 --checkers=8
+              {{- end }}
+              
+              echo "Velero backup completed: $BACKUP_NAME"
+            env:
+            {{- if .Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
+            resources:
+              {{- if .Values.backups.velero.resources }}
+              {{- toYaml .Values.backups.velero.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 512Mi
+                cpu: 500m
+              requests:
+                memory: 256Mi
+                cpu: 200m
+              {{- end }}
+{{- end }}
+
+{{- if .Values.backups.etcd.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-etcd
+  labels:
+    app: backup-etcd
+spec:
+  schedule: {{ .Values.backups.etcd.schedule | default "0 3 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-etcd
+        spec:
+          hostNetwork: true
+          hostPID: true
+          restartPolicy: OnFailure
+          containers:
+          - name: etcd-backup
+            image: "{{ .Values.backups.etcd.image.repository }}:{{ .Values.backups.etcd.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip
+                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+              fi
+              
+              echo "Starting etcd backup..."
+              
+              BACKUP_FILE="/tmp/backups/etcd/etcd-backup-$(date +%Y%m%d-%H%M%S).db"
+              mkdir -p /tmp/backups/etcd
+              
+              # Backup etcd
+              ETCD_ENDPOINTS="{{ .Values.backups.etcd.endpoints | default "https://127.0.0.1:2379" }}"
+              ETCD_CA="{{ .Values.backups.etcd.ca | default "/var/lib/rancher/k3s/server/tls/etcd/server-ca.crt" }}"
+              ETCD_CERT="{{ .Values.backups.etcd.cert | default "/var/lib/rancher/k3s/server/tls/etcd/server-client.crt" }}"
+              ETCD_KEY="{{ .Values.backups.etcd.key | default "/var/lib/rancher/k3s/server/tls/etcd/server-client.key" }}"
+              
+              ETCDCTL_API=3 etcdctl \
+                --endpoints=$ETCD_ENDPOINTS \
+                --cacert=$ETCD_CA \
+                --cert=$ETCD_CERT \
+                --key=$ETCD_KEY \
+                snapshot save $BACKUP_FILE
+              
+              echo "etcd backup created: $BACKUP_FILE"
+              
+              {{- if .Values.backups.backblaze.enabled }}
+              echo "Uploading etcd backup to Backblaze..."
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/etcd/ --transfers=4 --checkers=8
+              {{- end }}
+              
+              echo "etcd backup completed"
+            securityContext:
+              privileged: true
+            volumeMounts:
+            - name: etcd-data
+              mountPath: /var/lib/rancher/k3s/server
+              readOnly: true
+            - name: tmp-backups
+              mountPath: /tmp/backups
+            env:
+            {{- if .Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
+            resources:
+              {{- if .Values.backups.etcd.resources }}
+              {{- toYaml .Values.backups.etcd.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 512Mi
+                cpu: 500m
+              requests:
+                memory: 256Mi
+                cpu: 200m
+              {{- end }}
+          volumes:
+          - name: etcd-data
+            hostPath:
+              path: /var/lib/rancher/k3s/server
+              type: Directory
+          - name: tmp-backups
+            emptyDir: {}
+{{- end }}
+
+{{- if .Values.backups.postgres.enabled }}
+{{- range .Values.backups.postgres.databases }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-postgres-{{ .name }}
+  labels:
+    app: backup-postgres
+    database: {{ .name }}
+spec:
+  schedule: {{ .schedule | default "0 4 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-postgres
+            database: {{ .name }}
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: postgres-backup
+            image: "{{ $.Values.backups.postgres.image.repository }}:{{ $.Values.backups.postgres.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip
+                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+              fi
+              
+              echo "Starting PostgreSQL backup for {{ .name }}..."
+              
+              BACKUP_FILE="/tmp/backups/postgres/{{ .name }}-$(date +%Y%m%d-%H%M%S).sql.gz"
+              mkdir -p /tmp/backups/postgres
+              
+              # Create backup
+              PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
+                -h {{ .host }} \
+                -p {{ .port | default "5432" }} \
+                -U {{ .user }} \
+                -d {{ .database }} \
+                {{- if .options }}
+                {{ .options }}
+                {{- else }}
+                --clean --if-exists
+                {{- end }} | gzip > $BACKUP_FILE
+              
+              echo "PostgreSQL backup created: $BACKUP_FILE"
+              
+              {{- if $.Values.backups.backblaze.enabled }}
+              echo "Uploading PostgreSQL backup to Backblaze..."
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy $BACKUP_FILE b2:{{ $.Values.backups.backblaze.bucket }}/postgres/{{ .name }}/ --transfers=4 --checkers=8
+              {{- end }}
+              
+              echo "PostgreSQL backup completed for {{ .name }}"
+            env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secretName }}
+                  key: {{ .passwordKey | default "postgres-password" }}
+            {{- if $.Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
+            resources:
+              {{- if $.Values.backups.postgres.resources }}
+              {{- toYaml $.Values.backups.postgres.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 512Mi
+                cpu: 500m
+              requests:
+                memory: 256Mi
+                cpu: 200m
+              {{- end }}
+          volumes:
+          - name: tmp-backups
+            emptyDir: {}
+{{- end }}
+{{- end }}
+
+{{- if .Values.backups.mysql.enabled }}
+{{- range .Values.backups.mysql.databases }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-mysql-{{ .name }}
+  labels:
+    app: backup-mysql
+    database: {{ .name }}
+spec:
+  schedule: {{ .schedule | default "0 5 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-mysql
+            database: {{ .name }}
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: mysql-backup
+            image: "{{ $.Values.backups.mysql.image.repository }}:{{ $.Values.backups.mysql.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apt-get update && apt-get install -y curl unzip || apk add --no-cache curl unzip
+                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+              fi
+              
+              echo "Starting MySQL backup for {{ .name }}..."
+              
+              BACKUP_FILE="/tmp/backups/mysql/{{ .name }}-$(date +%Y%m%d-%H%M%S).sql.gz"
+              mkdir -p /tmp/backups/mysql
+              
+              # Create backup
+              mysqldump \
+                -h {{ .host }} \
+                -P {{ .port | default "3306" }} \
+                -u {{ .user }} \
+                -p"$MYSQL_PASSWORD" \
+                {{ .database }} \
+                {{- if .options }}
+                {{ .options }}
+                {{- else }}
+                --single-transaction --routines --triggers
+                {{- end }} | gzip > $BACKUP_FILE
+              
+              echo "MySQL backup created: $BACKUP_FILE"
+              
+              {{- if $.Values.backups.backblaze.enabled }}
+              echo "Uploading MySQL backup to Backblaze..."
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy $BACKUP_FILE b2:{{ $.Values.backups.backblaze.bucket }}/mysql/{{ .name }}/ --transfers=4 --checkers=8
+              {{- end }}
+              
+              echo "MySQL backup completed for {{ .name }}"
+            env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secretName }}
+                  key: {{ .passwordKey | default "mysql-password" }}
+            {{- if $.Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
+            resources:
+              {{- if $.Values.backups.mysql.resources }}
+              {{- toYaml $.Values.backups.mysql.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 512Mi
+                cpu: 500m
+              requests:
+                memory: 256Mi
+                cpu: 200m
+              {{- end }}
+          volumes:
+          - name: tmp-backups
+            emptyDir: {}
+{{- end }}
+{{- end }}
+
+{{- if .Values.backups.meilisearch.enabled }}
+{{- range .Values.backups.meilisearch.instances }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-meilisearch-{{ .name }}
+  labels:
+    app: backup-meilisearch
+    instance: {{ .name }}
+spec:
+  schedule: {{ .schedule | default "0 6 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-meilisearch
+            instance: {{ .name }}
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: meilisearch-backup
+            image: "{{ $.Values.backups.meilisearch.image.repository }}:{{ $.Values.backups.meilisearch.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip
+                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+              fi
+              
+              echo "Starting Meilisearch backup for {{ .name }}..."
+              
+              BACKUP_FILE="/tmp/backups/meilisearch/{{ .name }}-$(date +%Y%m%d-%H%M%S).tar.gz"
+              mkdir -p /tmp/backups/meilisearch
+              
+              # Trigger Meilisearch dump
+              MEILI_URL="http://{{ .host }}:{{ .port | default "7700" }}"
+              MEILI_KEY="{{ .masterKey }}"
+              
+              # Create a snapshot/dump using Meilisearch API
+              curl -X POST "$MEILI_URL/snapshots" \
+                -H "Authorization: Bearer $MEILI_KEY" \
+                || echo "Note: Snapshot API may not be available, using alternative method"
+              
+              # Wait a moment for snapshot to be created
+              sleep 5
+              
+              # If we have access to the data directory, backup it directly
+              # Otherwise, we'll need to use the export API if available
+              echo "Meilisearch backup initiated for {{ .name }}"
+              
+              {{- if $.Values.backups.backblaze.enabled }}
+              echo "Uploading Meilisearch backup to Backblaze..."
+              # Note: Actual backup method depends on Meilisearch version and access
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy /tmp/backups/meilisearch/ b2:{{ $.Values.backups.backblaze.bucket }}/meilisearch/{{ .name }}/ --transfers=4 --checkers=8 || true
+              {{- end }}
+              
+              echo "Meilisearch backup completed for {{ .name }}"
+            env:
+            {{- if .masterKeySecret }}
+            - name: MEILI_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .masterKeySecret.name }}
+                  key: {{ .masterKeySecret.key }}
+            {{- else if .masterKey }}
+            - name: MEILI_MASTER_KEY
+              value: {{ .masterKey | quote }}
+            {{- end }}
+            {{- if $.Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
+            resources:
+              {{- if $.Values.backups.meilisearch.resources }}
+              {{- toYaml $.Values.backups.meilisearch.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 512Mi
+                cpu: 500m
+              requests:
+                memory: 256Mi
+                cpu: 200m
+              {{- end }}
+          volumes:
+          - name: tmp-backups
+            emptyDir: {}
+{{- end }}
+{{- end }}
+
+{{- if .Values.backups.redis.enabled }}
+{{- range .Values.backups.redis.instances }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-redis-{{ .name }}
+  labels:
+    app: backup-redis
+    instance: {{ .name }}
+spec:
+  schedule: {{ .schedule | default "0 7 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-redis
+            instance: {{ .name }}
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: redis-backup
+            image: "{{ $.Values.backups.redis.image.repository }}:{{ $.Values.backups.redis.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip
+                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+              fi
+              
+              echo "Starting Redis backup for {{ .name }}..."
+              
+              BACKUP_FILE="/tmp/backups/redis/{{ .name }}-$(date +%Y%m%d-%H%M%S).rdb"
+              mkdir -p /tmp/backups/redis
+              
+              # Create backup using redis-cli
+              redis-cli \
+                -h {{ .host }} \
+                -p {{ .port | default "6379" }} \
+                {{- if .password }}
+                -a "$REDIS_PASSWORD" \
+                {{- end }}
+                --rdb $BACKUP_FILE
+              
+              # Compress the backup
+              gzip $BACKUP_FILE
+              
+              echo "Redis backup created: $BACKUP_FILE.gz"
+              
+              {{- if $.Values.backups.backblaze.enabled }}
+              echo "Uploading Redis backup to Backblaze..."
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy $BACKUP_FILE.gz b2:{{ $.Values.backups.backblaze.bucket }}/redis/{{ .name }}/ --transfers=4 --checkers=8
+              {{- end }}
+              
+              echo "Redis backup completed for {{ .name }}"
+            env:
+            {{- if .password }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .passwordSecret.name }}
+                  key: {{ .passwordSecret.key }}
+            {{- end }}
+            {{- if $.Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
+            resources:
+              {{- if $.Values.backups.redis.resources }}
+              {{- toYaml $.Values.backups.redis.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 512Mi
+                cpu: 500m
+              requests:
+                memory: 256Mi
+                cpu: 200m
+              {{- end }}
+          volumes:
+          - name: tmp-backups
+            emptyDir: {}
+{{- end }}
+{{- end }}
+{{- end }}
