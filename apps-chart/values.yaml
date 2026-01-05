@@ -1021,7 +1021,7 @@ backups:
     schedule: "0 3 * * *"
     image:
       repository: quay.io/coreos/etcd
-      tag: v3.5.9
+      tag: v3.6.7
     endpoints: "https://127.0.0.1:2379"
     ca: "/var/lib/rancher/k3s/server/tls/etcd/server-ca.crt"
     cert: "/var/lib/rancher/k3s/server/tls/etcd/server-client.crt"
