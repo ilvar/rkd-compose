@@ -847,7 +847,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 1.1.6
+      tag: 1.1.7
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
@@ -994,7 +994,6 @@ videosCleanupReport:
       memory: 256Mi
     requests:
       memory: 128Mi
-
 backups:
   enabled: true
   serviceAccountName: backup
@@ -1021,8 +1020,8 @@ backups:
     enabled: true
     schedule: "0 3 * * *"
     image:
-      repository: bitnami/etcd
-      tag: 3.5.9
+      repository: quay.io/coreos/etcd
+      tag: v3.5.9
     endpoints: "https://127.0.0.1:2379"
     ca: "/var/lib/rancher/k3s/server/tls/etcd/server-ca.crt"
     cert: "/var/lib/rancher/k3s/server/tls/etcd/server-client.crt"
@@ -1061,7 +1060,7 @@ backups:
         port: 5432
         user: postgres
         database: crm
-        secretName: kosmos-secrets
+        secretName: kosmos-db-secrets
         passwordKey: postgres-password
         schedule: "0 4 * * *"
     resources:
@@ -1128,6 +1127,35 @@ backups:
         port: 6379
         password: false
         schedule: "0 7 * * *"
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 200m
+  immichData:
+    enabled: true
+    schedule: "0 9 * * *"
+    sourcePath: /home/rkd/.docker/immich/upload
+    image:
+      repository: alpine
+      tag: latest
+    transfers: 4
+    checkers: 8
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+      requests:
+        memory: 512Mi
+        cpu: 500m
+  cleanup:
+    enabled: true
+    schedule: "0 8 * * *"
+    image:
+      repository: alpine
+      tag: latest
     resources:
       limits:
         memory: 512Mi

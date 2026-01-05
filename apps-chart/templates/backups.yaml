@@ -635,3 +635,380 @@ spec:
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{- if .Values.backups.immichData.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-immich-data
+  labels:
+    app: backup-immich-data
+spec:
+  schedule: {{ .Values.backups.immichData.schedule | default "0 */6 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-immich-data
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: immich-data-backup
+            image: "{{ .Values.backups.immichData.image.repository }}:{{ .Values.backups.immichData.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip
+                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+              fi
+              
+              echo "Starting Immich data directory backup..."
+              
+              # Setup rclone config
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              
+              # Sync Immich upload directory to Backblaze (incremental)
+              # Using sync instead of copy to only transfer new/changed files
+              echo "Syncing Immich data directory to Backblaze..."
+              rclone sync /immich-data b2:{{ .Values.backups.backblaze.bucket }}/immich-data/ \
+                --transfers={{ .Values.backups.immichData.transfers | default "4" }} \
+                --checkers={{ .Values.backups.immichData.checkers | default "8" }} \
+                --log-level=INFO \
+                --stats=1m \
+                --stats-log-level=INFO
+              
+              echo "Immich data backup completed"
+            env:
+            {{- if .Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
+            resources:
+              {{- if .Values.backups.immichData.resources }}
+              {{- toYaml .Values.backups.immichData.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 2Gi
+                cpu: 1000m
+              requests:
+                memory: 512Mi
+                cpu: 500m
+              {{- end }}
+            volumeMounts:
+            - name: immich-data
+              mountPath: /immich-data
+              readOnly: true
+          volumes:
+          - name: immich-data
+            hostPath:
+              path: {{ .Values.backups.immichData.sourcePath }}
+              type: Directory
+{{- end }}
+
+{{- if .Values.backups.cleanup.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-cleanup
+  labels:
+    app: backup-cleanup
+spec:
+  schedule: {{ .Values.backups.cleanup.schedule | default "0 8 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-cleanup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: cleanup
+            image: "{{ .Values.backups.cleanup.image.repository }}:{{ .Values.backups.cleanup.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip
+                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+              fi
+              
+              echo "Installing Python if needed..."
+              if ! command -v python3 &> /dev/null; then
+                apk add --no-cache python3 py3-pip
+              fi
+              
+              python3 << 'PYEOF'
+              import os
+              import re
+              import subprocess
+              from datetime import datetime, timedelta
+              from collections import defaultdict
+              
+              # Configuration
+              B2_BUCKET = "{{ .Values.backups.backblaze.bucket }}"
+              KEEP_DAILY_DAYS = 7
+              KEEP_MONTHLY_MONTHS = 12
+              
+              # Setup rclone config
+              os.makedirs("/root/.config/rclone", exist_ok=True)
+              with open("/root/.config/rclone/rclone.conf", "w") as f:
+                  f.write("[b2]\n")
+                  f.write("type = b2\n")
+                  f.write("account = " + os.environ.get("RCLONE_CONFIG_B2_ACCOUNT", "") + "\n")
+                  f.write("key = " + os.environ.get("RCLONE_CONFIG_B2_KEY", "") + "\n")
+              
+              def parse_date_from_filename(filename):
+                  """Extract date from filename. Supports formats like:
+                  - YYYYMMDD-HHMMSS (e.g., 20240103-023042)
+                  - YYYYMMDD (e.g., 20240103)
+                  """
+                  # Try YYYYMMDD-HHMMSS format
+                  match = re.search(r'(\d{8})-(\d{6})', filename)
+                  if match:
+                      date_str = match.group(1)
+                      try:
+                          return datetime.strptime(date_str, "%Y%m%d")
+                      except ValueError:
+                          pass
+                  
+                  # Try YYYYMMDD format
+                  match = re.search(r'(\d{8})', filename)
+                  if match:
+                      date_str = match.group(1)
+                      try:
+                          return datetime.strptime(date_str, "%Y%m%d")
+                      except ValueError:
+                          pass
+                  
+                  return None
+              
+              def list_files_in_folder(folder_path):
+                  """List all files in a B2 folder using rclone."""
+                  try:
+                      result = subprocess.run(
+                          ["rclone", "ls", f"b2:{B2_BUCKET}/{folder_path}/"],
+                          capture_output=True,
+                          text=True,
+                          check=True
+                      )
+                      files = []
+                      for line in result.stdout.strip().split("\n"):
+                          if line:
+                              parts = line.split(None, 1)
+                              if len(parts) == 2:
+                                  size, filename = parts
+                                  files.append(filename)
+                      return files
+                  except subprocess.CalledProcessError as e:
+                      print(f"Error listing files in {folder_path}: {e.stderr}")
+                      return []
+              
+              def delete_file(folder_path, filename):
+                  """Delete a file from B2 using rclone."""
+                  try:
+                      subprocess.run(
+                          ["rclone", "delete", f"b2:{B2_BUCKET}/{folder_path}/{filename}"],
+                          check=True,
+                          capture_output=True
+                      )
+                      return True
+                  except subprocess.CalledProcessError as e:
+                      print(f"Error deleting {folder_path}/{filename}: {e.stderr}")
+                      return False
+              
+              def cleanup_folder(folder_path):
+                  """Clean up backups in a folder according to retention policy."""
+                  print(f"\n{'='*80}")
+                  print(f"Cleaning up folder: {folder_path}")
+                  print(f"{'='*80}")
+                  
+                  files = list_files_in_folder(folder_path)
+                  if not files:
+                      print(f"No files found in {folder_path}")
+                      return
+                  
+                  print(f"Found {len(files)} files")
+                  
+                  # Parse dates and group files
+                  files_with_dates = []
+                  for filename in files:
+                      date = parse_date_from_filename(filename)
+                      if date:
+                          files_with_dates.append((filename, date))
+                      else:
+                          print(f"Warning: Could not parse date from {filename}, skipping")
+                  
+                  if not files_with_dates:
+                      print("No files with parseable dates found")
+                      return
+                  
+                  # Sort by date (newest first)
+                  files_with_dates.sort(key=lambda x: x[1], reverse=True)
+                  
+                  now = datetime.now()
+                  cutoff_daily = now - timedelta(days=KEEP_DAILY_DAYS)
+                  cutoff_monthly = now - timedelta(days=KEEP_DAILY_DAYS + (KEEP_MONTHLY_MONTHS * 30))
+                  
+                  # Group by day for daily retention
+                  daily_groups = defaultdict(list)
+                  monthly_groups = defaultdict(list)
+                  to_delete = []
+                  
+                  for filename, date in files_with_dates:
+                      if date >= cutoff_daily:
+                          # Keep daily backups
+                          day_key = date.strftime("%Y-%m-%d")
+                          daily_groups[day_key].append((filename, date))
+                      elif date >= cutoff_monthly:
+                          # Keep monthly backups
+                          month_key = date.strftime("%Y-%m")
+                          monthly_groups[month_key].append((filename, date))
+                      else:
+                          # Too old, mark for deletion
+                          to_delete.append((filename, date))
+                  
+                  # Keep only the newest file per day for daily backups
+                  to_keep = set()
+                  for day, files in daily_groups.items():
+                      if files:
+                          # Keep the newest file for this day
+                          newest = max(files, key=lambda x: x[1])
+                          to_keep.add(newest[0])
+                          # Mark others for deletion
+                          for filename, date in files:
+                              if filename != newest[0]:
+                                  to_delete.append((filename, date))
+                  
+                  # Keep only the newest file per month for monthly backups
+                  for month, files in monthly_groups.items():
+                      if files:
+                          # Keep the newest file for this month
+                          newest = max(files, key=lambda x: x[1])
+                          to_keep.add(newest[0])
+                          # Mark others for deletion
+                          for filename, date in files:
+                              if filename != newest[0]:
+                                  to_delete.append((filename, date))
+                  
+                  # Delete files
+                  deleted_count = 0
+                  kept_count = len(to_keep)
+                  
+                  for filename, date in to_delete:
+                      if delete_file(folder_path, filename):
+                          deleted_count += 1
+                          print(f"Deleted: {filename} (date: {date.strftime('%Y-%m-%d')})")
+                  
+                  print(f"\nSummary for {folder_path}:")
+                  print(f"  Kept: {kept_count} files")
+                  print(f"  Deleted: {deleted_count} files")
+              
+              # Cleanup all backup folders
+              folders_to_clean = []
+              
+              {{- if .Values.backups.velero.enabled }}
+              folders_to_clean.append("velero")
+              {{- end }}
+              
+              {{- if .Values.backups.etcd.enabled }}
+              folders_to_clean.append("etcd")
+              {{- end }}
+              
+              # Add postgres databases
+              {{- if .Values.backups.postgres.enabled }}
+              {{- range .Values.backups.postgres.databases }}
+              folders_to_clean.append("postgres/{{ .name }}")
+              {{- end }}
+              {{- end }}
+              
+              # Add mysql databases
+              {{- if .Values.backups.mysql.enabled }}
+              {{- range .Values.backups.mysql.databases }}
+              folders_to_clean.append("mysql/{{ .name }}")
+              {{- end }}
+              {{- end }}
+              
+              # Add meilisearch instances
+              {{- if .Values.backups.meilisearch.enabled }}
+              {{- range .Values.backups.meilisearch.instances }}
+              folders_to_clean.append("meilisearch/{{ .name }}")
+              {{- end }}
+              {{- end }}
+              
+              # Add redis instances
+              {{- if .Values.backups.redis.enabled }}
+              {{- range .Values.backups.redis.instances }}
+              folders_to_clean.append("redis/{{ .name }}")
+              {{- end }}
+              {{- end }}
+              
+              print("Starting backup cleanup...")
+              print(f"Retention policy: {KEEP_DAILY_DAYS} days daily, {KEEP_MONTHLY_MONTHS} months monthly")
+              
+              for folder in folders_to_clean:
+                  try:
+                      cleanup_folder(folder)
+                  except Exception as e:
+                      print(f"Error cleaning up {folder}: {e}")
+                      continue
+              
+              print("\n" + "="*80)
+              print("Backup cleanup completed")
+              print("="*80)
+              PYEOF
+            env:
+            {{- if .Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
+            resources:
+              {{- if .Values.backups.cleanup.resources }}
+              {{- toYaml .Values.backups.cleanup.resources | nindent 14 }}
+              {{- else }}
+              limits:
+                memory: 512Mi
+                cpu: 500m
+              requests:
+                memory: 256Mi
+                cpu: 200m
+              {{- end }}
+{{- end }}
