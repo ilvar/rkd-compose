@@ -10,6 +10,25 @@ stringData:
   db-password: {{ .Values.immich.secrets.dbPassword | default "postgres" | quote }}
   postgres-password: {{ .Values.immich.secrets.postgresPassword | default "postgres" | quote }}
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.immich.server.storage.upload }}
+  labels:
+    app: immich
+    storage-type: longhorn
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.longhornMigration.storageClass | default "longhorn" }}
+  resources:
+    requests:
+      storage: {{ .Values.longhornMigration.immich.size | default "50Gi" }}
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
