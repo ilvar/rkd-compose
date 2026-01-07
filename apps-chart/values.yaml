@@ -260,7 +260,7 @@ hoarder:
   meilisearch:
     image:
       repository: getmeili/meilisearch
-      tag: v1.11.1
+      tag: v1.31.0
     resources:
       limits:
         memory: 100Mi
