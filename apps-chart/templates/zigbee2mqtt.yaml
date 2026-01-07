@@ -75,6 +75,8 @@ spec:
         - name: localtime
           mountPath: /etc/localtime
           readOnly: true
+        securityContext:
+          privileged: {{ .Values.zigbee2mqtt.privileged | default true }}
         resources:
           limits:
             memory: {{ .Values.zigbee2mqtt.resources.limits.memory }}

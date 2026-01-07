@@ -1012,6 +1012,7 @@ zigbee2mqtt:
   timezone: Europe/Dublin
   nodeName: rockpro64
   device: /dev/ttyACM0
+  privileged: true
   ports:
     http: 8080
   resources:
