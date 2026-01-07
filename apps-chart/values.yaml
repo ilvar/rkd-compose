@@ -1160,7 +1160,7 @@ backups:
         port: 5432
         user: postgres
         database: crm
-        secretName: kosmos-db-secrets
+        secretName: kosmos-secrets
         passwordKey: postgres-password
         schedule: "0 4 * * *"
     resources:
