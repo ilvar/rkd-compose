@@ -801,7 +801,7 @@ kosmos:
   db:
     image:
       repository: postgres
-      tag: '14'
+      tag: '18'
     resources:
       limits:
         memory: 100Mi
@@ -1148,7 +1148,7 @@ backups:
     enabled: true
     image:
       repository: postgres
-      tag: 14-alpine
+      tag: 18-alpine
     databases:
       - name: immich
         host: immich-database
