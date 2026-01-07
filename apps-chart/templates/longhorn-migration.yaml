@@ -40,17 +40,23 @@ spec:
     requests:
       storage: {{ .Values.longhornMigration.nextcloud.size | default "500Gi" }}
 ---
-# Job to migrate Immich data from hostPath to Longhorn
+# CronJob to migrate Immich data from hostPath to Longhorn
 apiVersion: batch/v1
-kind: Job
+kind: CronJob
 metadata:
   name: migrate-immich-data-to-longhorn
   labels:
     app: longhorn-migration
     migration: immich
 spec:
-  ttlSecondsAfterFinished: 86400  # Keep job for 24 hours after completion
-  template:
+  schedule: {{ .Values.longhornMigration.immich.schedule | default "0 0 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 86400  # Keep job for 24 hours after completion
+      template:
     metadata:
       labels:
         app: longhorn-migration
@@ -141,17 +147,23 @@ spec:
           cpu: 500m
         {{- end }}
 ---
-# Job to migrate Nextcloud data from hostPath to Longhorn
+# CronJob to migrate Nextcloud data from hostPath to Longhorn
 apiVersion: batch/v1
-kind: Job
+kind: CronJob
 metadata:
   name: migrate-nextcloud-data-to-longhorn
   labels:
     app: longhorn-migration
     migration: nextcloud
 spec:
-  ttlSecondsAfterFinished: 86400  # Keep job for 24 hours after completion
-  template:
+  schedule: {{ .Values.longhornMigration.nextcloud.schedule | default "0 0 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 86400  # Keep job for 24 hours after completion
+      template:
     metadata:
       labels:
         app: longhorn-migration
