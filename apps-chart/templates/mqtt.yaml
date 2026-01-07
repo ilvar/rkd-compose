@@ -1,0 +1,101 @@
+{{- if .Values.mqtt.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mqtt-config
+  labels:
+    app: mqtt
+data:
+  mosquitto.conf: |
+{{ .Values.mqtt.config | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt
+  labels:
+    app: mqtt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqtt
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mqtt
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      containers:
+      - name: mqtt
+        image: "{{ .Values.mqtt.image.repository }}:{{ .Values.mqtt.image.tag }}"
+        env:
+        - name: TZ
+          value: {{ .Values.mqtt.timezone | quote }}
+        ports:
+        - name: mqtt
+          containerPort: {{ .Values.mqtt.ports.mqtt }}
+          protocol: TCP
+          hostPort: {{ .Values.mqtt.ports.mqtt }}
+        - name: websocket
+          containerPort: {{ .Values.mqtt.ports.websocket }}
+          protocol: TCP
+          hostPort: {{ .Values.mqtt.ports.websocket }}
+        volumeMounts:
+        - name: config
+          mountPath: /mosquitto/config
+        - name: log
+          mountPath: /mosquitto/log
+        - name: data
+          mountPath: /mosquitto/data
+        - name: localtime
+          mountPath: /etc/localtime
+          readOnly: true
+        resources:
+          limits:
+            memory: {{ .Values.mqtt.resources.limits.memory }}
+          requests:
+            memory: {{ .Values.mqtt.resources.requests.memory }}
+            {{- if .Values.mqtt.resources.requests.cpu }}
+            cpu: {{ .Values.mqtt.resources.requests.cpu }}
+            {{- end }}
+      volumes:
+      - name: config
+        configMap:
+          name: mqtt-config
+      - name: log
+        hostPath:
+          path: /home/rkd/.docker/mosquitto/log
+          type: DirectoryOrCreate
+      - name: data
+        hostPath:
+          path: /home/rkd/.docker/mosquitto/data
+          type: DirectoryOrCreate
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+          type: File
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqtt
+  labels:
+    app: mqtt
+spec:
+  type: ClusterIP
+  ports:
+  - name: mqtt
+    port: {{ .Values.mqtt.ports.mqtt }}
+    targetPort: {{ .Values.mqtt.ports.mqtt }}
+    protocol: TCP
+  - name: websocket
+    port: {{ .Values.mqtt.ports.websocket }}
+    targetPort: {{ .Values.mqtt.ports.websocket }}
+    protocol: TCP
+  selector:
+    app: mqtt
+{{- end }}
