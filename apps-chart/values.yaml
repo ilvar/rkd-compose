@@ -1099,7 +1099,7 @@ backups:
   serviceAccountName: backup
   backblaze:
     enabled: true
-    bucket: rkd-backups
+    bucket: homelab-rancher-backup
     secretName: backblaze-credentials
     accountIdKey: account-id
     applicationKeyKey: application-key
@@ -1120,8 +1120,8 @@ backups:
     enabled: true
     schedule: "0 3 * * *"
     image:
-      repository: quay.io/coreos/etcd
-      tag: v3.5.9
+      repository: alpine
+      tag: latest
     endpoints: "https://127.0.0.1:2379"
     ca: "/var/lib/rancher/k3s/server/tls/etcd/server-ca.crt"
     cert: "/var/lib/rancher/k3s/server/tls/etcd/server-client.crt"

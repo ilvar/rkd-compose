@@ -114,7 +114,28 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
+              echo "Installing etcdctl and rclone if needed..."
+              
+              # Install etcdctl if not available
+              if ! command -v etcdctl &> /dev/null; then
+                apk add --no-cache curl tar || true
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  ETCD_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  ETCD_ARCH="arm64"
+                else
+                  ETCD_ARCH="amd64"
+                fi
+                ETCD_VERSION="v3.5.9"
+                curl -L https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-${ETCD_ARCH}.tar.gz -o /tmp/etcd.tar.gz 2>/dev/null || echo "Failed to download etcd"
+                tar -xz -C /tmp -f /tmp/etcd.tar.gz 2>/dev/null || echo "Failed to extract etcd"
+                cp /tmp/etcd-${ETCD_VERSION}-linux-${ETCD_ARCH}/etcdctl /usr/local/bin/ 2>/dev/null || echo "Failed to copy etcdctl"
+                chmod +x /usr/local/bin/etcdctl 2>/dev/null || true
+                rm -rf /tmp/etcd* 2>/dev/null || true
+              fi
+              
+              # Install rclone if not available
               if ! command -v rclone &> /dev/null; then
                 apk add --no-cache curl unzip || true
                 # Download and install rclone manually (works with sh, no bash needed)
