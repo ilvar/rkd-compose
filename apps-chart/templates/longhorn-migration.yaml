@@ -4,7 +4,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: immich-upload-longhorn
+  name: immich-upload
   namespace: default
   labels:
     app: immich
@@ -24,7 +24,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nextcloud-data-longhorn
+  name: nextcloud-data
   namespace: default
   labels:
     app: nextcloud
@@ -133,7 +133,7 @@ spec:
               type: Directory
           - name: longhorn-data
             persistentVolumeClaim:
-              claimName: immich-upload-longhorn
+              claimName: immich-upload
           resources:
             {{- if .Values.longhornMigration.resources }}
             {{- toYaml .Values.longhornMigration.resources | nindent 12 }}
@@ -239,7 +239,7 @@ spec:
               type: Directory
           - name: longhorn-data
             persistentVolumeClaim:
-              claimName: nextcloud-data-longhorn
+              claimName: nextcloud-data
           resources:
             {{- if .Values.longhornMigration.resources }}
             {{- toYaml .Values.longhornMigration.resources | nindent 12 }}
