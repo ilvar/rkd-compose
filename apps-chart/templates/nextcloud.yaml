@@ -159,9 +159,8 @@ spec:
         runAsGroup: {{ include "apps-chart.groupID" .Values.nextcloud.app.user | int }}
       volumes:
       - name: data
-        hostPath:
-          path: /home/rkd/.docker/nextcloud/data
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: {{ .Values.nextcloud.app.storage.data }}
 ---
 apiVersion: v1
 kind: Service

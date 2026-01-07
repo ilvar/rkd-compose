@@ -86,7 +86,7 @@ metadata:
   labels:
     app: mqtt
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
   - name: mqtt
     port: {{ .Values.mqtt.ports.mqtt }}

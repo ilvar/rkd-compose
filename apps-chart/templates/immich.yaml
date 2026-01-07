@@ -235,9 +235,8 @@ spec:
           path: /etc/localtime
           type: File
       - name: upload
-        hostPath:
-          path: /home/rkd/.docker/immich/upload
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: {{ .Values.immich.server.storage.upload }}
 ---
 apiVersion: v1
 kind: Service
