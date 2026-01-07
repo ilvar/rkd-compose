@@ -819,9 +819,9 @@ kosmos:
       tag: 1.0.19
     resources:
       limits:
-        memory: 162Mi
+        memory: 512Mi
       requests:
-        memory: 162Mi
+        memory: 512Mi
         cpu: 300m
     environment:
       DEBUG: 'False'
