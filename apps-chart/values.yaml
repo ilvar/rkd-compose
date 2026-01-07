@@ -1173,8 +1173,8 @@ backups:
   mysql:
     enabled: true
     image:
-      repository: mariadb
-      tag: 12.1
+      repository: alpine
+      tag: latest
     databases:
       - name: nextcloud
         host: nextcloud-db
