@@ -29,6 +29,17 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - orangepi5
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: mqtt
         image: "{{ .Values.mqtt.image.repository }}:{{ .Values.mqtt.image.tag }}"
@@ -39,11 +50,9 @@ spec:
         - name: mqtt
           containerPort: {{ .Values.mqtt.ports.mqtt }}
           protocol: TCP
-          hostPort: {{ .Values.mqtt.ports.mqtt }}
         - name: websocket
           containerPort: {{ .Values.mqtt.ports.websocket }}
           protocol: TCP
-          hostPort: {{ .Values.mqtt.ports.websocket }}
         volumeMounts:
         - name: config
           mountPath: /mosquitto/config
@@ -86,7 +95,7 @@ metadata:
   labels:
     app: mqtt
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
   - name: mqtt
     port: {{ .Values.mqtt.ports.mqtt }}

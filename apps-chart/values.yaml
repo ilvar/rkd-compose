@@ -753,27 +753,6 @@ reloader:
       requests:
         memory: 32Mi
         cpu: 50m
-termix:
-  enabled: false
-  image:
-    repository: ghcr.io/lukegus/termix
-    tag: latest
-  resources:
-    limits:
-      memory: 129Mi
-    requests:
-      memory: 129Mi
-      cpu: 100m
-  environment:
-    PORT: '8080'
-  ports:
-    http: 8080
-  ingress:
-    enabled: true
-    hosts:
-    - termix.h.rkd.pw
-    - termix.k.rkd.pw
-    servicePort: 8080
 pinchflat:
   enabled: true
   image:
