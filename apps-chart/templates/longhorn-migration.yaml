@@ -55,97 +55,96 @@ spec:
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
-      ttlSecondsAfterFinished: 86400  # Keep job for 24 hours after completion
       template:
-    metadata:
-      labels:
-        app: longhorn-migration
-        migration: immich
-    spec:
-      restartPolicy: Never
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - rkd-um560
-      containers:
-      - name: rsync
-        image: {{ .Values.longhornMigration.image.repository }}:{{ .Values.longhornMigration.image.tag }}
-        command:
-        - /bin/sh
-        - -c
-        - |
-          set -e
-          echo "Starting Immich data migration from hostPath to Longhorn..."
-          echo "Source: {{ .Values.longhornMigration.immich.sourcePath }}"
-          echo "Destination: /mnt/longhorn"
-          
-          # Install rsync if not available
-          if ! command -v rsync &> /dev/null; then
-            apk add --no-cache rsync || echo "rsync already available"
-          fi
-          
-          # Check if source exists
-          if [ ! -d "{{ .Values.longhornMigration.immich.sourcePath }}" ]; then
-            echo "ERROR: Source directory does not exist: {{ .Values.longhornMigration.immich.sourcePath }}"
-            exit 1
-          fi
-          
-          # Create destination directory if it doesn't exist
-          mkdir -p /mnt/longhorn
-          
-          # Perform rsync with progress
-          echo "Starting rsync transfer..."
-          rsync -avh --progress --stats \
-            "{{ .Values.longhornMigration.immich.sourcePath }}/" \
-            /mnt/longhorn/
-          
-          # Verify transfer
-          echo "Verifying transfer..."
-          SOURCE_SIZE=$(du -sb "{{ .Values.longhornMigration.immich.sourcePath }}" 2>/dev/null | cut -f1)
-          DEST_SIZE=$(du -sb /mnt/longhorn 2>/dev/null | cut -f1)
-          
-          if [ "$SOURCE_SIZE" = "$DEST_SIZE" ]; then
-            echo "✓ Migration completed successfully!"
-            echo "Source size: $SOURCE_SIZE bytes"
-            echo "Destination size: $DEST_SIZE bytes"
-          else
-            echo "⚠ WARNING: Size mismatch!"
-            echo "Source size: $SOURCE_SIZE bytes"
-            echo "Destination size: $DEST_SIZE bytes"
-            echo "Please verify the migration manually."
-          fi
-          
-          echo "Migration job completed."
-        volumeMounts:
-        - name: source-data
-          mountPath: {{ .Values.longhornMigration.immich.sourcePath }}
-          readOnly: true
-        - name: longhorn-data
-          mountPath: /mnt/longhorn
-      volumes:
-      - name: source-data
-        hostPath:
-          path: {{ .Values.longhornMigration.immich.sourcePath }}
-          type: Directory
-      - name: longhorn-data
-        persistentVolumeClaim:
-          claimName: immich-upload-longhorn
-      resources:
-        {{- if .Values.longhornMigration.resources }}
-        {{- toYaml .Values.longhornMigration.resources | nindent 8 }}
-        {{- else }}
-        limits:
-          memory: 2Gi
-          cpu: 2000m
-        requests:
-          memory: 512Mi
-          cpu: 500m
-        {{- end }}
+        metadata:
+          labels:
+            app: longhorn-migration
+            migration: immich
+        spec:
+          restartPolicy: Never
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - rkd-um560
+          containers:
+          - name: rsync
+            image: {{ .Values.longhornMigration.image.repository }}:{{ .Values.longhornMigration.image.tag }}
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting Immich data migration from hostPath to Longhorn..."
+              echo "Source: {{ .Values.longhornMigration.immich.sourcePath }}"
+              echo "Destination: /mnt/longhorn"
+              
+              # Install rsync if not available
+              if ! command -v rsync &> /dev/null; then
+                apk add --no-cache rsync || echo "rsync already available"
+              fi
+              
+              # Check if source exists
+              if [ ! -d "{{ .Values.longhornMigration.immich.sourcePath }}" ]; then
+                echo "ERROR: Source directory does not exist: {{ .Values.longhornMigration.immich.sourcePath }}"
+                exit 1
+              fi
+              
+              # Create destination directory if it doesn't exist
+              mkdir -p /mnt/longhorn
+              
+              # Perform rsync with progress
+              echo "Starting rsync transfer..."
+              rsync -avh --progress --stats \
+                "{{ .Values.longhornMigration.immich.sourcePath }}/" \
+                /mnt/longhorn/
+              
+              # Verify transfer
+              echo "Verifying transfer..."
+              SOURCE_SIZE=$(du -sb "{{ .Values.longhornMigration.immich.sourcePath }}" 2>/dev/null | cut -f1)
+              DEST_SIZE=$(du -sb /mnt/longhorn 2>/dev/null | cut -f1)
+              
+              if [ "$SOURCE_SIZE" = "$DEST_SIZE" ]; then
+                echo "✓ Migration completed successfully!"
+                echo "Source size: $SOURCE_SIZE bytes"
+                echo "Destination size: $DEST_SIZE bytes"
+              else
+                echo "⚠ WARNING: Size mismatch!"
+                echo "Source size: $SOURCE_SIZE bytes"
+                echo "Destination size: $DEST_SIZE bytes"
+                echo "Please verify the migration manually."
+              fi
+              
+              echo "Migration job completed."
+            volumeMounts:
+            - name: source-data
+              mountPath: {{ .Values.longhornMigration.immich.sourcePath }}
+              readOnly: true
+            - name: longhorn-data
+              mountPath: /mnt/longhorn
+          volumes:
+          - name: source-data
+            hostPath:
+              path: {{ .Values.longhornMigration.immich.sourcePath }}
+              type: Directory
+          - name: longhorn-data
+            persistentVolumeClaim:
+              claimName: immich-upload-longhorn
+          resources:
+            {{- if .Values.longhornMigration.resources }}
+            {{- toYaml .Values.longhornMigration.resources | nindent 12 }}
+            {{- else }}
+            limits:
+              memory: 2Gi
+              cpu: 2000m
+            requests:
+              memory: 512Mi
+              cpu: 500m
+            {{- end }}
 ---
 # CronJob to migrate Nextcloud data from hostPath to Longhorn
 apiVersion: batch/v1
@@ -162,95 +161,94 @@ spec:
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
-      ttlSecondsAfterFinished: 86400  # Keep job for 24 hours after completion
       template:
-    metadata:
-      labels:
-        app: longhorn-migration
-        migration: nextcloud
-    spec:
-      restartPolicy: Never
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - rkd-um560
-      containers:
-      - name: rsync
-        image: {{ .Values.longhornMigration.image.repository }}:{{ .Values.longhornMigration.image.tag }}
-        command:
-        - /bin/sh
-        - -c
-        - |
-          set -e
-          echo "Starting Nextcloud data migration from hostPath to Longhorn..."
-          echo "Source: {{ .Values.longhornMigration.nextcloud.sourcePath }}"
-          echo "Destination: /mnt/longhorn"
-          
-          # Install rsync if not available
-          if ! command -v rsync &> /dev/null; then
-            apk add --no-cache rsync || echo "rsync already available"
-          fi
-          
-          # Check if source exists
-          if [ ! -d "{{ .Values.longhornMigration.nextcloud.sourcePath }}" ]; then
-            echo "ERROR: Source directory does not exist: {{ .Values.longhornMigration.nextcloud.sourcePath }}"
-            exit 1
-          fi
-          
-          # Create destination directory if it doesn't exist
-          mkdir -p /mnt/longhorn
-          
-          # Perform rsync with progress
-          echo "Starting rsync transfer..."
-          rsync -avh --progress --stats \
-            "{{ .Values.longhornMigration.nextcloud.sourcePath }}/" \
-            /mnt/longhorn/
-          
-          # Verify transfer
-          echo "Verifying transfer..."
-          SOURCE_SIZE=$(du -sb "{{ .Values.longhornMigration.nextcloud.sourcePath }}" 2>/dev/null | cut -f1)
-          DEST_SIZE=$(du -sb /mnt/longhorn 2>/dev/null | cut -f1)
-          
-          if [ "$SOURCE_SIZE" = "$DEST_SIZE" ]; then
-            echo "✓ Migration completed successfully!"
-            echo "Source size: $SOURCE_SIZE bytes"
-            echo "Destination size: $DEST_SIZE bytes"
-          else
-            echo "⚠ WARNING: Size mismatch!"
-            echo "Source size: $SOURCE_SIZE bytes"
-            echo "Destination size: $DEST_SIZE bytes"
-            echo "Please verify the migration manually."
-          fi
-          
-          echo "Migration job completed."
-        volumeMounts:
-        - name: source-data
-          mountPath: {{ .Values.longhornMigration.nextcloud.sourcePath }}
-          readOnly: true
-        - name: longhorn-data
-          mountPath: /mnt/longhorn
-      volumes:
-      - name: source-data
-        hostPath:
-          path: {{ .Values.longhornMigration.nextcloud.sourcePath }}
-          type: Directory
-      - name: longhorn-data
-        persistentVolumeClaim:
-          claimName: nextcloud-data-longhorn
-      resources:
-        {{- if .Values.longhornMigration.resources }}
-        {{- toYaml .Values.longhornMigration.resources | nindent 8 }}
-        {{- else }}
-        limits:
-          memory: 2Gi
-          cpu: 2000m
-        requests:
-          memory: 512Mi
-          cpu: 500m
-        {{- end }}
+        metadata:
+          labels:
+            app: longhorn-migration
+            migration: nextcloud
+        spec:
+          restartPolicy: Never
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - rkd-um560
+          containers:
+          - name: rsync
+            image: {{ .Values.longhornMigration.image.repository }}:{{ .Values.longhornMigration.image.tag }}
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting Nextcloud data migration from hostPath to Longhorn..."
+              echo "Source: {{ .Values.longhornMigration.nextcloud.sourcePath }}"
+              echo "Destination: /mnt/longhorn"
+              
+              # Install rsync if not available
+              if ! command -v rsync &> /dev/null; then
+                apk add --no-cache rsync || echo "rsync already available"
+              fi
+              
+              # Check if source exists
+              if [ ! -d "{{ .Values.longhornMigration.nextcloud.sourcePath }}" ]; then
+                echo "ERROR: Source directory does not exist: {{ .Values.longhornMigration.nextcloud.sourcePath }}"
+                exit 1
+              fi
+              
+              # Create destination directory if it doesn't exist
+              mkdir -p /mnt/longhorn
+              
+              # Perform rsync with progress
+              echo "Starting rsync transfer..."
+              rsync -avh --progress --stats \
+                "{{ .Values.longhornMigration.nextcloud.sourcePath }}/" \
+                /mnt/longhorn/
+              
+              # Verify transfer
+              echo "Verifying transfer..."
+              SOURCE_SIZE=$(du -sb "{{ .Values.longhornMigration.nextcloud.sourcePath }}" 2>/dev/null | cut -f1)
+              DEST_SIZE=$(du -sb /mnt/longhorn 2>/dev/null | cut -f1)
+              
+              if [ "$SOURCE_SIZE" = "$DEST_SIZE" ]; then
+                echo "✓ Migration completed successfully!"
+                echo "Source size: $SOURCE_SIZE bytes"
+                echo "Destination size: $DEST_SIZE bytes"
+              else
+                echo "⚠ WARNING: Size mismatch!"
+                echo "Source size: $SOURCE_SIZE bytes"
+                echo "Destination size: $DEST_SIZE bytes"
+                echo "Please verify the migration manually."
+              fi
+              
+              echo "Migration job completed."
+            volumeMounts:
+            - name: source-data
+              mountPath: {{ .Values.longhornMigration.nextcloud.sourcePath }}
+              readOnly: true
+            - name: longhorn-data
+              mountPath: /mnt/longhorn
+          volumes:
+          - name: source-data
+            hostPath:
+              path: {{ .Values.longhornMigration.nextcloud.sourcePath }}
+              type: Directory
+          - name: longhorn-data
+            persistentVolumeClaim:
+              claimName: nextcloud-data-longhorn
+          resources:
+            {{- if .Values.longhornMigration.resources }}
+            {{- toYaml .Values.longhornMigration.resources | nindent 12 }}
+            {{- else }}
+            limits:
+              memory: 2Gi
+              cpu: 2000m
+            requests:
+              memory: 512Mi
+              cpu: 500m
+            {{- end }}
 {{- end }}
