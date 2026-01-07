@@ -293,6 +293,8 @@ compote3:
       url: https://app.mailbox.org/
     - name: Meduza
       url: https://meduza.io
+    - name: NAS
+      url: http://192.168.1.95
     - name: RuTracker
       url: https://rutracker.org/forum/viewforum.php?f=635
     - name: Tessie
