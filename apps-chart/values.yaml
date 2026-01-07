@@ -661,6 +661,7 @@ miniflux:
     hosts:
     - miniflux.rkd.pw
     - miniflux.k.rkd.pw
+    - miniflux.h.rkd.pw
     servicePort: 8080
 blog:
   enabled: true
@@ -679,6 +680,7 @@ blog:
     hosts:
     - blog.rkd.pw
     - blog.k.rkd.pw
+    - blog.h.rkd.pw
     servicePort: 5000
 rkdPw:
   enabled: true
@@ -814,7 +816,7 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: 1.0.3
+      tag: 1.0.19
     resources:
       limits:
         memory: 162Mi
@@ -847,7 +849,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 1.1.7
+      tag: 1.1.32
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
@@ -994,6 +996,104 @@ videosCleanupReport:
       memory: 256Mi
     requests:
       memory: 128Mi
+mqtt:
+  enabled: true
+  image:
+    repository: eclipse-mosquitto
+    tag: latest
+  timezone: Europe/Dublin
+  ports:
+    mqtt: 1883
+    websocket: 9001
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      memory: 64Mi
+      cpu: 50m
+  config: |
+    allow_anonymous true
+    bind_address 0.0.0.0
+zigbee2mqtt:
+  enabled: true
+  image:
+    repository: koenkk/zigbee2mqtt
+    tag: latest
+  timezone: Europe/Dublin
+  nodeName: rockpro64
+  device: /dev/ttyACM0
+  ports:
+    http: 8080
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      memory: 128Mi
+      cpu: 100m
+  ingress:
+    enabled: true
+    hosts:
+    - zigbee.d.z85
+    - zigbee.h.rkd.pw
+    servicePort: 8080
+  config: |
+    mqtt:
+      base_topic: zigbee2mqtt
+      server: mqtt://mqtt.default.svc.cluster.local:1883
+    serial:
+      port: /dev/ttyACM0
+    frontend:
+      enabled: true
+      port: 8080
+    homeassistant:
+      enabled: true
+      discovery_topic: homeassistant
+      status_topic: hass/status
+    advanced:
+      network_key:
+        - 13
+        - 221
+        - 108
+        - 106
+        - 53
+        - 249
+        - 177
+        - 128
+        - 48
+        - 235
+        - 38
+        - 59
+        - 216
+        - 215
+        - 72
+        - 108
+    device_options: {}
+    devices:
+      '0x70b3d52b600286ee':
+        friendly_name: 'Socket: Bed Heater'
+      '0x00124b0029dee0ec':
+        friendly_name: 'Curtain: Bedroom'
+      '0x00124b0020bc7099':
+        friendly_name: '0x00124b0020bc7099'
+      '0x00158d000247d794':
+        friendly_name: '0x00158d000247d794'
+      '0x70b3d52b60028bc8':
+        friendly_name: '0x70b3d52b60028bc8'
+      '0x70b3d52b60028ba0':
+        friendly_name: '0x70b3d52b60028ba0'
+      '0x70b3d52b60028c11':
+        friendly_name: '0x70b3d52b60028c11'
+      '0xa4c13854552d0e8d':
+        friendly_name: '0xa4c13854552d0e8d'
+      '0xdc8e95fffe5d2fb4':
+        friendly_name: '0xdc8e95fffe5d2fb4'
+      '0xa4c1384a2bf861d0':
+        friendly_name: '0xa4c1384a2bf861d0'
+      '0xa4c138e8f8b0a889':
+        friendly_name: '0xa4c138e8f8b0a889'
+      '0x5c0272fffe808011':
+        friendly_name: '0x5c0272fffe808011'
+    version: 4
 backups:
   enabled: true
   serviceAccountName: backup
