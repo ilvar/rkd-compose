@@ -642,7 +642,7 @@ miniflux:
   enabled: true
   image:
     repository: miniflux/miniflux
-    tag: 2.2.15
+    tag: 2.2.16
   resources:
     limits:
       memory: 100Mi
