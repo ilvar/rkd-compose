@@ -1313,11 +1313,11 @@ longhornMigration:
     tag: latest
   immich:
     sourcePath: /home/rkd/.docker/immich/upload
-    size: 500Gi
+    size: 40Gi
     schedule: "0 0 * * *"  # Daily at 00:00
   nextcloud:
     sourcePath: /home/rkd/.docker/nextcloud/data
-    size: 500Gi
+    size: 80Gi
     schedule: "0 0 * * *"  # Daily at 00:00
   resources:
     limits:
