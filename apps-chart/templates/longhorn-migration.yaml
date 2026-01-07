@@ -9,6 +9,7 @@ metadata:
   labels:
     app: immich
     storage-type: longhorn
+    app.kubernetes.io/managed-by: Helm
   annotations:
     meta.helm.sh/release-name: {{ .Release.Name }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
@@ -29,6 +30,7 @@ metadata:
   labels:
     app: nextcloud
     storage-type: longhorn
+    app.kubernetes.io/managed-by: Helm
   annotations:
     meta.helm.sh/release-name: {{ .Release.Name }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
