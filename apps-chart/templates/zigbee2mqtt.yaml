@@ -9,6 +9,19 @@ data:
   configuration.yaml: |
 {{ .Values.zigbee2mqtt.config | indent 4 }}
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zigbee2mqtt-data
+  labels:
+    app: zigbee2mqtt
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Mi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -50,7 +63,10 @@ spec:
           protocol: TCP
         volumeMounts:
         - name: data
-          mountPath: /app/data
+          mountPath: /data
+        - name: config
+          mountPath: /data/configuration.yaml
+          subPath: configuration.yaml
         - name: udev
           mountPath: /run/udev
           readOnly: true
@@ -69,9 +85,11 @@ spec:
             {{- end }}
       volumes:
       - name: data
-        hostPath:
-          path: /home/rkd/.docker/zigbee2mqtt/data
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: zigbee2mqtt-data
+      - name: config
+        configMap:
+          name: zigbee2mqtt-config
       - name: udev
         hostPath:
           path: /run/udev
