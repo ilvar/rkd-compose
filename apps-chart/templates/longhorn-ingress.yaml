@@ -1,0 +1,39 @@
+{{- if .Values.longhorn.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+  labels:
+    app: longhorn
+  annotations:
+    {{- if .Values.longhorn.ingress.annotations }}
+    {{- toYaml .Values.longhorn.ingress.annotations | nindent 4 }}
+    {{- end }}
+    {{- if .Values.longhorn.ingress.certManager }}
+    cert-manager.io/cluster-issuer: {{ .Values.longhorn.ingress.certManager.clusterIssuer | default "letsencrypt-prod" }}
+    {{- end }}
+spec:
+{{- if gt (len .Values.longhorn.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+{{- range .Values.longhorn.ingress.hosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: {{ .Values.longhorn.ingress.tlsSecretName | default "homelab-wildcard-h-tls" }}
+{{- end }}
+  rules:
+  {{- range .Values.longhorn.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: longhorn-frontend
+            port:
+              number: {{ $.Values.longhorn.ingress.servicePort | default 80 }}
+  {{- end }}
+{{- end }}

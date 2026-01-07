@@ -924,6 +924,13 @@ jitsi-meet:
       - jitsi.k.rkd.pw
 kube-prometheus-stack:
   enabled: true
+  prometheusOperator:
+    admissionWebhooks:
+      enabled: false
+      patch:
+        enabled: false
+    tls:
+      enabled: false
   grafana:
     enabled: true
     adminPassword: CHANGE_ME
@@ -1279,3 +1286,37 @@ backups:
       requests:
         memory: 256Mi
         cpu: 200m
+longhorn:
+  ingress:
+    enabled: true
+    hosts:
+    - longhorn.h.rkd.pw
+    servicePort: 80
+    tlsSecretName: homelab-wildcard-h-tls
+    certManager:
+      clusterIssuer: letsencrypt-prod
+    annotations: {}
+  requirementsCheck:
+    enabled: false
+    image:
+      repository: alpine
+      tag: latest
+longhornMigration:
+  enabled: true
+  storageClass: longhorn
+  image:
+    repository: alpine
+    tag: latest
+  immich:
+    sourcePath: /home/rkd/.docker/immich/upload
+    size: 500Gi
+  nextcloud:
+    sourcePath: /home/rkd/.docker/nextcloud/data
+    size: 500Gi
+  resources:
+    limits:
+      memory: 2Gi
+      cpu: 2000m
+    requests:
+      memory: 512Mi
+      cpu: 500m
