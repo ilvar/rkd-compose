@@ -931,6 +931,8 @@ kube-prometheus-stack:
       enabled: false
       patch:
         enabled: false
+      tls:
+        enabled: false
     tls:
       enabled: false
   grafana:

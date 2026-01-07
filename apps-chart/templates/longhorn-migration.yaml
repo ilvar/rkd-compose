@@ -5,9 +5,13 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: immich-upload-longhorn
+  namespace: default
   labels:
     app: immich
     storage-type: longhorn
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -21,9 +25,13 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: nextcloud-data-longhorn
+  namespace: default
   labels:
     app: nextcloud
     storage-type: longhorn
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
     - ReadWriteOnce
