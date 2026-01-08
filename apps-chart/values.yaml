@@ -830,7 +830,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 1.1.36
+      tag: 1.1.37
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
@@ -846,6 +846,15 @@ kosmos:
       - kosmos.k.rkd.pw
       - kosmos.rkd.pw
       servicePort: 80
+  notifications:
+    enabled: true
+    telegram:
+      enabled: true
+      secret:
+        name: kosmos-telegram-secret
+        botTokenKey: bot-token
+        chatIdKey: chat-id
+    checkInterval: "*/5 * * * *"
 jitsi-meet:
   enabled: true
   publicURL: https://jitsi.h.rkd.pw
