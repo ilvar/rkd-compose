@@ -31,7 +31,7 @@ spec:
           serviceAccountName: kosmos-notifications
           containers:
           - name: kosmos-notifications
-            image: bitnami/kubectl:latest
+            image: "{{ .Values.kosmos.notifications.image.repository }}:{{ .Values.kosmos.notifications.image.tag }}"
             command:
             - /bin/sh
             - -c

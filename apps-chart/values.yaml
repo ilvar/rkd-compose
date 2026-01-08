@@ -830,7 +830,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 1.1.37
+      tag: 1.1.39
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
@@ -848,6 +848,9 @@ kosmos:
       servicePort: 80
   notifications:
     enabled: true
+    image:
+      repository: python
+      tag: 3.11-alpine
     telegram:
       enabled: true
       secret:
@@ -1238,11 +1241,19 @@ backups:
     enabled: true
     schedule: "0 9 * * *"
     sourcePath: /home/rkd/.docker/immich/upload
+    pvcName: immich-upload
     image:
       repository: alpine
       tag: latest
     transfers: 4
     checkers: 8
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: immich-server
+          topologyKey: kubernetes.io/hostname
     resources:
       limits:
         memory: 2Gi

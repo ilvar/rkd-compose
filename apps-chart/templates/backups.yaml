@@ -261,6 +261,10 @@ spec:
             database: {{ .name }}
         spec:
           restartPolicy: OnFailure
+          {{- if and $.Values.backups $.Values.backups.immichData $.Values.backups.immichData.affinity }}
+          affinity:
+            {{- toYaml $.Values.backups.immichData.affinity | nindent 12 }}
+          {{- end }}
           containers:
           - name: postgres-backup
             image: "{{ $.Values.backups.postgres.image.repository }}:{{ $.Values.backups.postgres.image.tag }}"
@@ -871,9 +875,14 @@ spec:
               readOnly: true
           volumes:
           - name: immich-data
+            {{- if and .Values.backups .Values.backups.immichData .Values.backups.immichData.pvcName }}
+            persistentVolumeClaim:
+              claimName: {{ .Values.backups.immichData.pvcName }}
+            {{- else }}
             hostPath:
               path: {{ .Values.backups.immichData.sourcePath }}
               type: Directory
+            {{- end }}
 {{- end }}
 
 {{- if .Values.backups.nextcloudData.enabled }}
