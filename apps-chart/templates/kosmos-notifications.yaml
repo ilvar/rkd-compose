@@ -146,7 +146,8 @@ spec:
                           message = f"🚀 *Kosmos Backend Deployed*\n\n"
                           message += f"*Old version:* `{state['backend']}`\n"
                           message += f"*New version:* `{backend_version}`\n"
-                          message += f"*Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}"
+                          message += f"*Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+                          message += "https://kosmos.rkd.pw/"
                           if send_telegram_message(bot_token, chat_id, message):
                               notifications_sent.append('backend')
                       state['backend'] = backend_version
@@ -159,7 +160,8 @@ spec:
                           message = f"🚀 *Kosmos Frontend Deployed*\n\n"
                           message += f"*Old version:* `{state['frontend']}`\n"
                           message += f"*New version:* `{frontend_version}`\n"
-                          message += f"*Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}"
+                          message += f"*Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+                          message += "https://kosmos.rkd.pw/"
                           if send_telegram_message(bot_token, chat_id, message):
                               notifications_sent.append('frontend')
                       state['frontend'] = frontend_version
