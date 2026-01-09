@@ -16,6 +16,7 @@ metadata:
   labels:
     app: zigbee2mqtt
 spec:
+  storageClass: local-path
   accessModes:
     - ReadWriteOnce
   resources:
