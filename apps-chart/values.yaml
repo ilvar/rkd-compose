@@ -857,7 +857,7 @@ kosmos:
         name: kosmos-telegram-secret
         botTokenKey: bot-token
         chatIdKey: chat-id
-    checkInterval: "*/5 * * * *"
+    checkInterval: "0 * * * *"
 jitsi-meet:
   enabled: true
   publicURL: https://jitsi.h.rkd.pw
