@@ -35,7 +35,6 @@ spec:
               import json
               import requests
               from kubernetes import client, config
-              from datetime import datetime
               
               def get_telegram_secret():
                   """Read Telegram credentials from environment (populated from secret)"""
@@ -139,33 +138,41 @@ spec:
                   notifications_sent = []
                   state_changed = False
                   
+                  prev_backend = state['backend']
+                  prev_frontend = state['frontend']
+                  
                   # Check kosmos-backend
                   backend_version = get_deployment_image('kosmos-backend')
-                  if backend_version and backend_version != state['backend']:
-                      if state['backend']:  # Only notify if we had a previous version
-                          message = f"🚀 *Kosmos Backend Deployed*\n\n"
-                          message += f"*Old version:* `{state['backend']}`\n"
-                          message += f"*New version:* `{backend_version}`\n"
-                          message += f"*Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
-                          message += "https://kosmos.rkd.pw/"
-                          if send_telegram_message(bot_token, chat_id, message):
-                              notifications_sent.append('backend')
+                  backend_changed = bool(backend_version and backend_version != prev_backend)
+                  if backend_changed:
                       state['backend'] = backend_version
                       state_changed = True
                   
                   # Check kosmos-frontend
                   frontend_version = get_deployment_image('kosmos-frontend')
-                  if frontend_version and frontend_version != state['frontend']:
-                      if state['frontend']:  # Only notify if we had a previous version
-                          message = f"🚀 *Kosmos Frontend Deployed*\n\n"
-                          message += f"*Old version:* `{state['frontend']}`\n"
-                          message += f"*New version:* `{frontend_version}`\n"
-                          message += f"*Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
-                          message += "https://kosmos.rkd.pw/"
-                          if send_telegram_message(bot_token, chat_id, message):
-                              notifications_sent.append('frontend')
+                  frontend_changed = bool(frontend_version and frontend_version != prev_frontend)
+                  if frontend_changed:
                       state['frontend'] = frontend_version
                       state_changed = True
+                  
+                  # Send notifications if any version changed and we had prior versions
+                  if backend_changed or frontend_changed:
+                      if backend_changed and frontend_changed and prev_backend and prev_frontend:
+                          message = "🚀 *Kosmos Deployed*\n\n"
+                          message += f"*Backend:* `{backend_version}`\n"
+                          message += f"*Frontend:* `{frontend_version}`\n"
+                          if send_telegram_message(bot_token, chat_id, message + "https://kosmos.rkd.pw/"):
+                              notifications_sent.append('backend+frontend')
+                      elif backend_changed and prev_backend:
+                          message = "🚀 *Kosmos Backend Deployed*\n\n"
+                          message += f"*Backend:* `{backend_version}`\n"
+                          if send_telegram_message(bot_token, chat_id, message + "https://kosmos.rkd.pw/"):
+                              notifications_sent.append('backend')
+                      elif frontend_changed and prev_frontend:
+                          message = "🚀 *Kosmos Frontend Deployed*\n\n"
+                          message += f"*Frontend:* `{frontend_version}`\n"
+                          if send_telegram_message(bot_token, chat_id, message + "https://kosmos.rkd.pw/"):
+                              notifications_sent.append('frontend')
                   
                   # Update ConfigMap if versions changed
                   if state_changed:
