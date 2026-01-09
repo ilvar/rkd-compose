@@ -147,6 +147,7 @@ spec:
                   state = get_state_configmap()
                   
                   notifications_sent = []
+                  state_changed = False
                   
                   # Check kosmos-backend
                   backend_version = get_deployment_image('kosmos-backend')
@@ -159,6 +160,7 @@ spec:
                           if send_telegram_message(bot_token, chat_id, message):
                               notifications_sent.append('backend')
                       state['backend'] = backend_version
+                      state_changed = True
                   
                   # Check kosmos-frontend
                   frontend_version = get_deployment_image('kosmos-frontend')
@@ -171,9 +173,10 @@ spec:
                           if send_telegram_message(bot_token, chat_id, message):
                               notifications_sent.append('frontend')
                       state['frontend'] = frontend_version
+                      state_changed = True
                   
                   # Update ConfigMap if versions changed
-                  if backend_version != state.get('backend', '') or frontend_version != state.get('frontend', ''):
+                  if state_changed:
                       update_state_configmap(
                           backend_version or state['backend'],
                           frontend_version or state['frontend']
