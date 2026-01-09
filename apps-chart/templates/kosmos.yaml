@@ -349,6 +349,13 @@ spec:
   - host: {{ . | quote }}
     http:
       paths:
+      - path: /media
+        pathType: Prefix
+        backend:
+          service:
+            name: kosmos-backend
+            port:
+              number: {{ $.Values.kosmos.backend.ingress.servicePort }}
       - path: /
         pathType: Prefix
         backend:
