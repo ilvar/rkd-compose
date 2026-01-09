@@ -102,18 +102,19 @@ spec:
           type: DirectoryOrCreate
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: nextcloud-app
   labels:
     app: nextcloud-app
 spec:
+  serviceName: nextcloud-app
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: nextcloud-app
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
@@ -241,4 +242,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

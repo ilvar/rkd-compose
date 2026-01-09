@@ -22,7 +22,10 @@ spec:
     matchLabels:
       app: hoarder-web
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -75,7 +78,10 @@ spec:
     matchLabels:
       app: hoarder-chrome
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -110,7 +116,10 @@ spec:
     matchLabels:
       app: hoarder-meilisearch
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:

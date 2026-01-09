@@ -12,7 +12,10 @@ spec:
     matchLabels:
       app: pinchflat
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:

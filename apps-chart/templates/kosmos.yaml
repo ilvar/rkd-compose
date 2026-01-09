@@ -114,7 +114,10 @@ spec:
     matchLabels:
       app: kosmos-backend
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -220,7 +223,10 @@ spec:
     matchLabels:
       app: kosmos-frontend
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:

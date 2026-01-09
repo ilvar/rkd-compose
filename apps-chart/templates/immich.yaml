@@ -188,18 +188,19 @@ spec:
           claimName: {{ .Values.immich.machineLearning.storage.modelCache }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: immich-server
   labels:
     app: immich-server
 spec:
+  serviceName: immich-server
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: immich-server
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
