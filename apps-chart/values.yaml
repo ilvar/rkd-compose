@@ -563,9 +563,9 @@ immich:
       tag: 14-vectorchord0.5.3-pgvector0.8.1
     resources:
       limits:
-        memory: 244Mi
+        memory: 1024Mi
       requests:
-        memory: 244Mi
+        memory: 512Mi
         cpu: 300m
     environment:
       POSTGRES_USER: postgres
@@ -957,6 +957,11 @@ kube-prometheus-stack:
     enabled: false
   prometheus:
     prometheusSpec:
+      image:
+        registry: quay.io
+        repository: prometheus/prometheus
+        tag: v2.54.1
+      version: v2.54.1
       scrapeInterval: 10m
       evaluationInterval: 10m
       retention: 14d
