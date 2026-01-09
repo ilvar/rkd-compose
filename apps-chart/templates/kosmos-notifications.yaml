@@ -1,14 +1,4 @@
 {{- if and .Values.kosmos.enabled .Values.kosmos.notifications.enabled .Values.kosmos.notifications.telegram.enabled }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kosmos-notifications-state
-  labels:
-    app: kosmos-notifications
-data:
-  kosmos-backend-version: ""
-  kosmos-frontend-version: ""
----
 apiVersion: batch/v1
 kind: CronJob
 metadata:
