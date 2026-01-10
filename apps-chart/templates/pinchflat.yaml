@@ -30,6 +30,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       initContainers:
       - name: fix-permissions
         image: busybox:latest
@@ -128,4 +129,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

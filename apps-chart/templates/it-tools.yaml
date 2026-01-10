@@ -20,6 +20,7 @@ spec:
       labels:
         app: it-tools
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: it-tools
         image: "{{ .Values.itTools.image.repository }}:{{ .Values.itTools.image.tag }}"

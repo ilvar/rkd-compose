@@ -1,3 +1,6 @@
+global:
+  excludeNodes:
+  - rockpro64
 blocky:
   enabled: true
   image:

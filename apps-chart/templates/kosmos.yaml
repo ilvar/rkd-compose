@@ -39,6 +39,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: kosmos-db
         image: "{{ .Values.kosmos.db.image.repository }}:{{ .Values.kosmos.db.image.tag }}"
@@ -134,6 +135,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: kosmos-backend
         image: "{{ .Values.kosmos.backend.image.repository }}:{{ .Values.kosmos.backend.image.tag }}"
@@ -243,6 +245,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: kosmos-frontend
         image: "{{ .Values.kosmos.frontend.image.repository }}:{{ .Values.kosmos.frontend.image.tag }}"

@@ -47,6 +47,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: portainer
         image: "{{ .Values.portainer.image.repository }}:{{ .Values.portainer.image.tag }}"

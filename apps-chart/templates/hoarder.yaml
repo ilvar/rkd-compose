@@ -33,6 +33,7 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: hoarder-web
         image: "{{ .Values.hoarder.web.image.repository }}:{{ .Values.hoarder.web.image.tag }}"
@@ -87,6 +88,7 @@ spec:
       labels:
         app: hoarder-chrome
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: hoarder-chrome
         image: "{{ .Values.hoarder.chrome.image.repository }}:{{ .Values.hoarder.chrome.image.tag }}"
@@ -125,6 +127,7 @@ spec:
       labels:
         app: hoarder-meilisearch
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: hoarder-meilisearch
         image: "{{ .Values.hoarder.meilisearch.image.repository }}:{{ .Values.hoarder.meilisearch.image.tag }}"
@@ -245,4 +248,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

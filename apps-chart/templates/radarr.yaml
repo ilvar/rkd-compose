@@ -29,6 +29,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: radarr
         image: "{{ .Values.radarr.image.repository }}:{{ .Values.radarr.image.tag }}"
@@ -114,4 +115,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

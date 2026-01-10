@@ -29,6 +29,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: kuma
         image: "{{ .Values.kuma.image.repository }}:{{ .Values.kuma.image.tag }}"
@@ -97,4 +98,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

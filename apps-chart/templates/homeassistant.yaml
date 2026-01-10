@@ -29,6 +29,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: homeassistant
         image: "{{ .Values.homeassistant.image.repository }}:{{ .Values.homeassistant.image.tag }}"
@@ -110,4 +111,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

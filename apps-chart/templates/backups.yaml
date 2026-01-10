@@ -264,6 +264,8 @@ spec:
           {{- if and $.Values.backups $.Values.backups.immichData $.Values.backups.immichData.affinity }}
           affinity:
             {{- toYaml $.Values.backups.immichData.affinity | nindent 12 }}
+          {{- else }}
+          {{- include "apps-chart.excludeNodeAffinity" . | nindent 10 }}
           {{- end }}
           containers:
           - name: postgres-backup

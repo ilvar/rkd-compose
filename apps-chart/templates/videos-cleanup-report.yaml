@@ -26,6 +26,7 @@ spec:
                     operator: In
                     values:
                     - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 18 }}
           restartPolicy: OnFailure
           containers:
           - name: videos-cleanup-report

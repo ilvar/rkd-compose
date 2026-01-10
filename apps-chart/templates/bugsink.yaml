@@ -22,6 +22,7 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: bugsink
         image: "{{ .Values.bugsink.image.repository }}:{{ .Values.bugsink.image.tag }}"

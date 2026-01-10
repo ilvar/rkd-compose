@@ -30,6 +30,7 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: miniflux-db
         image: "{{ .Values.minifluxDb.image.repository }}:{{ .Values.minifluxDb.image.tag }}"
@@ -109,6 +110,7 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: miniflux
         image: "{{ .Values.miniflux.image.repository }}:{{ .Values.miniflux.image.tag }}"

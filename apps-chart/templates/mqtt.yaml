@@ -41,6 +41,7 @@ spec:
                 operator: In
                 values:
                 - orangepi5
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:

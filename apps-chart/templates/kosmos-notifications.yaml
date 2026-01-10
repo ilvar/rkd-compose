@@ -17,6 +17,7 @@ spec:
           labels:
             app: kosmos-notifications
         spec:
+          {{- include "apps-chart.excludeNodeAffinity" . | nindent 10 }}
           restartPolicy: OnFailure
           serviceAccountName: kosmos-notifications
           containers:

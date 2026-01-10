@@ -29,6 +29,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: deluge
         image: "{{ .Values.deluge.image.repository }}:{{ .Values.deluge.image.tag }}"
@@ -119,4 +120,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

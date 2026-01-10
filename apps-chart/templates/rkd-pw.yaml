@@ -20,6 +20,7 @@ spec:
       labels:
         app: rkd-pw
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: rkd-pw
         image: "{{ .Values.rkdPw.image.repository }}:{{ .Values.rkdPw.image.tag }}"

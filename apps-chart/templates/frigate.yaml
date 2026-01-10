@@ -29,6 +29,7 @@ spec:
                 operator: In
                 values:
                 - hm60
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: frigate
         image: "{{ .Values.frigate.image.repository }}:{{ .Values.frigate.image.tag }}"
@@ -173,4 +174,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

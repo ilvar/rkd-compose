@@ -60,6 +60,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: nextcloud-db
         image: "{{ .Values.nextcloud.db.image.repository }}:{{ .Values.nextcloud.db.image.tag }}"
@@ -131,6 +132,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: nextcloud-app
         image: "{{ .Values.nextcloud.app.image.repository }}:{{ .Values.nextcloud.app.image.tag }}"

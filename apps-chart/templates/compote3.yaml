@@ -79,6 +79,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: compote3
         image: "{{ .Values.compote3.image.repository }}:{{ .Values.compote3.image.tag }}"
@@ -150,4 +151,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

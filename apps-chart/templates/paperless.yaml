@@ -50,6 +50,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: paperless-redis
         image: "{{ .Values.paperless.redis.image.repository }}:{{ .Values.paperless.redis.image.tag }}"
@@ -110,6 +111,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: paperless-webserver
         image: "{{ .Values.paperless.webserver.image.repository }}:{{ .Values.paperless.webserver.image.tag }}"
@@ -230,4 +232,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-
