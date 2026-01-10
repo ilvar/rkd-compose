@@ -1027,7 +1027,7 @@ zigbee2mqtt:
     repository: koenkk/zigbee2mqtt
     tag: latest
   timezone: Europe/Dublin
-  nodeName: rockpro64
+  nodeName: hm60
   device: /dev/ttyACM0
   privileged: true
   ports:
