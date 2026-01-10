@@ -958,119 +958,10 @@ jitsi-meet:
       hosts:
       - jitsi.h.rkd.pw
       - jitsi.k.rkd.pw
-kube-prometheus-stack:
-  enabled: false
-  prometheusOperator:
-    admissionWebhooks:
-      enabled: false
-      patch:
-        enabled: false
-      tls:
-        enabled: false
-    tls:
-      enabled: false
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-  grafana:
-    enabled: false
-    adminPassword: CHANGE_ME
-    securityContext:
-      runAsUser: 472
-      runAsGroup: 472
-      fsGroup: 472
-    initChownData:
-      enabled: false
-    persistence:
-      enabled: true
-      size: 5Gi
-    grafana.ini:
-      server:
-        root_url: https://grafana.k.rkd.pw/
-        serve_from_sub_path: false
-    ingress:
-      enabled: true
-      ingressClassName: ''
-      hosts:
-      - grafana.k.rkd.pw
-      annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-prod
-      tls:
-      - secretName: homelab-wildcard-h-tls
-        hosts:
-        - grafana.k.rkd.pw
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-  alertmanager:
-    enabled: false
-  prometheus:
-    prometheusSpec:
-      image:
-        registry: quay.io
-        repository: prometheus/prometheus
-        tag: v2.54.1
-      version: v2.54.1
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: NotIn
-                values:
-                - rockpro64
-                - orangepi5
-      scrapeInterval: 10m
-      evaluationInterval: 10m
-      retention: 14d
-      resources:
-        requests:
-          cpu: 100m
-          memory: 512Mi
-      storageSpec:
-        volumeClaimTemplate:
-          spec:
-            accessModes:
-            - ReadWriteOnce
-            resources:
-              requests:
-                storage: 10Gi
-  kubeStateMetrics:
-    enabled: true
-    resources:
-      limits:
-        memory: 64Mi
-      requests:
-        memory: 32Mi
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
 openobserve:
   auth:
-    ZO_ROOT_USER_EMAIL: root@example.com
-    ZO_ROOT_USER_PASSWORD: CHANGE_ME
+    ZO_ROOT_USER_EMAIL: a@rkd.pw
+    ZO_ROOT_USER_PASSWORD: jedi8947
   config:
     ZO_LOCAL_MODE: "true"
     ZO_META_STORE: "sqlite"
@@ -1085,9 +976,14 @@ openobserve:
         paths:
           - path: /
             pathType: Prefix
+      - host: openobserve.h.rkd.pw
+        paths:
+          - path: /
+            pathType: Prefix
     tls:
       - secretName: homelab-wildcard-h-tls
         hosts:
+          - openobserve.h.rkd.pw
           - openobserve.k.rkd.pw
   ingester:
     persistence:
