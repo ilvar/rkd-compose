@@ -30,6 +30,68 @@ spec:
     requests:
       storage: {{ .Values.longhornMigration.nextcloud.size | default "50Gi" }}
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.nextcloud.db.storage.longhornClaim }}
+  labels:
+    app: nextcloud-db
+    storage-type: longhorn
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.longhornMigration.storageClass | default "longhorn" }}
+  resources:
+    requests:
+      storage: {{ .Values.nextcloud.db.storage.size | default "10Gi" }}
+---
+{{- if and .Values.longhornMigration.enabled .Values.longhornMigration.nextcloudDb.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-db-migration
+  labels:
+    app: nextcloud-db
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: nextcloud-db
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: migrate-nextcloud-db
+        image: "{{ .Values.longhornMigration.image.repository }}:{{ .Values.longhornMigration.image.tag }}"
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          if [ -d /source ]; then
+            mkdir -p /dest
+            cd /source
+            tar cf - . | tar xf - -C /dest
+          fi
+        volumeMounts:
+        - name: source
+          mountPath: /source
+        - name: dest
+          mountPath: /dest
+      volumes:
+      - name: source
+        hostPath:
+          path: {{ .Values.nextcloud.db.storage.hostPath | quote }}
+          type: DirectoryOrCreate
+      - name: dest
+        persistentVolumeClaim:
+          claimName: {{ .Values.nextcloud.db.storage.longhornClaim }}
+{{- end }}
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -99,7 +161,7 @@ spec:
       volumes:
       - name: data
         hostPath:
-          path: /home/rkd/.docker/nextcloud/db
+          path: {{ .Values.nextcloud.db.storage.hostPath | quote }}
           type: DirectoryOrCreate
 ---
 apiVersion: apps/v1

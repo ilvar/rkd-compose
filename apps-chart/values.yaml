@@ -495,6 +495,8 @@ nextcloud:
       PGID: 1000
     storage:
       size: 10Gi
+      hostPath: /home/rkd/.docker/nextcloud/db
+      longhornClaim: nextcloud-db-data
 kuma:
   enabled: true
   image:
@@ -1408,6 +1410,8 @@ longhornMigration:
     sourcePath: /home/rkd/.docker/nextcloud/data
     size: 80Gi
     schedule: "0 0 * * *"  # Daily at 00:00
+  nextcloudDb:
+    enabled: true
   resources:
     limits:
       memory: 2Gi
