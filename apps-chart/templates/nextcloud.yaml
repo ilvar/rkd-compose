@@ -63,6 +63,16 @@ spec:
       labels:
         app: nextcloud-db
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       restartPolicy: OnFailure
       containers:
       - name: migrate-nextcloud-db
