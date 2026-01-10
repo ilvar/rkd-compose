@@ -322,10 +322,8 @@ compote3:
       description: NVR with real-time AI object detection
     - name: gandi
       description: Domain and DNS management
-    - name: grafana
-      description: Analytics and monitoring dashboards
-    - name: rkd-compose-grafana
-      description: Analytics and monitoring dashboards
+    - name: openobserve
+      description: Logs, metrics, and tracing observability
     - name: hoarder
       description: Web archive and bookmark manager
     - name: homeassistant
@@ -381,10 +379,9 @@ compote3:
     overrides:
       - name: kosmos-frontend
         new_name: kosmos
-      - name: rkd-compose-grafana
-        new_name: grafana
+      - name: openobserve
         url: |
-          https://grafana.k.rkd.pw/d/e0057f60-1041-4bff-9c0b-72b409765227/main?orgId=1&from=now-6h&to=now&timezone=browser&refresh=1m
+          https://openobserve.k.rkd.pw/
   ingress:
     enabled: true
     hosts:
@@ -962,7 +959,7 @@ jitsi-meet:
       - jitsi.h.rkd.pw
       - jitsi.k.rkd.pw
 kube-prometheus-stack:
-  enabled: true
+  enabled: false
   prometheusOperator:
     admissionWebhooks:
       enabled: false
@@ -983,7 +980,7 @@ kube-prometheus-stack:
               - rockpro64
               - orangepi5
   grafana:
-    enabled: true
+    enabled: false
     adminPassword: CHANGE_ME
     securityContext:
       runAsUser: 472
@@ -1061,6 +1058,99 @@ kube-prometheus-stack:
       requests:
         memory: 32Mi
     affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
+openobserve:
+  auth:
+    ZO_ROOT_USER_EMAIL: root@example.com
+    ZO_ROOT_USER_PASSWORD: CHANGE_ME
+  config:
+    ZO_LOCAL_MODE: "true"
+    ZO_META_STORE: "sqlite"
+    ZO_WEB_URL: "https://openobserve.k.rkd.pw"
+  ingress:
+    enabled: true
+    className: ""
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: openobserve.k.rkd.pw
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: homelab-wildcard-h-tls
+        hosts:
+          - openobserve.k.rkd.pw
+  ingester:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: longhorn
+  querier:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: longhorn
+  nats:
+    config:
+      jetstream:
+        fileStore:
+          pvc:
+            storageClassName: longhorn
+  postgres:
+    enabled: false
+  minio:
+    enabled: false
+  affinity:
+    ingester:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
+    querier:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
+    compactor:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
+    router:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
+    alertmanager:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
