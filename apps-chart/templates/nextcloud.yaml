@@ -170,9 +170,8 @@ spec:
         runAsGroup: {{ include "apps-chart.groupID" .Values.nextcloud.db.user | int }}
       volumes:
       - name: data
-        hostPath:
-          path: {{ .Values.nextcloud.db.storage.hostPath | quote }}
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: {{ .Values.nextcloud.db.storage.longhornClaim }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
