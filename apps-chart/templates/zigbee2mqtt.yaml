@@ -68,9 +68,9 @@ spec:
           protocol: TCP
         volumeMounts:
         - name: data
-          mountPath: /data
+          mountPath: /app/data
         - name: config
-          mountPath: /data/configuration.yaml
+          mountPath: /app/data/configuration.yaml
           subPath: configuration.yaml
         - name: udev
           mountPath: /run/udev
