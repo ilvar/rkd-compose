@@ -874,6 +874,15 @@ jitsi-meet:
       requests:
         memory: 64Mi
         cpu: 250m
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
   prosody:
     resources:
       limits:
@@ -881,6 +890,15 @@ jitsi-meet:
       requests:
         memory: 128Mi
         cpu: 100m
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
     persistence:
       enabled: true
       size: 3Gi
@@ -891,6 +909,15 @@ jitsi-meet:
       requests:
         memory: 256Mi
         cpu: 250m
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
   jvb:
     replicaCount: 1
     resources:
@@ -901,6 +928,15 @@ jitsi-meet:
         cpu: 1000m
     useHostPort: true
     useNodeIP: true
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
   ingress:
     enabled: true
     className: ''
@@ -929,6 +965,15 @@ kube-prometheus-stack:
         enabled: false
     tls:
       enabled: false
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
   grafana:
     enabled: true
     adminPassword: CHANGE_ME
@@ -956,6 +1001,15 @@ kube-prometheus-stack:
       - secretName: homelab-wildcard-h-tls
         hosts:
         - grafana.k.rkd.pw
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
   alertmanager:
     enabled: false
   prometheus:
@@ -965,6 +1019,15 @@ kube-prometheus-stack:
         repository: prometheus/prometheus
         tag: v2.54.1
       version: v2.54.1
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - rockpro64
       scrapeInterval: 10m
       evaluationInterval: 10m
       retention: 14d
@@ -987,6 +1050,15 @@ kube-prometheus-stack:
         memory: 64Mi
       requests:
         memory: 32Mi
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
   nodeExporter:
     enabled: true
   kubeEtcd:
