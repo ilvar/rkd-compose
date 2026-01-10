@@ -1101,10 +1101,26 @@ openobserve:
       storageClass: longhorn
   nats:
     config:
+      cluster:
+        enabled: false
+        replicas: 1
       jetstream:
         fileStore:
           pvc:
             storageClassName: longhorn
+    podTemplate:
+      merge:
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                    - rockpro64
+                    - orangepi5
   postgres:
     enabled: false
     pgadmin:
