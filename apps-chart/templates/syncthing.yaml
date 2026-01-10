@@ -74,10 +74,6 @@ spec:
           mountPath: /config
         - name: data
           mountPath: /data
-      securityContext:
-        runAsUser: {{ include "apps-chart.userID" .Values.syncthing.user | int }}
-        runAsGroup: {{ include "apps-chart.groupID" .Values.syncthing.user | int }}
-        fsGroup: {{ include "apps-chart.groupID" .Values.syncthing.user | int }}
       volumes:
       - name: config
         persistentVolumeClaim:
