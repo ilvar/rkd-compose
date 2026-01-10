@@ -168,6 +168,7 @@ spec:
       securityContext:
         runAsUser: {{ include "apps-chart.userID" .Values.nextcloud.db.user | int }}
         runAsGroup: {{ include "apps-chart.groupID" .Values.nextcloud.db.user | int }}
+        fsGroup: {{ include "apps-chart.groupID" .Values.nextcloud.db.user | int }}
       volumes:
       - name: data
         persistentVolumeClaim:
