@@ -1107,6 +1107,8 @@ openobserve:
             storageClassName: longhorn
   postgres:
     enabled: false
+    pgadmin:
+      enabled: false
   minio:
     enabled: false
   affinity:
