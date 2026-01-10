@@ -440,7 +440,7 @@ paperless:
     - docs.z85
     servicePort: 8000
 nextcloud:
-  enabled: true
+  enabled: false
   app:
     image:
       repository: nextcloud
