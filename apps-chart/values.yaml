@@ -366,6 +366,8 @@ compote3:
       description: Kubernetes cluster management platform
     - name: rkd-pw
       description: Password manager
+    - name: syncthing
+      description: File synchronization
     - name: termix
       description: Terminal emulator for web
     - name: tessie
@@ -494,6 +496,31 @@ nextcloud:
       size: 10Gi
       hostPath: /home/rkd/.docker/nextcloud/db
       longhornClaim: nextcloud-db-data
+syncthing:
+  enabled: true
+  image:
+    repository: linuxserver/syncthing
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 256Mi
+      cpu: 200m
+  user: 1000:1000
+  environment:
+    PUID: 1000
+    PGID: 1000
+  nodeName: hm60
+  storage:
+    config: syncthing-config
+    configSize: 5Gi
+    className: longhorn
+    dataPath: /home/rkd/.docker/nextcloud/data/data/ilvar/files
+  ingress:
+    enabled: false
+    hosts: []
+    servicePort: 8384
 kuma:
   enabled: true
   image:

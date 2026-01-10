@@ -1,0 +1,143 @@
+{{- if .Values.syncthing.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.syncthing.storage.config }}
+  labels:
+    app: syncthing
+    storage-type: longhorn
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.syncthing.storage.className | default "longhorn" }}
+  resources:
+    requests:
+      storage: {{ .Values.syncthing.storage.configSize }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncthing
+  labels:
+    app: syncthing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: syncthing
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: syncthing
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - {{ .Values.syncthing.nodeName | quote }}
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
+      containers:
+      - name: syncthing
+        image: "{{ .Values.syncthing.image.repository }}:{{ .Values.syncthing.image.tag }}"
+        env:
+        - name: PUID
+          value: {{ .Values.syncthing.environment.PUID | quote }}
+        - name: PGID
+          value: {{ .Values.syncthing.environment.PGID | quote }}
+        ports:
+        - name: gui
+          containerPort: 8384
+          protocol: TCP
+        - name: sync
+          containerPort: 22000
+          protocol: TCP
+        - name: discovery
+          containerPort: 21027
+          protocol: UDP
+        resources:
+          limits:
+            memory: {{ .Values.syncthing.resources.limits.memory }}
+          requests:
+            memory: {{ .Values.syncthing.resources.requests.memory }}
+            cpu: {{ .Values.syncthing.resources.requests.cpu }}
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+      securityContext:
+        runAsUser: {{ include "apps-chart.userID" .Values.syncthing.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.syncthing.user | int }}
+        fsGroup: {{ include "apps-chart.groupID" .Values.syncthing.user | int }}
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: {{ .Values.syncthing.storage.config }}
+      - name: data
+        hostPath:
+          path: {{ .Values.syncthing.storage.dataPath | quote }}
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing
+  labels:
+    app: syncthing
+spec:
+  ports:
+  - name: gui
+    port: 8384
+    targetPort: 8384
+    protocol: TCP
+  - name: sync
+    port: 22000
+    targetPort: 22000
+    protocol: TCP
+  - name: discovery
+    port: 21027
+    targetPort: 21027
+    protocol: UDP
+  selector:
+    app: syncthing
+{{- if and .Values.syncthing.enabled .Values.syncthing.ingress.enabled (gt (len .Values.syncthing.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: syncthing
+  labels:
+    app: syncthing
+spec:
+{{- if gt (len .Values.syncthing.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+{{- range .Values.syncthing.ingress.hosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
+  rules:
+  {{- range .Values.syncthing.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: syncthing
+            port:
+              number: {{ $.Values.syncthing.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
