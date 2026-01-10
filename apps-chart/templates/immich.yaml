@@ -220,6 +220,21 @@ spec:
                 values:
                 - rkd-um560
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
+      initContainers:
+      - name: init-immich-upload
+        image: alpine:3.20
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          for dir in backups library profile thumbs encoded-video; do
+            mkdir -p "/usr/src/app/upload/${dir}"
+            touch "/usr/src/app/upload/${dir}/.immich"
+          done
+        volumeMounts:
+        - name: upload
+          mountPath: /usr/src/app/upload
       containers:
       - name: immich-server
         image: "{{ .Values.immich.server.image.repository }}:{{ .Values.immich.server.image.tag }}"
