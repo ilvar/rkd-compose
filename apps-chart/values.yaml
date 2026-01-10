@@ -1018,12 +1018,12 @@ openobserve:
     persistence:
       enabled: true
       size: 20Gi
-      storageClass: longhorn
+      storageClass: ""
   querier:
     persistence:
       enabled: true
       size: 20Gi
-      storageClass: longhorn
+      storageClass: ""
   nats:
     config:
       cluster:
@@ -1032,7 +1032,7 @@ openobserve:
       jetstream:
         fileStore:
           pvc:
-            storageClassName: longhorn
+            storageClassName: ""
     podTemplate:
       merge:
         spec:

@@ -228,7 +228,7 @@ spec:
         - -c
         - |
           set -e
-          for dir in backups library profile thumbs encoded-video; do
+          for dir in backups library profile thumbs encoded-video upload; do
             mkdir -p "/usr/src/app/upload/${dir}"
             touch "/usr/src/app/upload/${dir}/.immich"
           done
