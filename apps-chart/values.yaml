@@ -518,8 +518,10 @@ syncthing:
     className: longhorn
     dataPath: /home/rkd/.docker/nextcloud/data/data/ilvar/files
   ingress:
-    enabled: false
-    hosts: []
+    enabled: true
+    hosts:
+    - syncthing.h.rkd.pw
+    - syncthing.k.rkd.pw
     servicePort: 8384
 kuma:
   enabled: true
