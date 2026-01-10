@@ -1,6 +1,7 @@
 global:
   excludeNodes:
   - rockpro64
+  - orangepi5
 blocky:
   enabled: true
   image:
@@ -883,6 +884,7 @@ jitsi-meet:
               operator: NotIn
               values:
               - rockpro64
+              - orangepi5
   prosody:
     resources:
       limits:
@@ -899,6 +901,7 @@ jitsi-meet:
               operator: NotIn
               values:
               - rockpro64
+              - orangepi5
     persistence:
       enabled: true
       size: 3Gi
@@ -918,6 +921,7 @@ jitsi-meet:
               operator: NotIn
               values:
               - rockpro64
+              - orangepi5
   jvb:
     replicaCount: 1
     resources:
@@ -937,6 +941,7 @@ jitsi-meet:
               operator: NotIn
               values:
               - rockpro64
+              - orangepi5
   ingress:
     enabled: true
     className: ''
@@ -974,6 +979,7 @@ kube-prometheus-stack:
               operator: NotIn
               values:
               - rockpro64
+              - orangepi5
   grafana:
     enabled: true
     adminPassword: CHANGE_ME
@@ -1010,6 +1016,7 @@ kube-prometheus-stack:
               operator: NotIn
               values:
               - rockpro64
+              - orangepi5
   alertmanager:
     enabled: false
   prometheus:
@@ -1028,6 +1035,7 @@ kube-prometheus-stack:
                 operator: NotIn
                 values:
                 - rockpro64
+                - orangepi5
       scrapeInterval: 10m
       evaluationInterval: 10m
       retention: 14d
@@ -1059,6 +1067,7 @@ kube-prometheus-stack:
               operator: NotIn
               values:
               - rockpro64
+              - orangepi5
   nodeExporter:
     enabled: true
   kubeEtcd:
