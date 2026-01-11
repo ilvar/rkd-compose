@@ -48,7 +48,7 @@ spec:
           protocol: TCP
         volumeMounts:
         - name: data
-          mountPath: /app/data
+          mountPath: /data
       volumes:
       - name: data
         persistentVolumeClaim:
