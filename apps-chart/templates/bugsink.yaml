@@ -23,6 +23,10 @@ spec:
         reloader.stakater.com/auto: "true"
     spec:
       {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      securityContext:
+        runAsUser: {{ include "apps-chart.userID" .Values.bugsink.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.bugsink.user | int }}
+        fsGroup: {{ include "apps-chart.groupID" .Values.bugsink.user | int }}
       containers:
       - name: bugsink
         image: "{{ .Values.bugsink.image.repository }}:{{ .Values.bugsink.image.tag }}"

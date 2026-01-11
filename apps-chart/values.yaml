@@ -623,6 +623,7 @@ bugsink:
     requests:
       memory: 393Mi
       cpu: 300m
+  user: 1000:1000
   environment:
     CREATE_SUPERUSER: admin:admin
     PORT: '8000'
