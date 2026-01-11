@@ -30,6 +30,6 @@ dependencies:
     version: "2.2.0"
     repository: "https://jitsi-contrib.github.io/jitsi-helm/"
   - name: openobserve
-    version: "0.13.0"
+    version: "0.40.1"
     repository: "https://charts.openobserve.ai"
 
