@@ -882,7 +882,7 @@ kosmos:
     enabled: true
     image:
       repository: python
-      tag: 3.11-alpine
+      tag: 3.14-alpine
     telegram:
       enabled: true
       secret:
