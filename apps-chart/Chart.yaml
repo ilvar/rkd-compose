@@ -2,7 +2,7 @@ apiVersion: v2
 name: rkd-apps-chart
 description: A comprehensive Helm chart for deploying multiple self-hosted applications including media servers, productivity tools, development utilities, and monitoring solutions.
 type: application
-version: 0.1.104
+version: 0.2.59
 appVersion: "1.0"
 keywords:
   - self-hosted
@@ -15,7 +15,7 @@ maintainers:
   - name: rkd
     email: a@rkd.pw
 sources:
-  - https://github.com/rkd-pw/rkd-apps-chart
+  - https://github.com/ilvar/rkd-compose/tree/main/apps-chart
 icon: https://raw.githubusercontent.com/kubernetes/kubernetes/master/logo/logo.png
 annotations:
   catalog.cattle.io/display-name: "RKD Applications Chart"
@@ -27,9 +27,9 @@ dependencies:
     version: "2.2.7"
     repository: "https://stakater.github.io/stakater-charts"
   - name: jitsi-meet
-    version: "2.1.3"
+    version: "2.2.0"
     repository: "https://jitsi-contrib.github.io/jitsi-helm/"
-  - name: kube-prometheus-stack
-    version: "80.10.0"
-    repository: "https://prometheus-community.github.io/helm-charts"
+  - name: openobserve
+    version: "0.13.0"
+    repository: "https://charts.openobserve.ai"
 

@@ -1,0 +1,250 @@
+{{- if and .Values.kosmos.enabled .Values.kosmos.notifications.enabled .Values.kosmos.notifications.telegram.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kosmos-notifications
+  labels:
+    app: kosmos-notifications
+spec:
+  schedule: {{ .Values.kosmos.notifications.checkInterval | default "*/5 * * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: kosmos-notifications
+        spec:
+          {{- include "apps-chart.excludeNodeAffinity" . | nindent 10 }}
+          restartPolicy: OnFailure
+          serviceAccountName: kosmos-notifications
+          containers:
+          - name: kosmos-notifications
+            image: "{{ .Values.kosmos.notifications.image.repository }}:{{ .Values.kosmos.notifications.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Install Python and requests
+              apk add --no-cache python3 py3-pip
+              pip3 install --no-cache-dir requests kubernetes
+              
+              python3 << 'EOF'
+              import os
+              import json
+              import requests
+              from kubernetes import client, config
+              
+              def get_telegram_secret():
+                  """Read Telegram credentials from environment (populated from secret)"""
+                  bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+                  chat_id = os.environ.get('TELEGRAM_CHAT_ID', '')
+                  return bot_token, chat_id
+              
+              def get_state_configmap():
+                  """Read last known versions from ConfigMap"""
+                  try:
+                      v1 = client.CoreV1Api()
+                      cm = v1.read_namespaced_config_map(
+                          name="kosmos-notifications-state",
+                          namespace=os.environ.get('NAMESPACE', 'default')
+                      )
+                      return {
+                          'backend': cm.data.get('kosmos-backend-version', ''),
+                          'frontend': cm.data.get('kosmos-frontend-version', '')
+                      }
+                  except Exception as e:
+                      print(f"Error reading ConfigMap: {e}")
+                      return {'backend': '', 'frontend': ''}
+              
+              def update_state_configmap(backend_version, frontend_version):
+                  """Update ConfigMap with new versions"""
+                  try:
+                      v1 = client.CoreV1Api()
+                      namespace = os.environ.get('NAMESPACE', 'default')
+                      cm = v1.read_namespaced_config_map(
+                          name="kosmos-notifications-state",
+                          namespace=namespace
+                      )
+                      cm.data['kosmos-backend-version'] = backend_version
+                      cm.data['kosmos-frontend-version'] = frontend_version
+                      v1.patch_namespaced_config_map(
+                          name="kosmos-notifications-state",
+                          namespace=namespace,
+                          body=cm
+                      )
+                      print(f"Updated ConfigMap: backend={backend_version}, frontend={frontend_version}")
+                  except Exception as e:
+                      print(f"Error updating ConfigMap: {e}")
+              
+              def get_deployment_image(deployment_name):
+                  """Get current image tag from deployment"""
+                  try:
+                      apps_v1 = client.AppsV1Api()
+                      namespace = os.environ.get('NAMESPACE', 'default')
+                      deployment = apps_v1.read_namespaced_deployment(
+                          name=deployment_name,
+                          namespace=namespace
+                      )
+                      image = deployment.spec.template.spec.containers[0].image
+                      # Extract tag from image:tag format
+                      if ':' in image:
+                          return image.split(':')[-1]
+                      return image
+                  except Exception as e:
+                      print(f"Error getting deployment {deployment_name}: {e}")
+                      return None
+              
+              def send_telegram_message(bot_token, chat_id, message):
+                  """Send message via Telegram Bot API"""
+                  if not bot_token or not chat_id:
+                      print("Telegram credentials not configured, skipping notification")
+                      return False
+                  
+                  url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+                  payload = {
+                      'chat_id': chat_id,
+                      'text': message,
+                      'parse_mode': 'Markdown'
+                  }
+                  
+                  try:
+                      response = requests.post(url, json=payload, timeout=10)
+                      response.raise_for_status()
+                      print(f"Telegram notification sent successfully")
+                      return True
+                  except Exception as e:
+                      print(f"Error sending Telegram message: {e}")
+                      return False
+              
+              def main():
+                  # Load Kubernetes config (in-cluster)
+                  try:
+                      config.load_incluster_config()
+                  except:
+                      config.load_kube_config()
+                  
+                  namespace = os.environ.get('NAMESPACE', 'default')
+                  bot_token, chat_id = get_telegram_secret()
+                  
+                  if not bot_token or not chat_id:
+                      print("ERROR: Telegram bot token or chat ID not found in environment")
+                      print("Make sure the secret is properly configured and mounted")
+                      exit(1)
+                  
+                  state = get_state_configmap()
+                  
+                  notifications_sent = []
+                  state_changed = False
+                  
+                  prev_backend = state['backend']
+                  prev_frontend = state['frontend']
+                  
+                  # Check kosmos-backend
+                  backend_version = get_deployment_image('kosmos-backend')
+                  backend_changed = bool(backend_version and backend_version != prev_backend)
+                  if backend_changed:
+                      state['backend'] = backend_version
+                      state_changed = True
+                  
+                  # Check kosmos-frontend
+                  frontend_version = get_deployment_image('kosmos-frontend')
+                  frontend_changed = bool(frontend_version and frontend_version != prev_frontend)
+                  if frontend_changed:
+                      state['frontend'] = frontend_version
+                      state_changed = True
+                  
+                  # Send notifications if any version changed and we had prior versions
+                  if backend_changed or frontend_changed:
+                      if backend_changed and frontend_changed and prev_backend and prev_frontend:
+                          message = "🚀 *Kosmos Deployed*\n\n"
+                          message += f"*Backend:* `{backend_version}`\n"
+                          message += f"*Frontend:* `{frontend_version}`\n"
+                          if send_telegram_message(bot_token, chat_id, message + "https://kosmos.rkd.pw/"):
+                              notifications_sent.append('backend+frontend')
+                      elif backend_changed and prev_backend:
+                          message = "🚀 *Kosmos Backend Deployed*\n\n"
+                          message += f"*Backend:* `{backend_version}`\n"
+                          if send_telegram_message(bot_token, chat_id, message + "https://kosmos.rkd.pw/"):
+                              notifications_sent.append('backend')
+                      elif frontend_changed and prev_frontend:
+                          message = "🚀 *Kosmos Frontend Deployed*\n\n"
+                          message += f"*Frontend:* `{frontend_version}`\n"
+                          if send_telegram_message(bot_token, chat_id, message + "https://kosmos.rkd.pw/"):
+                              notifications_sent.append('frontend')
+                  
+                  # Update ConfigMap if versions changed
+                  if state_changed:
+                      update_state_configmap(
+                          backend_version or state['backend'],
+                          frontend_version or state['frontend']
+                      )
+                  
+                  if notifications_sent:
+                      print(f"Notifications sent for: {', '.join(notifications_sent)}")
+                  else:
+                      print("No deployment changes detected")
+              
+              if __name__ == '__main__':
+                  main()
+              EOF
+            env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kosmos.notifications.telegram.secret.name | default "kosmos-telegram-secret" | quote }}
+                  key: {{ .Values.kosmos.notifications.telegram.secret.botTokenKey | default "bot-token" | quote }}
+            - name: TELEGRAM_CHAT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kosmos.notifications.telegram.secret.name | default "kosmos-telegram-secret" | quote }}
+                  key: {{ .Values.kosmos.notifications.telegram.secret.chatIdKey | default "chat-id" | quote }}
+            resources:
+              limits:
+                memory: 256Mi
+              requests:
+                memory: 128Mi
+                cpu: 100m
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kosmos-notifications
+  labels:
+    app: kosmos-notifications
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kosmos-notifications
+  labels:
+    app: kosmos-notifications
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "patch", "update"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kosmos-notifications
+  labels:
+    app: kosmos-notifications
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kosmos-notifications
+subjects:
+- kind: ServiceAccount
+  name: kosmos-notifications
+  namespace: default
+{{- end }}

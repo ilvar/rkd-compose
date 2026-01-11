@@ -11,7 +11,10 @@ spec:
     matchLabels:
       app: nodered
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -26,6 +29,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: nodered
         image: "{{ .Values.nodered.image.repository }}:{{ .Values.nodered.image.tag }}"
@@ -107,4 +111,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

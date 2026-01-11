@@ -39,6 +39,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: kosmos-db
         image: "{{ .Values.kosmos.db.image.repository }}:{{ .Values.kosmos.db.image.tag }}"
@@ -114,7 +115,10 @@ spec:
     matchLabels:
       app: kosmos-backend
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -131,6 +135,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: kosmos-backend
         image: "{{ .Values.kosmos.backend.image.repository }}:{{ .Values.kosmos.backend.image.tag }}"
@@ -220,7 +225,10 @@ spec:
     matchLabels:
       app: kosmos-frontend
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -237,6 +245,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: kosmos-frontend
         image: "{{ .Values.kosmos.frontend.image.repository }}:{{ .Values.kosmos.frontend.image.tag }}"
@@ -349,6 +358,13 @@ spec:
   - host: {{ . | quote }}
     http:
       paths:
+      - path: /media
+        pathType: Prefix
+        backend:
+          service:
+            name: kosmos-backend
+            port:
+              number: {{ $.Values.kosmos.backend.ingress.servicePort }}
       - path: /
         pathType: Prefix
         backend:

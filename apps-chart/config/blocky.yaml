@@ -1,10 +1,8 @@
 upstream:
   default:
-    - 1.1.1.1
-    - 8.8.8.8
+    - https://dns.nextdns.io/c7ade2
   externalResolvers:
-    - 1.1.1.1
-    - 8.8.8.8
+    - https://dns.nextdns.io/c7ade2
 blocking:
   blackLists:
     ads:

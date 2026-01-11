@@ -58,7 +58,10 @@ spec:
     matchLabels:
       app: compote3
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -76,6 +79,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: compote3
         image: "{{ .Values.compote3.image.repository }}:{{ .Values.compote3.image.tag }}"
@@ -147,4 +151,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

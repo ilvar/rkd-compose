@@ -11,7 +11,10 @@ spec:
     matchLabels:
       app: bugsink
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -19,6 +22,7 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: bugsink
         image: "{{ .Values.bugsink.image.repository }}:{{ .Values.bugsink.image.tag }}"
@@ -44,7 +48,7 @@ spec:
           protocol: TCP
         volumeMounts:
         - name: data
-          mountPath: /app/data
+          mountPath: /data
       volumes:
       - name: data
         persistentVolumeClaim:

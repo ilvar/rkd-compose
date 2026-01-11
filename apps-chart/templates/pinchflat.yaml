@@ -12,7 +12,10 @@ spec:
     matchLabels:
       app: pinchflat
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -27,6 +30,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       initContainers:
       - name: fix-permissions
         image: busybox:latest
@@ -125,4 +129,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

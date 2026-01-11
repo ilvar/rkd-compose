@@ -1,3 +1,7 @@
+global:
+  excludeNodes:
+  - rockpro64
+  - orangepi5
 blocky:
   enabled: true
   image:
@@ -275,7 +279,7 @@ compote3:
   enabled: true
   image:
     repository: ilvar/compote3
-    tag: v0.3.10
+    tag: v0.3.11
   resources:
     limits:
       memory: 100Mi
@@ -293,6 +297,8 @@ compote3:
       url: https://app.mailbox.org/
     - name: Meduza
       url: https://meduza.io
+    - name: NAS
+      url: http://192.168.1.95
     - name: RuTracker
       url: https://rutracker.org/forum/viewforum.php?f=635
     - name: Tessie
@@ -316,10 +322,8 @@ compote3:
       description: NVR with real-time AI object detection
     - name: gandi
       description: Domain and DNS management
-    - name: grafana
-      description: Analytics and monitoring dashboards
-    - name: rkd-compose-grafana
-      description: Analytics and monitoring dashboards
+    - name: openobserve
+      description: Logs, metrics, and tracing observability
     - name: hoarder
       description: Web archive and bookmark manager
     - name: homeassistant
@@ -362,6 +366,8 @@ compote3:
       description: Kubernetes cluster management platform
     - name: rkd-pw
       description: Password manager
+    - name: syncthing
+      description: File synchronization
     - name: termix
       description: Terminal emulator for web
     - name: tessie
@@ -375,10 +381,9 @@ compote3:
     overrides:
       - name: kosmos-frontend
         new_name: kosmos
-      - name: rkd-compose-grafana
-        new_name: grafana
+      - name: openobserve
         url: |
-          https://grafana.k.rkd.pw/d/e0057f60-1041-4bff-9c0b-72b409765227/main?orgId=1&from=now-6h&to=now&timezone=browser&refresh=1m
+          https://openobserve.k.rkd.pw/
   ingress:
     enabled: true
     hosts:
@@ -435,7 +440,7 @@ paperless:
     - docs.z85
     servicePort: 8000
 nextcloud:
-  enabled: true
+  enabled: false
   app:
     image:
       repository: nextcloud
@@ -489,6 +494,35 @@ nextcloud:
       PGID: 1000
     storage:
       size: 10Gi
+      hostPath: /home/rkd/.docker/nextcloud/db
+      longhornClaim: nextcloud-db-data
+syncthing:
+  enabled: true
+  image:
+    repository: linuxserver/syncthing
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 256Mi
+      cpu: 200m
+  user: 1000:1000
+  environment:
+    PUID: 1000
+    PGID: 1000
+  nodeName: hm60
+  storage:
+    config: syncthing-config
+    configSize: 5Gi
+    className: longhorn
+    dataPath: /home/rkd/.docker/nextcloud/data/data/ilvar/files
+  ingress:
+    enabled: true
+    hosts:
+    - syncthing.h.rkd.pw
+    - syncthing.k.rkd.pw
+    servicePort: 8384
 kuma:
   enabled: true
   image:
@@ -561,9 +595,9 @@ immich:
       tag: 14-vectorchord0.5.3-pgvector0.8.1
     resources:
       limits:
-        memory: 244Mi
+        memory: 1024Mi
       requests:
-        memory: 244Mi
+        memory: 512Mi
         cpu: 300m
     environment:
       POSTGRES_USER: postgres
@@ -642,7 +676,7 @@ miniflux:
   enabled: true
   image:
     repository: miniflux/miniflux
-    tag: 2.2.15
+    tag: 2.2.16
   resources:
     limits:
       memory: 100Mi
@@ -661,6 +695,7 @@ miniflux:
     hosts:
     - miniflux.rkd.pw
     - miniflux.k.rkd.pw
+    - miniflux.h.rkd.pw
     servicePort: 8080
 blog:
   enabled: true
@@ -679,6 +714,7 @@ blog:
     hosts:
     - blog.rkd.pw
     - blog.k.rkd.pw
+    - blog.h.rkd.pw
     servicePort: 5000
 rkdPw:
   enabled: true
@@ -749,27 +785,6 @@ reloader:
       requests:
         memory: 32Mi
         cpu: 50m
-termix:
-  enabled: false
-  image:
-    repository: ghcr.io/lukegus/termix
-    tag: latest
-  resources:
-    limits:
-      memory: 129Mi
-    requests:
-      memory: 129Mi
-      cpu: 100m
-  environment:
-    PORT: '8080'
-  ports:
-    http: 8080
-  ingress:
-    enabled: true
-    hosts:
-    - termix.h.rkd.pw
-    - termix.k.rkd.pw
-    servicePort: 8080
 pinchflat:
   enabled: true
   image:
@@ -814,12 +829,12 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: 1.0.3
+      tag: 1.2.0
     resources:
       limits:
-        memory: 162Mi
+        memory: 512Mi
       requests:
-        memory: 162Mi
+        memory: 512Mi
         cpu: 300m
     environment:
       DEBUG: 'False'
@@ -847,7 +862,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 1.1.7
+      tag: 1.2.5
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
@@ -863,6 +878,18 @@ kosmos:
       - kosmos.k.rkd.pw
       - kosmos.rkd.pw
       servicePort: 80
+  notifications:
+    enabled: true
+    image:
+      repository: python
+      tag: 3.14-alpine
+    telegram:
+      enabled: true
+      secret:
+        name: kosmos-telegram-secret
+        botTokenKey: bot-token
+        chatIdKey: chat-id
+    checkInterval: "0 * * * *"
 jitsi-meet:
   enabled: true
   publicURL: https://jitsi.h.rkd.pw
@@ -876,6 +903,16 @@ jitsi-meet:
       requests:
         memory: 64Mi
         cpu: 250m
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
   prosody:
     resources:
       limits:
@@ -883,6 +920,16 @@ jitsi-meet:
       requests:
         memory: 128Mi
         cpu: 100m
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
     persistence:
       enabled: true
       size: 3Gi
@@ -893,6 +940,16 @@ jitsi-meet:
       requests:
         memory: 256Mi
         cpu: 250m
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
   jvb:
     replicaCount: 1
     resources:
@@ -903,6 +960,16 @@ jitsi-meet:
         cpu: 1000m
     useHostPort: true
     useNodeIP: true
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
   ingress:
     enabled: true
     className: ''
@@ -920,61 +987,122 @@ jitsi-meet:
       hosts:
       - jitsi.h.rkd.pw
       - jitsi.k.rkd.pw
-kube-prometheus-stack:
-  enabled: true
-  grafana:
+openobserve:
+  auth:
+    ZO_ROOT_USER_EMAIL: a@rkd.pw
+    ZO_ROOT_USER_PASSWORD: jedi8947
+  config:
+    ZO_LOCAL_MODE: "true"
+    ZO_META_STORE: "sqlite"
+    ZO_WEB_URL: "https://openobserve.k.rkd.pw"
+  ingress:
     enabled: true
-    adminPassword: CHANGE_ME
-    securityContext:
-      runAsUser: 472
-      runAsGroup: 472
-      fsGroup: 472
-    initChownData:
-      enabled: false
-    persistence:
-      enabled: true
-      size: 5Gi
-    grafana.ini:
-      server:
-        root_url: https://grafana.k.rkd.pw/
-        serve_from_sub_path: false
-    ingress:
-      enabled: true
-      ingressClassName: ''
-      hosts:
-      - grafana.k.rkd.pw
-      annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-prod
-      tls:
+    className: ""
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: openobserve.k.rkd.pw
+        paths:
+          - path: /
+            pathType: Prefix
+      - host: openobserve.h.rkd.pw
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
       - secretName: homelab-wildcard-h-tls
         hosts:
-        - grafana.k.rkd.pw
-  alertmanager:
+          - openobserve.h.rkd.pw
+          - openobserve.k.rkd.pw
+  ingester:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: ""
+  querier:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: ""
+  nats:
+    config:
+      cluster:
+        enabled: false
+        replicas: 1
+      jetstream:
+        fileStore:
+          pvc:
+            storageClassName: ""
+    podTemplate:
+      merge:
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                    - rockpro64
+                    - orangepi5
+  postgres:
     enabled: false
-  prometheus:
-    prometheusSpec:
-      scrapeInterval: 10m
-      evaluationInterval: 10m
-      retention: 14d
-      resources:
-        requests:
-          cpu: 100m
-          memory: 512Mi
-      storageSpec:
-        volumeClaimTemplate:
-          spec:
-            accessModes:
-            - ReadWriteOnce
-            resources:
-              requests:
-                storage: 10Gi
-  kubeStateMetrics:
-    enabled: true
-    resources:
-      limits:
-        memory: 64Mi
-      requests:
-        memory: 32Mi
+    pgadmin:
+      enabled: false
+  minio:
+    enabled: false
+  affinity:
+    ingester:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
+    querier:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
+    compactor:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
+    router:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
+    alertmanager:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - rockpro64
+              - orangepi5
   nodeExporter:
     enabled: true
   kubeEtcd:
@@ -994,12 +1122,111 @@ videosCleanupReport:
       memory: 256Mi
     requests:
       memory: 128Mi
+mqtt:
+  enabled: true
+  image:
+    repository: eclipse-mosquitto
+    tag: latest
+  timezone: Europe/Dublin
+  ports:
+    mqtt: 1883
+    websocket: 9001
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      memory: 64Mi
+      cpu: 50m
+  config: |
+    allow_anonymous true
+    bind_address 0.0.0.0
+zigbee2mqtt:
+  enabled: true
+  image:
+    repository: koenkk/zigbee2mqtt
+    tag: latest
+  timezone: Europe/Dublin
+  nodeName: hm60
+  device: /dev/ttyACM0
+  privileged: true
+  ports:
+    http: 8080
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      memory: 128Mi
+      cpu: 100m
+  ingress:
+    enabled: true
+    hosts:
+    - zigbee.d.z85
+    - zigbee.h.rkd.pw
+    servicePort: 8080
+  config: |
+    mqtt:
+      base_topic: zigbee2mqtt
+      server: mqtt://mqtt.default.svc.cluster.local:1883
+    serial:
+      port: /dev/ttyACM0
+    frontend:
+      enabled: true
+      port: 8080
+    homeassistant:
+      enabled: true
+      discovery_topic: homeassistant
+      status_topic: hass/status
+    advanced:
+      network_key:
+        - 13
+        - 221
+        - 108
+        - 106
+        - 53
+        - 249
+        - 177
+        - 128
+        - 48
+        - 235
+        - 38
+        - 59
+        - 216
+        - 215
+        - 72
+        - 108
+    device_options: {}
+    devices:
+      '0x70b3d52b600286ee':
+        friendly_name: 'Socket: Bed Heater'
+      '0x00124b0029dee0ec':
+        friendly_name: 'Curtain: Bedroom'
+      '0x00124b0020bc7099':
+        friendly_name: '0x00124b0020bc7099'
+      '0x00158d000247d794':
+        friendly_name: '0x00158d000247d794'
+      '0x70b3d52b60028bc8':
+        friendly_name: '0x70b3d52b60028bc8'
+      '0x70b3d52b60028ba0':
+        friendly_name: '0x70b3d52b60028ba0'
+      '0x70b3d52b60028c11':
+        friendly_name: '0x70b3d52b60028c11'
+      '0xa4c13854552d0e8d':
+        friendly_name: '0xa4c13854552d0e8d'
+      '0xdc8e95fffe5d2fb4':
+        friendly_name: '0xdc8e95fffe5d2fb4'
+      '0xa4c1384a2bf861d0':
+        friendly_name: '0xa4c1384a2bf861d0'
+      '0xa4c138e8f8b0a889':
+        friendly_name: '0xa4c138e8f8b0a889'
+      '0x5c0272fffe808011':
+        friendly_name: '0x5c0272fffe808011'
+    version: 4
 backups:
   enabled: true
   serviceAccountName: backup
   backblaze:
     enabled: true
-    bucket: rkd-backups
+    bucket: homelab-rancher-backup
     secretName: backblaze-credentials
     accountIdKey: account-id
     applicationKeyKey: application-key
@@ -1008,7 +1235,7 @@ backups:
     schedule: "0 2 * * *"
     image:
       repository: velero/velero
-      tag: v1.13.0
+      tag: v1.17.1
     resources:
       limits:
         memory: 512Mi
@@ -1020,8 +1247,8 @@ backups:
     enabled: true
     schedule: "0 3 * * *"
     image:
-      repository: quay.io/coreos/etcd
-      tag: v3.5.9
+      repository: alpine
+      tag: latest
     endpoints: "https://127.0.0.1:2379"
     ca: "/var/lib/rancher/k3s/server/tls/etcd/server-ca.crt"
     cert: "/var/lib/rancher/k3s/server/tls/etcd/server-client.crt"
@@ -1060,7 +1287,7 @@ backups:
         port: 5432
         user: postgres
         database: crm
-        secretName: kosmos-db-secrets
+        secretName: kosmos-secrets
         passwordKey: postgres-password
         schedule: "0 4 * * *"
     resources:
@@ -1073,8 +1300,8 @@ backups:
   mysql:
     enabled: true
     image:
-      repository: mariadb
-      tag: 12.1
+      repository: alpine
+      tag: latest
     databases:
       - name: nextcloud
         host: nextcloud-db
@@ -1138,11 +1365,19 @@ backups:
     enabled: true
     schedule: "0 9 * * *"
     sourcePath: /home/rkd/.docker/immich/upload
+    pvcName: immich-upload
     image:
       repository: alpine
       tag: latest
     transfers: 4
     checkers: 8
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: immich-server
+          topologyKey: kubernetes.io/hostname
     resources:
       limits:
         memory: 2Gi
@@ -1179,3 +1414,41 @@ backups:
       requests:
         memory: 256Mi
         cpu: 200m
+longhorn:
+  ingress:
+    enabled: true
+    hosts:
+    - longhorn.h.rkd.pw
+    servicePort: 80
+    tlsSecretName: homelab-wildcard-h-tls
+    certManager:
+      clusterIssuer: letsencrypt-prod
+    annotations: {}
+  requirementsCheck:
+    enabled: false
+    image:
+      repository: alpine
+      tag: latest
+longhornMigration:
+  enabled: true
+  storageClass: longhorn
+  image:
+    repository: alpine
+    tag: latest
+  immich:
+    sourcePath: /home/rkd/.docker/immich/upload
+    size: 40Gi
+    schedule: "0 0 * * *"  # Daily at 00:00
+  nextcloud:
+    sourcePath: /home/rkd/.docker/nextcloud/data
+    size: 80Gi
+    schedule: "0 0 * * *"  # Daily at 00:00
+  nextcloudDb:
+    enabled: true
+  resources:
+    limits:
+      memory: 2Gi
+      cpu: 2000m
+    requests:
+      memory: 512Mi
+      cpu: 500m

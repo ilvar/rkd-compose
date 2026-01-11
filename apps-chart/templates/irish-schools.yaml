@@ -11,12 +11,16 @@ spec:
     matchLabels:
       app: irish-schools
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
         app: irish-schools
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: irish-schools
         image: "{{ .Values.irishSchools.image.repository }}:{{ .Values.irishSchools.image.tag }}"

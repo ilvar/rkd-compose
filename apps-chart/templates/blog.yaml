@@ -11,7 +11,10 @@ spec:
     matchLabels:
       app: blog
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -21,6 +24,7 @@ spec:
       nodeSelector:
         {{- toYaml .Values.blog.nodeSelector | nindent 8 }}
       {{- end }}
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: blog
         image: "{{ .Values.blog.image.repository }}:{{ .Values.blog.image.tag }}"

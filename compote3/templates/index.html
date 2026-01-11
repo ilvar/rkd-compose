@@ -25,6 +25,39 @@
             padding: 0 1rem;
         }
 
+        .search-container {
+            margin-bottom: 2rem;
+            padding: 0 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 600px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            font-family: inherit;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3077ba;
+            box-shadow: 0 0 0 3px rgba(48, 119, 186, 0.1);
+        }
+
+        .link-card.hidden,
+        .app-card.hidden,
+        .repo-card.hidden {
+            display: none;
+        }
+
+        .section.hidden {
+            display: none;
+        }
+
         .section {
             margin-bottom: 2rem;
         }
@@ -415,6 +448,11 @@
 </head>
 <body>
     <div class="container">
+        <!-- Search Field -->
+        <div class="search-container">
+            <input type="text" id="search-input" class="search-input" placeholder="Search tiles...">
+        </div>
+
         <!-- Applications Section -->
         <div class="section">
             <h2 class="section-title">Applications</h2>
@@ -458,6 +496,142 @@
 
     <script>
         const STORAGE_KEY = 'compote3_data';
+        
+        // Store all tiles for search functionality
+        let allTiles = [];
+
+        // Levenshtein distance calculation
+        function levenshteinDistance(str1, str2) {
+            const m = str1.length;
+            const n = str2.length;
+            const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+            for (let i = 0; i <= m; i++) dp[i][0] = i;
+            for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (str1[i - 1] === str2[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1];
+                    } else {
+                        dp[i][j] = Math.min(
+                            dp[i - 1][j] + 1,     // deletion
+                            dp[i][j - 1] + 1,     // insertion
+                            dp[i - 1][j - 1] + 1  // substitution
+                        );
+                    }
+                }
+            }
+
+            return dp[m][n];
+        }
+
+        // Check if text contains query (case-insensitive)
+        function containsSubstring(text, query) {
+            return text.toLowerCase().includes(query.toLowerCase());
+        }
+
+        // Get search text from a tile element
+        function getTileSearchText(tile) {
+            const h3 = tile.querySelector('h3');
+            if (h3) {
+                // For repo cards, combine author and repo name
+                const author = h3.querySelector('.repo-author');
+                const repoName = h3.querySelector('.repo-name');
+                if (author && repoName) {
+                    return (author.textContent + ' ' + repoName.textContent).toLowerCase();
+                }
+                return h3.textContent.toLowerCase();
+            }
+            return '';
+        }
+
+        // Check if text contains query with 1-edit distance tolerance
+        function containsWithLevenshtein(text, query) {
+            const textLower = text.toLowerCase();
+            const queryLower = query.toLowerCase();
+            
+            // First check exact substring match
+            if (textLower.includes(queryLower)) {
+                return { match: true, exact: true };
+            }
+            
+            // Check if any substring of text matches query with <= 1 edit distance
+            // We check all possible substrings of length query.length +/- 1
+            for (let i = 0; i <= textLower.length; i++) {
+                for (let len = Math.max(1, queryLower.length - 1); len <= Math.min(textLower.length - i, queryLower.length + 1); len++) {
+                    const substr = textLower.substring(i, i + len);
+                    const distance = levenshteinDistance(substr, queryLower);
+                    if (distance <= 1) {
+                        return { match: true, exact: false };
+                    }
+                }
+            }
+            
+            return { match: false, exact: false };
+        }
+
+        // Filter tiles based on search query
+        function filterTiles(query) {
+            if (!query.trim()) {
+                // Show all tiles and sections
+                allTiles.forEach(tile => {
+                    tile.classList.remove('hidden');
+                });
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.remove('hidden');
+                });
+                return 0;
+            }
+
+            const exactMatches = [];
+            const fuzzyMatches = [];
+
+            allTiles.forEach(tile => {
+                const searchText = getTileSearchText(tile);
+                
+                if (searchText.length === 0) {
+                    tile.classList.add('hidden');
+                    return;
+                }
+                
+                const result = containsWithLevenshtein(searchText, query);
+                
+                if (result.match) {
+                    if (result.exact) {
+                        exactMatches.push(tile);
+                    } else {
+                        fuzzyMatches.push(tile);
+                    }
+                    tile.classList.remove('hidden');
+                } else {
+                    tile.classList.add('hidden');
+                }
+            });
+
+            // Hide empty sections
+            document.querySelectorAll('.section').forEach(section => {
+                const grids = section.querySelectorAll('.applications-grid, .links-grid');
+                let hasVisibleTiles = false;
+                grids.forEach(grid => {
+                    const visibleTiles = Array.from(grid.children).filter(
+                        child => !child.classList.contains('hidden')
+                    );
+                    if (visibleTiles.length > 0) {
+                        hasVisibleTiles = true;
+                    }
+                });
+                
+                if (hasVisibleTiles) {
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                }
+            });
+
+            // Return visible tiles count
+            return exactMatches.length + fuzzyMatches.length;
+        }
 
         // Load cached data from localStorage (always return if available, regardless of age)
         function loadCachedData() {
@@ -506,6 +680,7 @@
                     <p class="url">${escapeHtml(app.url)}</p>
                 `;
                 container.appendChild(card);
+                allTiles.push(card);
             });
         }
 
@@ -538,6 +713,7 @@
                     </div>
                 `;
                 container.appendChild(card);
+                allTiles.push(card);
             });
         }
 
@@ -549,6 +725,8 @@
 
         // Render all data
         function renderAllData(data) {
+            // Clear tiles array when re-rendering
+            allTiles = [];
             if (!data) return;
             renderApplications(data.applications || [], 'applications');
             renderApplications(data.links || [], 'links');
@@ -557,11 +735,50 @@
             renderRepos(data.github_watched || [], 'github-watched');
         }
 
+        // Setup search functionality
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            if (!searchInput) return;
+
+            // Focus search input on load
+            searchInput.focus();
+
+            // Handle input changes
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value;
+                filterTiles(query);
+            });
+
+            // Handle Enter key
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const query = e.target.value.trim();
+                    
+                    if (!query) return;
+                    
+                    // Ensure filter is applied (may have been triggered by input event already)
+                    const visibleCount = filterTiles(query);
+                    
+                    if (visibleCount === 1) {
+                        // Find the single visible tile and navigate to it
+                        const visibleTile = allTiles.find(tile => !tile.classList.contains('hidden'));
+                        if (visibleTile && visibleTile.href) {
+                            window.location.href = visibleTile.href;
+                        }
+                    }
+                }
+            });
+        }
+
         // Load and render cached data immediately (synchronously, before any async operations)
         const cachedData = loadCachedData();
         if (cachedData) {
             renderAllData(cachedData);
         }
+
+        // Setup search after initial render
+        setupSearch();
 
         // Fetch fresh data asynchronously and update when it arrives
         async function fetchFreshData() {
@@ -574,6 +791,12 @@
                 
                 // Update UI with fresh data
                 renderAllData(data);
+                
+                // Reapply current search filter if there is one
+                const searchInput = document.getElementById('search-input');
+                if (searchInput && searchInput.value) {
+                    filterTiles(searchInput.value);
+                }
                 
                 // Cache the fresh data for next time
                 saveCachedData(data);

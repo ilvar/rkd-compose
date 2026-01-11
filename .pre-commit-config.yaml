@@ -1,6 +1,13 @@
 repos:
   - repo: local
     hooks:
+      - id: post-commit-push
+        name: post-commit-push
+        entry: scripts/git/post_commit_push.sh
+        language: script
+        stages: [post-commit]
+        pass_filenames: false
+        always_run: true
       - id: helm-lint
         name: Helm Lint
         entry: bash -c 'helm lint apps-chart'
@@ -38,4 +45,3 @@ repos:
         exclude: ^compote3/VERSION$
         pass_filenames: false
         always_run: false
-

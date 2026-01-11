@@ -1,5 +1,6 @@
 .env
 local.yaml
+homelab.yaml
 .tmp
 tmp/
 apps-chart/charts/

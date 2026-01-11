@@ -22,7 +22,10 @@ spec:
     matchLabels:
       app: hoarder-web
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -30,6 +33,7 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: hoarder-web
         image: "{{ .Values.hoarder.web.image.repository }}:{{ .Values.hoarder.web.image.tag }}"
@@ -75,12 +79,16 @@ spec:
     matchLabels:
       app: hoarder-chrome
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
         app: hoarder-chrome
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: hoarder-chrome
         image: "{{ .Values.hoarder.chrome.image.repository }}:{{ .Values.hoarder.chrome.image.tag }}"
@@ -110,12 +118,16 @@ spec:
     matchLabels:
       app: hoarder-meilisearch
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
         app: hoarder-meilisearch
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: hoarder-meilisearch
         image: "{{ .Values.hoarder.meilisearch.image.repository }}:{{ .Values.hoarder.meilisearch.image.tag }}"
@@ -236,4 +248,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

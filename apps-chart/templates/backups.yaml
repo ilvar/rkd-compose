@@ -114,7 +114,28 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
+              echo "Installing etcdctl and rclone if needed..."
+              
+              # Install etcdctl if not available
+              if ! command -v etcdctl &> /dev/null; then
+                apk add --no-cache curl tar || true
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  ETCD_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  ETCD_ARCH="arm64"
+                else
+                  ETCD_ARCH="amd64"
+                fi
+                ETCD_VERSION="v3.5.9"
+                curl -L https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-${ETCD_ARCH}.tar.gz -o /tmp/etcd.tar.gz 2>/dev/null || echo "Failed to download etcd"
+                tar -xz -C /tmp -f /tmp/etcd.tar.gz 2>/dev/null || echo "Failed to extract etcd"
+                cp /tmp/etcd-${ETCD_VERSION}-linux-${ETCD_ARCH}/etcdctl /usr/local/bin/ 2>/dev/null || echo "Failed to copy etcdctl"
+                chmod +x /usr/local/bin/etcdctl 2>/dev/null || true
+                rm -rf /tmp/etcd* 2>/dev/null || true
+              fi
+              
+              # Install rclone if not available
               if ! command -v rclone &> /dev/null; then
                 apk add --no-cache curl unzip || true
                 # Download and install rclone manually (works with sh, no bash needed)
@@ -136,8 +157,14 @@ spec:
               
               echo "Starting etcd backup..."
               
-              BACKUP_FILE="/tmp/backups/etcd/etcd-backup-$(date +%Y%m%d-%H%M%S).db"
-              mkdir -p /tmp/backups/etcd
+              BACKUP_DIR="/tmp/backups/etcd"
+              mkdir -p $BACKUP_DIR
+              
+              # Delete old backup files before creating new one
+              echo "Cleaning up old etcd backup files..."
+              rm -f $BACKUP_DIR/etcd-backup-*.db 2>/dev/null || true
+              
+              BACKUP_FILE="$BACKUP_DIR/etcd-backup-$(date +%Y%m%d-%H%M%S).db"
               
               # Backup etcd
               ETCD_ENDPOINTS="{{ .Values.backups.etcd.endpoints | default "https://127.0.0.1:2379" }}"
@@ -234,6 +261,12 @@ spec:
             database: {{ .name }}
         spec:
           restartPolicy: OnFailure
+          {{- if and $.Values.backups $.Values.backups.immichData $.Values.backups.immichData.affinity }}
+          affinity:
+            {{- toYaml $.Values.backups.immichData.affinity | nindent 12 }}
+          {{- else }}
+          {{- include "apps-chart.excludeNodeAffinity" . | nindent 10 }}
+          {{- end }}
           containers:
           - name: postgres-backup
             image: "{{ $.Values.backups.postgres.image.repository }}:{{ $.Values.backups.postgres.image.tag }}"
@@ -264,8 +297,14 @@ spec:
               
               echo "Starting PostgreSQL backup for {{ .name }}..."
               
-              BACKUP_FILE="/tmp/backups/postgres/{{ .name }}-$(date +%Y%m%d-%H%M%S).sql.gz"
-              mkdir -p /tmp/backups/postgres
+              BACKUP_DIR="/tmp/backups/postgres"
+              mkdir -p $BACKUP_DIR
+              
+              # Delete old backup files before creating new one
+              echo "Cleaning up old PostgreSQL backup files..."
+              rm -f $BACKUP_DIR/{{ .name }}-*.sql.gz 2>/dev/null || true
+              
+              BACKUP_FILE="$BACKUP_DIR/{{ .name }}-$(date +%Y%m%d-%H%M%S).sql.gz"
               
               # Create backup
               PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
@@ -363,16 +402,43 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
+              echo "Installing mysql-client and rclone if needed..."
+              
+              # Install mysql-client (contains mysqldump) and other tools
+              if ! command -v mysqldump &> /dev/null; then
+                apk add --no-cache mariadb-client curl unzip || echo "Failed to install mariadb-client"
+              fi
+              
+              # Install rclone if needed
               if ! command -v rclone &> /dev/null; then
-                apt-get update && apt-get install -y curl unzip || apk add --no-cache curl unzip
-                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
+                apk add --no-cache curl unzip || true
+                # Download and install rclone manually (works with sh, no bash needed)
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                # Cleanup
+                rm -rf /tmp/rclone* 2>/dev/null || true
               fi
               
               echo "Starting MySQL backup for {{ .name }}..."
               
-              BACKUP_FILE="/tmp/backups/mysql/{{ .name }}-$(date +%Y%m%d-%H%M%S).sql.gz"
-              mkdir -p /tmp/backups/mysql
+              BACKUP_DIR="/tmp/backups/mysql"
+              mkdir -p $BACKUP_DIR
+              
+              # Delete old backup files before creating new one
+              echo "Cleaning up old MySQL backup files..."
+              rm -f $BACKUP_DIR/{{ .name }}-*.sql.gz 2>/dev/null || true
+              
+              BACKUP_FILE="$BACKUP_DIR/{{ .name }}-$(date +%Y%m%d-%H%M%S).sql.gz"
               
               # Create backup
               mysqldump \
@@ -499,8 +565,14 @@ spec:
               
               echo "Starting Meilisearch backup for {{ .name }}..."
               
-              BACKUP_FILE="/tmp/backups/meilisearch/{{ .name }}-$(date +%Y%m%d-%H%M%S).tar.gz"
-              mkdir -p /tmp/backups/meilisearch
+              BACKUP_DIR="/tmp/backups/meilisearch"
+              mkdir -p $BACKUP_DIR
+              
+              # Delete old backup files before creating new one
+              echo "Cleaning up old Meilisearch backup files..."
+              rm -f $BACKUP_DIR/{{ .name }}-*.tar.gz 2>/dev/null || true
+              
+              BACKUP_FILE="$BACKUP_DIR/{{ .name }}-$(date +%Y%m%d-%H%M%S).tar.gz"
               
               # Trigger Meilisearch dump
               MEILI_URL="http://{{ .host }}:{{ .port | default "7700" }}"
@@ -628,8 +700,14 @@ spec:
               
               echo "Starting Redis backup for {{ .name }}..."
               
-              BACKUP_FILE="/tmp/backups/redis/{{ .name }}-$(date +%Y%m%d-%H%M%S).rdb"
-              mkdir -p /tmp/backups/redis
+              BACKUP_DIR="/tmp/backups/redis"
+              mkdir -p $BACKUP_DIR
+              
+              # Delete old backup files before creating new one
+              echo "Cleaning up old Redis backup files..."
+              rm -f $BACKUP_DIR/{{ .name }}-*.rdb* 2>/dev/null || true
+              
+              BACKUP_FILE="$BACKUP_DIR/{{ .name }}-$(date +%Y%m%d-%H%M%S).rdb"
               
               # Create backup using redis-cli
               redis-cli \
@@ -799,9 +877,14 @@ spec:
               readOnly: true
           volumes:
           - name: immich-data
+            {{- if and .Values.backups .Values.backups.immichData .Values.backups.immichData.pvcName }}
+            persistentVolumeClaim:
+              claimName: {{ .Values.backups.immichData.pvcName }}
+            {{- else }}
             hostPath:
               path: {{ .Values.backups.immichData.sourcePath }}
               type: Directory
+            {{- end }}
 {{- end }}
 
 {{- if .Values.backups.nextcloudData.enabled }}

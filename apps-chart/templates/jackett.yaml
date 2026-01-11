@@ -11,7 +11,10 @@ spec:
     matchLabels:
       app: jackett
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -26,6 +29,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: jackett
         image: "{{ .Values.jackett.image.repository }}:{{ .Values.jackett.image.tag }}"
@@ -101,4 +105,3 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
-

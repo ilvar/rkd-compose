@@ -55,3 +55,28 @@ Parse group ID from user:group format
 {{- end }}
 {{- end }}
 
+{{/*
+Global node exclusion match expression for node affinity.
+*/}}
+{{- define "apps-chart.excludeNodeMatchExpressions" -}}
+{{- if .Values.global.excludeNodes }}
+- key: kubernetes.io/hostname
+  operator: NotIn
+  values:
+{{- toYaml .Values.global.excludeNodes | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{/*
+Global node exclusion affinity block.
+*/}}
+{{- define "apps-chart.excludeNodeAffinity" -}}
+{{- if .Values.global.excludeNodes }}
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 8 }}
+{{- end }}
+{{- end }}

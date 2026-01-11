@@ -10,6 +10,25 @@ stringData:
   db-password: {{ .Values.immich.secrets.dbPassword | default "postgres" | quote }}
   postgres-password: {{ .Values.immich.secrets.postgresPassword | default "postgres" | quote }}
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.immich.server.storage.upload }}
+  labels:
+    app: immich
+    storage-type: longhorn
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.longhornMigration.storageClass | default "longhorn" }}
+  resources:
+    requests:
+      storage: {{ .Values.longhornMigration.immich.size | default "50Gi" }}
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -40,6 +59,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: immich-database
         image: "{{ .Values.immich.database.image.repository }}:{{ .Values.immich.database.image.tag }}"
@@ -157,6 +177,7 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: immich-machine-learning
         image: "{{ .Values.immich.machineLearning.image.repository }}:{{ .Values.immich.machineLearning.image.tag }}"
@@ -169,18 +190,19 @@ spec:
           claimName: {{ .Values.immich.machineLearning.storage.modelCache }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: immich-server
   labels:
     app: immich-server
 spec:
+  serviceName: immich-server
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: immich-server
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
@@ -197,6 +219,22 @@ spec:
                 operator: In
                 values:
                 - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
+      initContainers:
+      - name: init-immich-upload
+        image: alpine:3.20
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          for dir in backups library profile thumbs encoded-video upload; do
+            mkdir -p "/usr/src/app/upload/${dir}"
+            touch "/usr/src/app/upload/${dir}/.immich"
+          done
+        volumeMounts:
+        - name: upload
+          mountPath: /usr/src/app/upload
       containers:
       - name: immich-server
         image: "{{ .Values.immich.server.image.repository }}:{{ .Values.immich.server.image.tag }}"
@@ -235,9 +273,8 @@ spec:
           path: /etc/localtime
           type: File
       - name: upload
-        hostPath:
-          path: /home/rkd/.docker/immich/upload
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: {{ .Values.immich.server.storage.upload }}
 ---
 apiVersion: v1
 kind: Service

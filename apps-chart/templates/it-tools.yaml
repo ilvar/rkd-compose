@@ -11,12 +11,16 @@ spec:
     matchLabels:
       app: it-tools
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
         app: it-tools
     spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       containers:
       - name: it-tools
         image: "{{ .Values.itTools.image.repository }}:{{ .Values.itTools.image.tag }}"
