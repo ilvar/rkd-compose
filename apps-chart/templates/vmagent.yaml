@@ -1,0 +1,49 @@
+{{- if .Values.vmagent.enabled }}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAgent
+metadata:
+  name: {{ .Values.vmagent.name | default "vmagent" }}
+  labels:
+    app: vmagent
+spec:
+  {{- if .Values.vmagent.image }}
+  image:
+    repository: {{ .Values.vmagent.image.repository }}
+    tag: {{ .Values.vmagent.image.tag }}
+    {{- if .Values.vmagent.image.pullPolicy }}
+    pullPolicy: {{ .Values.vmagent.image.pullPolicy }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.vmagent.remoteWrite }}
+  remoteWrite:
+    {{- range .Values.vmagent.remoteWrite }}
+    - url: {{ .url | quote }}
+      {{- if .basicAuth }}
+      basicAuth:
+        {{- if .basicAuth.username }}
+        username:
+          name: {{ .basicAuth.username.name | quote }}
+          key: {{ .basicAuth.username.key | quote }}
+        {{- end }}
+        {{- if .basicAuth.password }}
+        password:
+          name: {{ .basicAuth.password.name | quote }}
+          key: {{ .basicAuth.password.key | quote }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- else }}
+  remoteWrite:
+    - url: http://{{ .Values.vmagent.vmsingleServiceName | default "vmsingle-vmsingle" }}:8428/api/v1/write
+  {{- end }}
+  {{- if .Values.vmagent.resources }}
+  resources:
+    {{- toYaml .Values.vmagent.resources | nindent 4 }}
+  {{- end }}
+  {{- if .Values.vmagent.replicaCount }}
+  replicaCount: {{ .Values.vmagent.replicaCount }}
+  {{- end }}
+  {{- if .Values.vmagent.selectAllByDefault }}
+  selectAllByDefault: {{ .Values.vmagent.selectAllByDefault }}
+  {{- end }}
+{{- end }}
