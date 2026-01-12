@@ -2,7 +2,7 @@ apiVersion: v2
 name: rkd-apps-chart
 description: A comprehensive Helm chart for deploying multiple self-hosted applications including media servers, productivity tools, development utilities, and monitoring solutions.
 type: application
-version: 0.2.83
+version: 0.2.84
 appVersion: "1.0"
 keywords:
   - self-hosted
@@ -29,7 +29,4 @@ dependencies:
   - name: jitsi-meet
     version: "2.2.0"
     repository: "https://jitsi-contrib.github.io/jitsi-helm/"
-  - name: openobserve
-    version: "0.40.1"
-    repository: "https://charts.openobserve.ai"
 

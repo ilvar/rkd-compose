@@ -5,8 +5,5 @@ dependencies:
 - name: jitsi-meet
   repository: https://jitsi-contrib.github.io/jitsi-helm/
   version: 2.2.0
-- name: openobserve
-  repository: https://charts.openobserve.ai
-  version: 0.40.1
-digest: sha256:1740067e3f4ea8b68fd13e4b08e1e5ed68ad50673c63a6148e5cfb999f1a11cc
-generated: "2026-01-11T21:17:34.800277891Z"
+digest: sha256:8d401697b266584020ad9d458cd9c2684ca8ddcef6a628d162a022350d334f52
+generated: "2026-01-12T22:35:59.806338087Z"

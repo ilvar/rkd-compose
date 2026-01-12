@@ -324,8 +324,6 @@ compote3:
       description: Domain and DNS management
     - name: longhorn-ui
       description: Longhorn storage management console
-    - name: openobserve
-      description: Logs, metrics, and tracing observability
     - name: hoarder
       description: Web archive and bookmark manager
     - name: homeassistant
@@ -387,9 +385,6 @@ compote3:
     overrides:
       - name: kosmos-frontend
         new_name: kosmos
-      - name: openobserve
-        url: |
-          https://openobserve.k.rkd.pw/
   ingress:
     enabled: true
     hosts:
@@ -994,107 +989,6 @@ jitsi-meet:
       hosts:
       - jitsi.h.rkd.pw
       - jitsi.k.rkd.pw
-openobserve:
-  auth:
-    ZO_ROOT_USER_EMAIL: a@rkd.pw
-    ZO_ROOT_USER_PASSWORD: jedi8947
-  config:
-    ZO_LOCAL_MODE: "true"
-    ZO_META_STORE: "sqlite"
-    ZO_WEB_URL: "https://openobserve.k.rkd.pw"
-  ingress:
-    enabled: true
-    className: ""
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-    hosts:
-      - host: openobserve.k.rkd.pw
-        paths:
-          - path: /
-            pathType: Prefix
-      - host: openobserve.h.rkd.pw
-        paths:
-          - path: /
-            pathType: Prefix
-    tls:
-      - secretName: homelab-wildcard-h-tls
-        hosts:
-          - openobserve.h.rkd.pw
-          - openobserve.k.rkd.pw
-  enterprise:
-    enabled: false
-    openfga:
-      enabled: false
-  ingester:
-    persistence:
-      enabled: true
-      size: 20Gi
-      storageClass: ""
-  querier:
-    persistence:
-      enabled: true
-      size: 20Gi
-      storageClass: ""
-  nats:
-    config:
-      cluster:
-        enabled: false
-        replicas: 1
-      jetstream:
-        fileStore:
-          pvc:
-            storageClassName: ""
-    podTemplate:
-      merge:
-        spec:
-          affinity:
-            nodeAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                nodeSelectorTerms:
-                - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values:
-                    - rockpro64
-                    - orangepi5
-  postgres:
-    enabled: false
-    pgadmin:
-      enabled: false
-  minio:
-    enabled: false
-  affinity:
-    ingester:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-    querier:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-    compactor:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-    router:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
