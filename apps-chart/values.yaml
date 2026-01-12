@@ -1189,12 +1189,12 @@ vmagent:
   nodeScrape:
     enabled: true
     name: node-exporter
-    port: "9100"
+    port: "http-metrics"
     path: "/metrics"
     interval: 30s
-    selector:
-      matchLabels:
-        app.kubernetes.io/name: node-exporter
+    namespaceSelector:
+      matchNames:
+        - default
   kubeStateMetricsScrape:
     enabled: true
     name: kube-state-metrics
