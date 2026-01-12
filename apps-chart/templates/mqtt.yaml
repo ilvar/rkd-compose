@@ -10,21 +10,17 @@ data:
 {{ .Values.mqtt.config | indent 4 }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: mqtt
   labels:
     app: mqtt
 spec:
+  serviceName: mqtt
   replicas: 1
   selector:
     matchLabels:
       app: mqtt
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
   template:
     metadata:
       labels:
@@ -76,13 +72,26 @@ spec:
       - name: config
         configMap:
           name: mqtt-config
-      - name: storage
-        persistentVolumeClaim:
-          claimName: {{ .Values.mqtt.storage.claimName | default "mqtt-data" }}
       - name: localtime
         hostPath:
           path: /etc/localtime
           type: File
+{{- if .Values.mqtt.storage }}
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+      labels:
+        app: mqtt
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.mqtt.storage.size }}
+      {{- if .Values.mqtt.storage.storageClass }}
+      storageClassName: {{ .Values.mqtt.storage.storageClass }}
+      {{- end }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -103,22 +112,4 @@ spec:
     protocol: TCP
   selector:
     app: mqtt
-{{- if .Values.mqtt.storage }}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.mqtt.storage.claimName }}
-  labels:
-    app: mqtt
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ .Values.mqtt.storage.size }}
-  {{- if .Values.mqtt.storage.storageClass }}
-  storageClassName: {{ .Values.mqtt.storage.storageClass }}
-  {{- end }}
-{{- end }}
 {{- end }}
