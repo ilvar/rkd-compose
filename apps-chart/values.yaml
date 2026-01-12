@@ -1134,7 +1134,7 @@ videosCleanupReport:
     requests:
       memory: 128Mi
 victoriaMetrics:
-  enabled: false
+  enabled: true
   image:
     repository: victoriametrics/victoria-metrics
     tag: v1.119.0
