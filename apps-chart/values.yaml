@@ -1133,63 +1133,6 @@ videosCleanupReport:
       memory: 256Mi
     requests:
       memory: 128Mi
-victoriaMetrics:
-  enabled: true
-  image:
-    repository: victoriametrics/victoria-metrics
-    tag: v1.119.0
-  resources:
-    limits:
-      memory: 1Gi
-      cpu: 500m
-    requests:
-      memory: 512Mi
-      cpu: 250m
-  storage:
-    size: 20Gi
-    storageClass: ""
-  retentionPeriod: 30d
-  vmalert:
-    enabled: true
-    image:
-      repository: victoriametrics/vmalert
-      tag: v1.119.0
-    port: 8080
-    evaluationInterval: 30s
-    resources:
-      limits:
-        memory: 256Mi
-        cpu: 200m
-      requests:
-        memory: 128Mi
-        cpu: 100m
-    rules: |
-      groups: []
-  vmalertmanager:
-    enabled: true
-    image:
-      repository: victoriametrics/vmalertmanager
-      tag: v1.119.0
-    port: 9093
-    resources:
-      limits:
-        memory: 256Mi
-        cpu: 200m
-      requests:
-        memory: 128Mi
-        cpu: 100m
-    config: |
-      global:
-        resolve_timeout: 5m
-      route:
-        group_by: ['alertname']
-        group_wait: 10s
-        group_interval: 10s
-        repeat_interval: 12h
-        receiver: 'null'
-      receivers:
-      - name: 'null'
-      templates: []
 mqtt:
   enabled: true
   image:
