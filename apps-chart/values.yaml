@@ -1257,26 +1257,8 @@ zigbee2mqtt:
         friendly_name: 'Socket: Bed Heater'
       '0x00124b0029dee0ec':
         friendly_name: 'Curtain: Bedroom'
-      '0x00124b0020bc7099':
-        friendly_name: '0x00124b0020bc7099'
-      '0x00158d000247d794':
-        friendly_name: '0x00158d000247d794'
-      '0x70b3d52b60028bc8':
-        friendly_name: '0x70b3d52b60028bc8'
-      '0x70b3d52b60028ba0':
-        friendly_name: '0x70b3d52b60028ba0'
-      '0x70b3d52b60028c11':
-        friendly_name: '0x70b3d52b60028c11'
-      '0xa4c13854552d0e8d':
-        friendly_name: '0xa4c13854552d0e8d'
       '0xdc8e95fffe5d2fb4':
-        friendly_name: '0xdc8e95fffe5d2fb4'
-      '0xa4c1384a2bf861d0':
-        friendly_name: '0xa4c1384a2bf861d0'
-      '0xa4c138e8f8b0a889':
-        friendly_name: '0xa4c138e8f8b0a889'
-      '0x5c0272fffe808011':
-        friendly_name: '0x5c0272fffe808011'
+        friendly_name: 'EV Charger'
     version: 4
 backups:
   enabled: true

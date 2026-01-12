@@ -1,4 +1,16 @@
 {{- if .Values.zigbee2mqtt.enabled }}
+{{- if .Values.zigbee2mqtt.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zigbee2mqtt-config
+  labels:
+    app: zigbee2mqtt
+data:
+  configuration.yaml: |
+{{ .Values.zigbee2mqtt.config | indent 4 }}
+---
+{{- end }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -46,6 +58,27 @@ spec:
                 values:
                 - {{ .Values.zigbee2mqtt.nodeName | quote }}
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
+      {{- if .Values.zigbee2mqtt.config }}
+      initContainers:
+      - name: init-config
+        image: busybox:latest
+        command: ['sh', '-c']
+        args:
+          - |
+            if [ ! -f /app/data/configuration.yaml ]; then
+              echo "Configuration file not found, creating from ConfigMap..."
+              cp /config/configuration.yaml /app/data/configuration.yaml
+              echo "Configuration file created successfully"
+            else
+              echo "Configuration file already exists, skipping initialization"
+            fi
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+        - name: config-template
+          mountPath: /config
+          readOnly: true
+      {{- end }}
       containers:
       - name: zigbee2mqtt
         image: "{{ .Values.zigbee2mqtt.image.repository }}:{{ .Values.zigbee2mqtt.image.tag }}"
@@ -81,6 +114,11 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: zigbee2mqtt-data
+      {{- if .Values.zigbee2mqtt.config }}
+      - name: config-template
+        configMap:
+          name: zigbee2mqtt-config
+      {{- end }}
       - name: udev
         hostPath:
           path: /run/udev
