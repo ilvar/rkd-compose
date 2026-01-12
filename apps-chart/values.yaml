@@ -1145,6 +1145,10 @@ mqtt:
   config: |
     allow_anonymous true
     bind_address 0.0.0.0
+  storage:
+    claimName: mqtt-data
+    size: 5Gi
+    storageClass: longhorn
 zigbee2mqtt:
   enabled: true
   image:

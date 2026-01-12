@@ -59,10 +59,8 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /mosquitto/config
-        - name: log
-          mountPath: /mosquitto/log
-        - name: data
-          mountPath: /mosquitto/data
+        - name: storage
+          mountPath: /mosquitto
         - name: localtime
           mountPath: /etc/localtime
           readOnly: true
@@ -78,14 +76,9 @@ spec:
       - name: config
         configMap:
           name: mqtt-config
-      - name: log
-        hostPath:
-          path: /home/rkd/.docker/mosquitto/log
-          type: DirectoryOrCreate
-      - name: data
-        hostPath:
-          path: /home/rkd/.docker/mosquitto/data
-          type: DirectoryOrCreate
+      - name: storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.mqtt.storage.claimName | default "mqtt-data" }}
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -110,4 +103,22 @@ spec:
     protocol: TCP
   selector:
     app: mqtt
+{{- if .Values.mqtt.storage }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.mqtt.storage.claimName }}
+  labels:
+    app: mqtt
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.mqtt.storage.size }}
+  {{- if .Values.mqtt.storage.storageClass }}
+  storageClassName: {{ .Values.mqtt.storage.storageClass }}
+  {{- end }}
+{{- end }}
 {{- end }}
