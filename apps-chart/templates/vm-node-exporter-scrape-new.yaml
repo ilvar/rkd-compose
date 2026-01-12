@@ -1,0 +1,20 @@
+{{- if and .Values.vmagent.enabled .Values.vmagent.nodeExporterScrape.enabled }}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: {{ .Values.vmagent.nodeExporterScrape.name | default "node-exporter" }}
+  labels:
+    app: vmagent
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  endpoints:
+    - port: {{ .Values.vmagent.nodeExporterScrape.port | default "http-metrics" | quote }}
+      {{- if .Values.vmagent.nodeExporterScrape.path }}
+      path: {{ .Values.vmagent.nodeExporterScrape.path | quote }}
+      {{- end }}
+      {{- if .Values.vmagent.nodeExporterScrape.interval }}
+      interval: {{ .Values.vmagent.nodeExporterScrape.interval | quote }}
+      {{- end }}
+{{- end }}
