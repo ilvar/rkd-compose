@@ -322,6 +322,8 @@ compote3:
       description: NVR with real-time AI object detection
     - name: gandi
       description: Domain and DNS management
+    - name: longhorn-ui
+      description: Longhorn storage management console
     - name: openobserve
       description: Logs, metrics, and tracing observability
     - name: hoarder
@@ -366,6 +368,8 @@ compote3:
       description: Kubernetes cluster management platform
     - name: rkd-pw
       description: Password manager
+    - name: weave-gitops
+      description: GitOps automation dashboard
     - name: syncthing
       description: File synchronization
     - name: termix
@@ -374,6 +378,8 @@ compote3:
       description: Tesla vehicle management
     - name: trello
       description: Project management and task boards
+    - name: zigbee2mqtt
+      description: Zigbee to MQTT bridge
     exclusions:
       - compote3
       - rkd-pw
