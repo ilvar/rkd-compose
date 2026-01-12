@@ -836,7 +836,7 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: 1.2.5
+      tag: 1.2.6
     resources:
       limits:
         memory: 512Mi
@@ -869,7 +869,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 1.2.11
+      tag: 1.2.12
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
@@ -1195,6 +1195,15 @@ vmagent:
     selector:
       matchLabels:
         app.kubernetes.io/name: node-exporter
+  kubeStateMetricsScrape:
+    enabled: true
+    name: kube-state-metrics
+    port: "http"
+    path: "/metrics"
+    interval: 30s
+    namespaceSelector:
+      matchNames:
+        - default
 vlagent:
   enabled: true
   name: vlagent
