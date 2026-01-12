@@ -1204,6 +1204,15 @@ vmagent:
     namespaceSelector:
       matchNames:
         - default
+  cadvisorScrape:
+    enabled: true
+    name: cadvisor
+    interval: 30s
+  podAnnotationsScrape:
+    enabled: true
+    name: pod-annotations-discovery
+    # Scrape all namespaces by default (empty selector means all)
+    namespaceSelector: {}
 vlagent:
   enabled: true
   name: vlagent

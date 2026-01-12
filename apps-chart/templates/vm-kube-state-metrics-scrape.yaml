@@ -1,0 +1,28 @@
+{{- if and .Values.vmagent.enabled .Values.vmagent.kubeStateMetricsScrape.enabled }}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: {{ .Values.vmagent.kubeStateMetricsScrape.name | default "kube-state-metrics" }}
+  labels:
+    app: vmagent
+spec:
+  selector:
+    matchLabels:
+      {{- if .Values.vmagent.kubeStateMetricsScrape.selector }}
+      {{- toYaml .Values.vmagent.kubeStateMetricsScrape.selector | nindent 6 }}
+      {{- else }}
+      app.kubernetes.io/name: kube-state-metrics
+      {{- end }}
+  {{- if .Values.vmagent.kubeStateMetricsScrape.namespaceSelector }}
+  namespaceSelector:
+    {{- toYaml .Values.vmagent.kubeStateMetricsScrape.namespaceSelector | nindent 4 }}
+  {{- end }}
+  endpoints:
+    - port: {{ .Values.vmagent.kubeStateMetricsScrape.port | default "http" | quote }}
+      {{- if .Values.vmagent.kubeStateMetricsScrape.path }}
+      path: {{ .Values.vmagent.kubeStateMetricsScrape.path | quote }}
+      {{- end }}
+      {{- if .Values.vmagent.kubeStateMetricsScrape.interval }}
+      interval: {{ .Values.vmagent.kubeStateMetricsScrape.interval | quote }}
+      {{- end }}
+{{- end }}

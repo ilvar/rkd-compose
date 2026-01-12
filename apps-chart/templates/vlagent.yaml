@@ -1,0 +1,52 @@
+{{- if .Values.vlagent.enabled }}
+apiVersion: operator.victoriametrics.com/v1
+kind: VLAgent
+metadata:
+  name: {{ .Values.vlagent.name | default "vlagent" }}
+  labels:
+    app: vlagent
+spec:
+  {{- if .Values.vlagent.image }}
+  image:
+    repository: {{ .Values.vlagent.image.repository }}
+    tag: {{ .Values.vlagent.image.tag }}
+    {{- if .Values.vlagent.image.pullPolicy }}
+    pullPolicy: {{ .Values.vlagent.image.pullPolicy }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.vlagent.remoteWrite }}
+  remoteWrite:
+    {{- range .Values.vlagent.remoteWrite }}
+    - url: {{ .url | quote }}
+      {{- if .basicAuth }}
+      basicAuth:
+        {{- if .basicAuth.username }}
+        username:
+          name: {{ .basicAuth.username.name | quote }}
+          key: {{ .basicAuth.username.key | quote }}
+        {{- end }}
+        {{- if .basicAuth.password }}
+        password:
+          name: {{ .basicAuth.password.name | quote }}
+          key: {{ .basicAuth.password.key | quote }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- else }}
+  remoteWrite:
+    - url: http://{{ .Values.vlagent.vlsingleServiceName | default "vlsingle-vlsingle" }}:9428
+  {{- end }}
+  {{- if .Values.vlagent.resources }}
+  resources:
+    {{- toYaml .Values.vlagent.resources | nindent 4 }}
+  {{- end }}
+  {{- if .Values.vlagent.replicaCount }}
+  replicaCount: {{ .Values.vlagent.replicaCount }}
+  {{- end }}
+  {{- if .Values.vlagent.extraArgs }}
+  extraArgs:
+    {{- range $key, $value := .Values.vlagent.extraArgs }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}
