@@ -1223,7 +1223,7 @@ zigbee2mqtt:
   config: |
     mqtt:
       base_topic: zigbee2mqtt
-      server: mqtt://mqtt.default.svc.cluster.local:1883
+      server: mqtt://192.168.1.123:1883
     serial:
       port: /dev/ttyACM0
     frontend:

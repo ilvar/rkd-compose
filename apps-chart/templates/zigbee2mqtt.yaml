@@ -67,7 +67,8 @@ spec:
           - |
             if [ ! -f /app/data/configuration.yaml ]; then
               echo "Configuration file not found, creating from ConfigMap..."
-              cp /config/configuration.yaml /app/data/configuration.yaml
+              # Remove 8 spaces from the start of each line (4 from values.yaml + 4 from indent = 8 total)
+              sed 's/^        //' /config/configuration.yaml > /app/data/configuration.yaml
               echo "Configuration file created successfully"
             else
               echo "Configuration file already exists, skipping initialization"
