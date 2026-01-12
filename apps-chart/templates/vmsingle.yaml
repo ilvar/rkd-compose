@@ -1,0 +1,55 @@
+{{- if .Values.vmsingle.enabled }}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMSingle
+metadata:
+  name: {{ .Values.vmsingle.name | default "vmsingle" }}
+  labels:
+    app: vmsingle
+spec:
+  {{- if .Values.vmsingle.image }}
+  image:
+    repository: {{ .Values.vmsingle.image.repository }}
+    tag: {{ .Values.vmsingle.image.tag }}
+    {{- if .Values.vmsingle.image.pullPolicy }}
+    pullPolicy: {{ .Values.vmsingle.image.pullPolicy }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.vmsingle.retentionPeriod }}
+  retentionPeriod: {{ .Values.vmsingle.retentionPeriod | quote }}
+  {{- end }}
+  {{- if .Values.vmsingle.resources }}
+  resources:
+    {{- toYaml .Values.vmsingle.resources | nindent 4 }}
+  {{- end }}
+  {{- if .Values.vmsingle.storage }}
+  storage:
+    {{- if .Values.vmsingle.storage.accessModes }}
+    accessModes:
+      {{- range .Values.vmsingle.storage.accessModes }}
+      - {{ . | quote }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.vmsingle.storage.storageClass }}
+    storageClassName: {{ .Values.vmsingle.storage.storageClass | quote }}
+    {{- end }}
+    resources:
+      requests:
+        storage: {{ .Values.vmsingle.storage.size }}
+  {{- end }}
+  {{- if .Values.vmsingle.service }}
+  service:
+    {{- if .Values.vmsingle.service.metadata }}
+    metadata:
+      {{- toYaml .Values.vmsingle.service.metadata | nindent 6 }}
+    {{- end }}
+    spec:
+      {{- if .Values.vmsingle.service.spec.ports }}
+      ports:
+        {{- range .Values.vmsingle.service.spec.ports }}
+        - name: {{ .name }}
+          port: {{ .port }}
+          targetPort: {{ .targetPort }}
+        {{- end }}
+      {{- end }}
+  {{- end }}
+{{- end }}

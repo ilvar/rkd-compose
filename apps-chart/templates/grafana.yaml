@@ -1,0 +1,186 @@
+{{- if .Values.grafana.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  labels:
+    app: grafana
+data:
+  datasources.yaml: |
+{{- if .Values.grafana.datasources }}
+{{ .Values.grafana.datasources | indent 4 }}
+{{- else }}
+    apiVersion: 1
+    datasources:
+      - name: VictoriaMetrics
+        type: prometheus
+        access: proxy
+        url: http://{{ .Values.grafana.vmsingleServiceName | default "vmsingle-vmsingle" }}:8428
+        isDefault: true
+        editable: true
+        jsonData:
+          httpMethod: POST
+      - name: VictoriaLogs
+        type: loki
+        access: proxy
+        url: http://{{ .Values.grafana.vlsingleServiceName | default "vlsingle-vlsingle" }}:9428
+        editable: true
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: grafana
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      containers:
+      - name: grafana
+        image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
+        ports:
+        - name: http
+          containerPort: {{ .Values.grafana.port }}
+          protocol: TCP
+        env:
+        - name: GF_SERVER_HTTP_PORT
+          value: {{ .Values.grafana.port | quote }}
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: {{ .Values.grafana.auth.anonymous.enabled | default "false" | quote }}
+        {{- if .Values.grafana.auth.anonymous.orgRole }}
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: {{ .Values.grafana.auth.anonymous.orgRole | quote }}
+        {{- end }}
+        {{- if .Values.grafana.adminUser }}
+        - name: GF_SECURITY_ADMIN_USER
+          value: {{ .Values.grafana.adminUser | quote }}
+        {{- end }}
+        {{- if .Values.grafana.adminPassword }}
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.grafana.secretName | default "grafana-secrets" }}
+              key: admin-password
+        {{- end }}
+        - name: GF_PATHS_PROVISIONING
+          value: /etc/grafana/provisioning
+        volumeMounts:
+        - name: datasources
+          mountPath: /etc/grafana/provisioning/datasources
+          readOnly: true
+        {{- if .Values.grafana.storage.data }}
+        - name: data
+          mountPath: /var/lib/grafana
+        {{- end }}
+        resources:
+          {{- if .Values.grafana.resources }}
+          {{- toYaml .Values.grafana.resources | nindent 10 }}
+          {{- end }}
+      volumes:
+      - name: datasources
+        configMap:
+          name: grafana-datasources
+      {{- if .Values.grafana.storage.data }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.grafana.storage.data }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: {{ .Values.grafana.servicePort | default 3000 }}
+    targetPort: {{ .Values.grafana.port }}
+    protocol: TCP
+  selector:
+    app: grafana
+---
+{{- if .Values.grafana.storage.data }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.grafana.storage.data }}
+  labels:
+    app: grafana
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.grafana.storage.size | default "5Gi" }}
+  {{- if .Values.grafana.storage.storageClass }}
+  storageClassName: {{ .Values.grafana.storage.storageClass | quote }}
+  {{- end }}
+---
+{{- end }}
+{{- if and .Values.grafana.enabled .Values.grafana.ingress.enabled (gt (len .Values.grafana.ingress.hosts) 0) }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+  {{- if .Values.grafana.ingress.annotations }}
+  annotations:
+    {{- toYaml .Values.grafana.ingress.annotations | nindent 4 }}
+  {{- end }}
+spec:
+{{- if gt (len .Values.grafana.ingress.hosts) 0 }}
+  {{- if .Values.grafana.ingress.tls }}
+  tls:
+  {{- range .Values.grafana.ingress.tls }}
+  - hosts:
+    {{- range .hosts }}
+    - {{ . | quote }}
+    {{- end }}
+    {{- if .secretName }}
+    secretName: {{ .secretName | quote }}
+    {{- end }}
+  {{- end }}
+  {{- else if gt (len .Values.grafana.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+  {{- range .Values.grafana.ingress.hosts }}
+    - {{ . | quote }}
+  {{- end }}
+    secretName: homelab-wildcard-h-tls
+  {{- end }}
+{{- end }}
+  rules:
+  {{- range .Values.grafana.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: {{ $.Values.grafana.servicePort | default 3000 }}
+  {{- end }}
+{{- end }}
+{{- end }}

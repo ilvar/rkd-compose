@@ -1,0 +1,52 @@
+{{- if .Values.vlsingle.enabled }}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VLSingle
+metadata:
+  name: {{ .Values.vlsingle.name | default "vlsingle" }}
+  labels:
+    app: vlsingle
+spec:
+  {{- if .Values.vlsingle.image }}
+  image:
+    repository: {{ .Values.vlsingle.image.repository }}
+    tag: {{ .Values.vlsingle.image.tag }}
+    {{- if .Values.vlsingle.image.pullPolicy }}
+    pullPolicy: {{ .Values.vlsingle.image.pullPolicy }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.vlsingle.resources }}
+  resources:
+    {{- toYaml .Values.vlsingle.resources | nindent 4 }}
+  {{- end }}
+  {{- if .Values.vlsingle.storage }}
+  storage:
+    {{- if .Values.vlsingle.storage.accessModes }}
+    accessModes:
+      {{- range .Values.vlsingle.storage.accessModes }}
+      - {{ . | quote }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.vlsingle.storage.storageClass }}
+    storageClassName: {{ .Values.vlsingle.storage.storageClass | quote }}
+    {{- end }}
+    resources:
+      requests:
+        storage: {{ .Values.vlsingle.storage.size }}
+  {{- end }}
+  {{- if .Values.vlsingle.service }}
+  service:
+    {{- if .Values.vlsingle.service.metadata }}
+    metadata:
+      {{- toYaml .Values.vlsingle.service.metadata | nindent 6 }}
+    {{- end }}
+    spec:
+      {{- if .Values.vlsingle.service.spec.ports }}
+      ports:
+        {{- range .Values.vlsingle.service.spec.ports }}
+        - name: {{ .name }}
+          port: {{ .port }}
+          targetPort: {{ .targetPort }}
+        {{- end }}
+      {{- end }}
+  {{- end }}
+{{- end }}
