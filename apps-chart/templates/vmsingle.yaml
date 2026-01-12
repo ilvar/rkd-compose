@@ -23,33 +23,8 @@ spec:
   {{- end }}
   {{- if .Values.vmsingle.storage }}
   storage:
-    {{- if .Values.vmsingle.storage.accessModes }}
-    accessModes:
-      {{- range .Values.vmsingle.storage.accessModes }}
-      - {{ . | quote }}
-      {{- end }}
-    {{- end }}
-    {{- if .Values.vmsingle.storage.storageClass }}
-    storageClassName: {{ .Values.vmsingle.storage.storageClass | quote }}
-    {{- end }}
     resources:
       requests:
         storage: {{ .Values.vmsingle.storage.size }}
-  {{- end }}
-  {{- if .Values.vmsingle.service }}
-  service:
-    {{- if .Values.vmsingle.service.metadata }}
-    metadata:
-      {{- toYaml .Values.vmsingle.service.metadata | nindent 6 }}
-    {{- end }}
-    spec:
-      {{- if .Values.vmsingle.service.spec.ports }}
-      ports:
-        {{- range .Values.vmsingle.service.spec.ports }}
-        - name: {{ .name }}
-          port: {{ .port }}
-          targetPort: {{ .targetPort }}
-        {{- end }}
-      {{- end }}
   {{- end }}
 {{- end }}

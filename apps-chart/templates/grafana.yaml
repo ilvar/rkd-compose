@@ -20,11 +20,13 @@ data:
         editable: true
         jsonData:
           httpMethod: POST
+      {{- if .Values.grafana.vlsingleServiceName }}
       - name: VictoriaLogs
         type: loki
         access: proxy
         url: http://{{ .Values.grafana.vlsingleServiceName | default "vlsingle-vlsingle" }}:9428
         editable: true
+      {{- end }}
 {{- end }}
 ---
 apiVersion: apps/v1

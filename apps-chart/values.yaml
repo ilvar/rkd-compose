@@ -1149,16 +1149,8 @@ vmsingle:
       cpu: 1000m
       memory: 2Gi
   storage:
-    accessModes:
-      - ReadWriteOnce
     size: 20Gi
     storageClass: ""
-  service:
-    spec:
-      ports:
-        - name: http
-          port: 8428
-          targetPort: 8428
 vlsingle:
   enabled: true
   name: vlsingle
@@ -1166,6 +1158,7 @@ vlsingle:
     repository: victoriametrics/victoria-logs
     tag: v1.33.0
     pullPolicy: IfNotPresent
+  retentionPeriod: 30d
   resources:
     requests:
       cpu: 500m
@@ -1174,16 +1167,8 @@ vlsingle:
       cpu: 1000m
       memory: 2Gi
   storage:
-    accessModes:
-      - ReadWriteOnce
     size: 20Gi
     storageClass: ""
-  service:
-    spec:
-      ports:
-        - name: http
-          port: 9428
-          targetPort: 9428
 grafana:
   enabled: true
   image:
