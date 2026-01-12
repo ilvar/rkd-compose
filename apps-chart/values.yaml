@@ -1080,28 +1080,25 @@ vmagent:
     limits:
       cpu: 500m
       memory: 512Mi
-  nodeScrape:
+  nodeExporterScrape:
     enabled: true
     name: node-exporter
     port: "http-metrics"
     path: "/metrics"
-    interval: 30s
-    namespaceSelector:
-      matchNames:
-        - default
+    interval: 10m
   kubeStateMetricsScrape:
     enabled: true
     name: kube-state-metrics
     port: "http"
     path: "/metrics"
-    interval: 30s
+    interval: 10m
     namespaceSelector:
       matchNames:
         - default
   cadvisorScrape:
     enabled: true
     name: cadvisor
-    interval: 30s
+    interval: 10m
   podAnnotationsScrape:
     enabled: true
     name: pod-annotations-discovery
@@ -1129,6 +1126,18 @@ vlagent:
     # Uses LogsQL syntax - excludeFilter excludes logs matching the pattern
     # So we exclude logs that don't match Warning/Error patterns (keeping only Warning/Error)
     kubernetesCollector.excludeFilter: '!(_msg:("Warning" OR "Error" OR "ERROR" OR "WARNING" OR "Fatal" OR "FATAL" OR "warn" OR "error" OR "fatal" OR "Exception"))'
+nodeExporter:
+  enabled: true
+  image:
+    repository: prom/node-exporter
+    tag: v1.7.0
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 grafana:
   enabled: true
   image:
