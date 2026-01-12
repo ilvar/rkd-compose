@@ -150,6 +150,8 @@ spec:
               key: {{ .Values.kosmos.backend.secrets.jwtSecret.key | default "jwt-secret" | quote }}
         - name: DATABASE_URL
           value: postgresql://{{ .Values.kosmos.db.environment.POSTGRES_USER }}:{{ .Values.kosmos.db.secrets.postgresPassword | default "postgres" }}@kosmos-db:5432/{{ .Values.kosmos.db.environment.POSTGRES_DB }}
+        - name: OTEL_PYTHON_SYSTEM_METRICS_ENABLED
+          value: "false"
         {{- if .Values.kosmos.backend.secrets.openaiApiKey }}
         - name: OPENAI_API_KEY
           valueFrom:
