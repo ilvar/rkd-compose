@@ -1195,6 +1195,28 @@ vmagent:
     selector:
       matchLabels:
         app.kubernetes.io/name: node-exporter
+vlagent:
+  enabled: true
+  name: vlagent
+  image:
+    repository: victoriametrics/vlagent
+    tag: v1.33.0
+    pullPolicy: IfNotPresent
+  vlsingleServiceName: vlsingle-vlsingle
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  extraArgs:
+    # Filter to collect only Warning and Error logs
+    # Excludes logs that don't contain Warning/Error patterns in the message
+    # Uses LogsQL syntax - excludeFilter excludes logs matching the pattern
+    # So we exclude logs that don't match Warning/Error patterns (keeping only Warning/Error)
+    kubernetesCollector.excludeFilter: '!(_msg:("Warning" OR "Error" OR "ERROR" OR "WARNING" OR "Fatal" OR "FATAL" OR "warn" OR "error" OR "fatal" OR "Exception"))'
 grafana:
   enabled: true
   image:
