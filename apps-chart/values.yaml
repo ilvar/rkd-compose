@@ -1015,6 +1015,10 @@ openobserve:
         hosts:
           - openobserve.h.rkd.pw
           - openobserve.k.rkd.pw
+  enterprise:
+    enabled: false
+    openfga:
+      enabled: false
   ingester:
     persistence:
       enabled: true
