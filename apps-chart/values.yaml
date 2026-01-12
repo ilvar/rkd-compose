@@ -1149,6 +1149,47 @@ victoriaMetrics:
     size: 20Gi
     storageClass: ""
   retentionPeriod: 30d
+  vmalert:
+    enabled: true
+    image:
+      repository: victoriametrics/vmalert
+      tag: v1.119.0
+    port: 8080
+    evaluationInterval: 30s
+    resources:
+      limits:
+        memory: 256Mi
+        cpu: 200m
+      requests:
+        memory: 128Mi
+        cpu: 100m
+    rules: |
+      groups: []
+  vmalertmanager:
+    enabled: true
+    image:
+      repository: victoriametrics/vmalertmanager
+      tag: v1.119.0
+    port: 9093
+    resources:
+      limits:
+        memory: 256Mi
+        cpu: 200m
+      requests:
+        memory: 128Mi
+        cpu: 100m
+    config: |
+      global:
+        resolve_timeout: 5m
+      route:
+        group_by: ['alertname']
+        group_wait: 10s
+        group_interval: 10s
+        repeat_interval: 12h
+        receiver: 'null'
+      receivers:
+      - name: 'null'
+      templates: []
 mqtt:
   enabled: true
   image:
