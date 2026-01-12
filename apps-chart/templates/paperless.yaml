@@ -41,6 +41,18 @@ spec:
       labels:
         app: paperless-redis
     spec:
+      initContainers:
+      - name: wait-for-redis
+        image: redis:7.0.12-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          until redis-cli -h paperless-redis ping >/dev/null 2>&1; do
+            echo "Waiting for paperless-redis"
+            sleep 3
+          done
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

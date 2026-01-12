@@ -1,0 +1,80 @@
+{{- if .Values.victoriaMetrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: victoria-metrics
+  labels:
+    app: victoria-metrics
+spec:
+  clusterIP: None
+  ports:
+    - name: http
+      port: 8428
+      targetPort: 8428
+      protocol: TCP
+  selector:
+    app: victoria-metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: victoria-metrics-http
+  labels:
+    app: victoria-metrics
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8428
+      targetPort: 8428
+      protocol: TCP
+  selector:
+    app: victoria-metrics
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: victoria-metrics
+  labels:
+    app: victoria-metrics
+spec:
+  serviceName: victoria-metrics
+  replicas: 1
+  selector:
+    matchLabels:
+      app: victoria-metrics
+  template:
+    metadata:
+      labels:
+        app: victoria-metrics
+    spec:
+      containers:
+      - name: victoria-metrics
+        image: "{{ .Values.victoriaMetrics.image.repository }}:{{ .Values.victoriaMetrics.image.tag }}"
+        args:
+          - -storageDataPath=/storage
+          - -retentionPeriod={{ .Values.victoriaMetrics.retentionPeriod }}
+        ports:
+          - name: http
+            containerPort: 8428
+            protocol: TCP
+        volumeMounts:
+          - name: storage
+            mountPath: /storage
+        resources:
+          {{- toYaml .Values.victoriaMetrics.resources | nindent 10 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+        labels:
+          app: victoria-metrics
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.victoriaMetrics.storage.size }}
+        {{- if .Values.victoriaMetrics.storage.storageClass }}
+        storageClassName: {{ .Values.victoriaMetrics.storage.storageClass }}
+        {{- end }}
+{{- end }}

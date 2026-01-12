@@ -1,6 +1,7 @@
 .env
 local.yaml
 homelab.yaml
+robusta_generated_values.yaml
 .tmp
 tmp/
 apps-chart/charts/

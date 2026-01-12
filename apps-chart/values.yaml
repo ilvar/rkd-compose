@@ -1133,6 +1133,22 @@ videosCleanupReport:
       memory: 256Mi
     requests:
       memory: 128Mi
+victoriaMetrics:
+  enabled: false
+  image:
+    repository: victoriametrics/victoria-metrics
+    tag: v1.119.0
+  resources:
+    limits:
+      memory: 1Gi
+      cpu: 500m
+    requests:
+      memory: 512Mi
+      cpu: 250m
+  storage:
+    size: 20Gi
+    storageClass: ""
+  retentionPeriod: 30d
 mqtt:
   enabled: true
   image:
