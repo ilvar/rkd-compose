@@ -1,15 +1,5 @@
 {{- if .Values.zigbee2mqtt.enabled }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: zigbee2mqtt-config
-  labels:
-    app: zigbee2mqtt
-data:
-  configuration.yaml: |
-{{ .Values.zigbee2mqtt.config | indent 4 }}
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: zigbee2mqtt-data
@@ -69,9 +59,6 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /app/data
-        - name: config
-          mountPath: /app/data/configuration.yaml
-          subPath: configuration.yaml
         - name: udev
           mountPath: /run/udev
           readOnly: true
@@ -94,9 +81,6 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: zigbee2mqtt-data
-      - name: config
-        configMap:
-          name: zigbee2mqtt-config
       - name: udev
         hostPath:
           path: /run/udev
