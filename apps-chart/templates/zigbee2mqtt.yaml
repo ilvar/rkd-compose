@@ -65,13 +65,17 @@ spec:
         command: ['sh', '-c']
         args:
           - |
-            if [ ! -f /app/data/configuration.yaml ]; then
-              echo "Configuration file not found, creating from ConfigMap..."
+            if [ ! -s /app/data/configuration.yaml ]; then
+              if [ ! -f /app/data/configuration.yaml ]; then
+                echo "Configuration file not found, creating from ConfigMap..."
+              else
+                echo "Configuration file is empty, replacing from ConfigMap..."
+              fi
               # Remove 8 spaces from the start of each line (4 from values.yaml + 4 from indent = 8 total)
               sed 's/^        //' /config/configuration.yaml > /app/data/configuration.yaml
               echo "Configuration file created successfully"
             else
-              echo "Configuration file already exists, skipping initialization"
+              echo "Configuration file already exists and is not empty, skipping initialization"
             fi
         volumeMounts:
         - name: data
