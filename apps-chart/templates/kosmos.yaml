@@ -125,6 +125,7 @@ spec:
         app: kosmos-backend
       annotations:
         reloader.stakater.com/auto: "true"
+        instrumentation.opentelemetry.io/inject-python: "openobserve-collector/openobserve-python"
     spec:
       affinity:
         nodeAffinity:
