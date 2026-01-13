@@ -814,7 +814,7 @@ kosmos:
   db:
     image:
       repository: postgres
-      tag: '18'
+      tag: '14'
     resources:
       limits:
         memory: 100Mi
