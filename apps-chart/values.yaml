@@ -1109,7 +1109,7 @@ vlagent:
   name: vlagent
   image:
     repository: victoriametrics/vlagent
-    tag: v1.33.0
+    tag: v1.43.1
     pullPolicy: IfNotPresent
   vlsingleServiceName: vlsingle-vlsingle
   replicaCount: 1
