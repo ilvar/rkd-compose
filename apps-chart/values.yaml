@@ -1050,7 +1050,7 @@ vlsingle:
   name: vlsingle
   image:
     repository: victoriametrics/victoria-logs
-    tag: v1.33.0
+    tag: v1.43.1
     pullPolicy: IfNotPresent
   retentionPeriod: 30d
   resources:
