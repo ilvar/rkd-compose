@@ -831,7 +831,7 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: 1.2.16
+      tag: 1.2.17
     resources:
       limits:
         memory: 512Mi
@@ -864,7 +864,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 1.2.21
+      tag: 1.2.23
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
