@@ -189,6 +189,20 @@ spec:
         persistentVolumeClaim:
           claimName: {{ .Values.immich.machineLearning.storage.modelCache }}
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-machine-learning
+  labels:
+    app: immich-machine-learning
+spec:
+  ports:
+  - port: 3003
+    targetPort: 3003
+    protocol: TCP
+  selector:
+    app: immich-machine-learning
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
