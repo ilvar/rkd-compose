@@ -552,9 +552,9 @@ immich:
       tag: release
     resources:
       limits:
-        memory: 1024Mi
+        memory: 2048Mi
       requests:
-        memory: 512Mi
+        memory: 1024Mi
         cpu: 400m
     environment:
       TZ: Europe/Dublin
@@ -831,7 +831,7 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: 1.2.19
+      tag: 1.2.20
     resources:
       limits:
         memory: 512Mi
@@ -864,7 +864,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 1.2.27
+      tag: 1.2.28
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
