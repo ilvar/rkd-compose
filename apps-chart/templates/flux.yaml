@@ -1,4 +1,4 @@
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
   name: kosmos-frontend
@@ -7,7 +7,7 @@ spec:
   image: docker.io/ilvar/kosmos-frontend
   interval: 60m
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
   name: kosmos-backend
@@ -16,7 +16,7 @@ spec:
   image: docker.io/ilvar/kosmos-backend
   interval: 60m
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:
   name: kosmos-frontend
@@ -28,7 +28,7 @@ spec:
     semver:
       range: ">=0.0.0"
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:
   name: kosmos-backend
