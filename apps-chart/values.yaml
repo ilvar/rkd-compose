@@ -39,27 +39,6 @@ portainer:
     - portainer.k.rkd.pw
     servicePort: 9000
 
-headlamp:
-  enabled: true
-  image:
-    repository: ghcr.io/k8scareers/headlamp
-    tag: latest
-  resources:
-    limits:
-      memory: 512Mi
-    requests:
-      memory: 256Mi
-      cpu: 200m
-  containerPort: 2000
-  servicePort: 2000
-  podAnnotations: {}
-  extraArgs: []
-  ingress:
-    enabled: true
-    hosts:
-    - headlamp.h.rkd.pw
-    - headlamp.k.rkd.pw
-    servicePort: 2000
 jackett:
   enabled: true
   image:

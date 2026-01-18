@@ -1,90 +1,3 @@
-{{- if .Values.headlamp.enabled }}
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: headlamp
-  labels:
-    app: headlamp
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: headlamp-cluster-admin
-  labels:
-    app: headlamp
-subjects:
-- kind: ServiceAccount
-  name: headlamp
-  namespace: default
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: rbac.authorization.k8s.io
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: headlamp
-  labels:
-    app: headlamp
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: headlamp
-  template:
-    metadata:
-      labels:
-        app: headlamp
-{{- with .Values.headlamp.podAnnotations }}
-      annotations:
-{{ toYaml . | indent 8 }}
-{{- end }}
-    spec:
-      serviceAccountName: headlamp
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - rkd-um560
-{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
-      containers:
-      - name: headlamp
-        image: "{{ .Values.headlamp.image.repository }}:{{ .Values.headlamp.image.tag }}"
-        ports:
-        - containerPort: {{ .Values.headlamp.containerPort }}
-{{- if .Values.headlamp.extraArgs }}
-        args:
-{{- range .Values.headlamp.extraArgs }}
-        - {{ . }}
-{{- end }}
-{{- end }}
-        resources:
-          limits:
-            memory: {{ .Values.headlamp.resources.limits.memory }}
-          requests:
-            memory: {{ .Values.headlamp.resources.requests.memory }}
-            cpu: {{ .Values.headlamp.resources.requests.cpu }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: headlamp
-  labels:
-    app: headlamp
-spec:
-  ports:
-  - port: {{ .Values.headlamp.servicePort }}
-    targetPort: {{ .Values.headlamp.containerPort }}
-    protocol: TCP
-  selector:
-    app: headlamp
-{{- if and .Values.headlamp.enabled .Values.headlamp.ingress.enabled (gt (len .Values.headlamp.ingress.hosts) 0) }}
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -92,17 +5,13 @@ metadata:
   labels:
     app: headlamp
 spec:
-{{- if gt (len .Values.headlamp.ingress.hosts) 0 }}
   tls:
   - hosts:
-{{- range .Values.headlamp.ingress.hosts }}
-    - {{ . | quote }}
-{{- end }}
+    - headlamp.h.rkd.pw
+    - headlamp.k.rkd.pw
     secretName: homelab-wildcard-h-tls
-{{- end }}
   rules:
-  {{- range .Values.headlamp.ingress.hosts }}
-  - host: {{ . | quote }}
+  - host: headlamp.h.rkd.pw
     http:
       paths:
       - path: /
@@ -111,7 +20,14 @@ spec:
           service:
             name: headlamp
             port:
-              number: {{ $.Values.headlamp.ingress.servicePort }}
-  {{- end }}
-{{- end }}
-{{- end }}
+              number: 2000
+  - host: headlamp.k.rkd.pw
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: headlamp
+            port:
+              number: 2000
