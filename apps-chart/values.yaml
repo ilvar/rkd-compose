@@ -829,9 +829,7 @@ kosmos:
     storage:
       size: 10Gi
   backend:
-    image:
-      repository: ilvar/kosmos-backend
-      tag: docker.io/ilvar/kosmos-backend:1.2.26 # {"$imagepolicy": "flux-system:kosmos-backend"}
+    image: docker.io/ilvar/kosmos-backend:1.2.26 # {"$imagepolicy": "flux-system:kosmos-backend"}
     resources:
       limits:
         memory: 512Mi
@@ -862,9 +860,7 @@ kosmos:
       - api.kosmos.rkd.pw
       servicePort: 8000
   frontend:
-    image:
-      repository: ilvar/kosmos-frontend
-      tag: docker.io/ilvar/kosmos-frontend:1.2.34 # {"$imagepolicy": "flux-system:kosmos-frontend"}
+    image: docker.io/ilvar/kosmos-frontend:1.2.34 # {"$imagepolicy": "flux-system:kosmos-frontend"}
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
