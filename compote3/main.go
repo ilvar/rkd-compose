@@ -75,15 +75,16 @@ func getDataWithDeps(cfg *Config, getK8sIngresses k8sIngressGetter, getGitHubTre
 
 	// Helper function to get domain priority (lower number = higher priority)
 	getDomainPriority := func(url string) int {
-		// Check more specific domains first
-		if strings.Contains(url, ".k.rkd.pw") {
-			return 2 // *.k.rkd.pw has second priority
+		if strings.Contains(url, ".rkd.pw") &&
+			!strings.Contains(url, ".h.rkd.pw") &&
+			!strings.Contains(url, ".k.rkd.pw") {
+			return 1 // plain *.rkd.pw has highest priority
 		}
 		if strings.Contains(url, ".h.rkd.pw") {
-			return 3 // *.h.rkd.pw has third priority
+			return 2 // *.h.rkd.pw has second priority
 		}
-		if strings.Contains(url, ".rkd.pw") {
-			return 1 // *.rkd.pw has highest priority (but not .k or .h)
+		if strings.Contains(url, ".k.rkd.pw") {
+			return 3 // *.k.rkd.pw has third priority
 		}
 		return 4 // Other domains have lowest priority
 	}

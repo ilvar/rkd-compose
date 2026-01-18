@@ -301,7 +301,7 @@ compote3:
   enabled: true
   image:
     repository: ilvar/compote3
-    tag: v0.3.11
+    tag: v0.3.14
   resources:
     limits:
       memory: 100Mi
@@ -348,6 +348,8 @@ compote3:
       description: Longhorn storage management console
     - name: hoarder
       description: Web archive and bookmark manager
+    - name: headlamp
+      description: Kubernetes diagnostics and cluster explorer
     - name: homeassistant
       description: Home automation and IoT platform
     - name: immich
@@ -410,7 +412,9 @@ compote3:
   ingress:
     enabled: true
     hosts:
+    - c.rkd.pw
     - c.h.rkd.pw
+    - c.k.rkd.pw
     servicePort: 9000
 paperless:
   enabled: true
