@@ -831,7 +831,7 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: 0.0.0 # {"$imagepolicy": "flux-system:kosmos-backend"}
+      tag: 1.2.26 # {"$imagepolicy": "flux-system:kosmos-backend"}
     resources:
       limits:
         memory: 512Mi
