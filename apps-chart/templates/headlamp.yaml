@@ -18,9 +18,9 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: headlamp
+            name: homelab-headlamp
             port:
-              number: 2000
+              number: 80
   - host: headlamp.k.rkd.pw
     http:
       paths:
@@ -28,6 +28,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: headlamp
+            name: homelab-headlamp
             port:
-              number: 2000
+              number: 80

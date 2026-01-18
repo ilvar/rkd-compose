@@ -1342,15 +1342,7 @@ backups:
     image:
       repository: alpine
       tag: latest
-    databases:
-    - name: nextcloud
-      host: nextcloud-db
-      port: 3306
-      user: root
-      database: nextcloud
-      secretName: nextcloud-secrets
-      passwordKey: mysql-root-password
-      schedule: "0 5 * * *"
+    databases: []
     resources:
       limits:
         memory: 512Mi
