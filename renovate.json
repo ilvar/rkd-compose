@@ -3,5 +3,5 @@
   "extends": [
     "config:recommended"
   ],
-  "ignoreDeps": ["postgres", "meilisearch/meilisearch"]
+  "ignoreDeps": ["postgres", "getmeili/meilisearch"]
 }
