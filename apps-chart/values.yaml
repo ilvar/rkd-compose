@@ -831,7 +831,7 @@ kosmos:
   backend:
     image:
       repository: ilvar/kosmos-backend
-      tag: 0.0.0 # {"$imagepolicy": "flux-system:kosmos-backend"}
+      tag: docker.io/ilvar/kosmos-backend:1.2.26 # {"$imagepolicy": "flux-system:kosmos-backend"}
     resources:
       limits:
         memory: 512Mi
@@ -864,7 +864,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 0.0.0 # {"$imagepolicy": "flux-system:kosmos-frontend"}
+      tag: docker.io/ilvar/kosmos-frontend:1.2.34 # {"$imagepolicy": "flux-system:kosmos-frontend"}
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
@@ -1094,7 +1094,7 @@ vmagent:
     interval: 10m
     namespaceSelector:
       matchNames:
-        - default
+      - default
   cadvisorScrape:
     enabled: true
     name: cadvisor
@@ -1168,15 +1168,15 @@ grafana:
   ingress:
     enabled: true
     hosts:
-      - grafana.k.rkd.pw
-      - grafana.h.rkd.pw
+    - grafana.k.rkd.pw
+    - grafana.h.rkd.pw
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
     tls:
-      - hosts:
-          - grafana.k.rkd.pw
-          - grafana.h.rkd.pw
-        secretName: homelab-wildcard-h-tls
+    - hosts:
+      - grafana.k.rkd.pw
+      - grafana.h.rkd.pw
+      secretName: homelab-wildcard-h-tls
 mqtt:
   enabled: true
   image:
@@ -1305,30 +1305,30 @@ backups:
       repository: postgres
       tag: 18-alpine
     databases:
-      - name: immich
-        host: immich-database
-        port: 5432
-        user: postgres
-        database: immich
-        secretName: immich-secrets
-        passwordKey: postgres-password
-        schedule: "0 4 * * *"
-      - name: miniflux
-        host: miniflux-db
-        port: 5432
-        user: miniflux
-        database: miniflux
-        secretName: miniflux-db-secrets
-        passwordKey: postgres-password
-        schedule: "0 4 * * *"
-      - name: kosmos
-        host: kosmos-db
-        port: 5432
-        user: postgres
-        database: crm
-        secretName: kosmos-secrets
-        passwordKey: postgres-password
-        schedule: "0 4 * * *"
+    - name: immich
+      host: immich-database
+      port: 5432
+      user: postgres
+      database: immich
+      secretName: immich-secrets
+      passwordKey: postgres-password
+      schedule: "0 4 * * *"
+    - name: miniflux
+      host: miniflux-db
+      port: 5432
+      user: miniflux
+      database: miniflux
+      secretName: miniflux-db-secrets
+      passwordKey: postgres-password
+      schedule: "0 4 * * *"
+    - name: kosmos
+      host: kosmos-db
+      port: 5432
+      user: postgres
+      database: crm
+      secretName: kosmos-secrets
+      passwordKey: postgres-password
+      schedule: "0 4 * * *"
     resources:
       limits:
         memory: 512Mi
@@ -1342,14 +1342,14 @@ backups:
       repository: alpine
       tag: latest
     databases:
-      - name: nextcloud
-        host: nextcloud-db
-        port: 3306
-        user: root
-        database: nextcloud
-        secretName: nextcloud-secrets
-        passwordKey: mysql-root-password
-        schedule: "0 5 * * *"
+    - name: nextcloud
+      host: nextcloud-db
+      port: 3306
+      user: root
+      database: nextcloud
+      secretName: nextcloud-secrets
+      passwordKey: mysql-root-password
+      schedule: "0 5 * * *"
     resources:
       limits:
         memory: 512Mi
@@ -1363,13 +1363,13 @@ backups:
       repository: alpine
       tag: latest
     instances:
-      - name: hoarder
-        host: hoarder-meilisearch
-        port: 7700
-        masterKeySecret:
-          name: hoarder-secrets
-          key: meili-master-key
-        schedule: "0 6 * * *"
+    - name: hoarder
+      host: hoarder-meilisearch
+      port: 7700
+      masterKeySecret:
+        name: hoarder-secrets
+        key: meili-master-key
+      schedule: "0 6 * * *"
     resources:
       limits:
         memory: 512Mi
@@ -1383,16 +1383,16 @@ backups:
       repository: redis
       tag: 8.4-alpine
     instances:
-      - name: paperless
-        host: paperless-redis
-        port: 6379
-        password: false
-        schedule: "0 7 * * *"
-      - name: immich
-        host: immich-redis
-        port: 6379
-        password: false
-        schedule: "0 7 * * *"
+    - name: paperless
+      host: paperless-redis
+      port: 6379
+      password: false
+      schedule: "0 7 * * *"
+    - name: immich
+      host: immich-redis
+      port: 6379
+      password: false
+      schedule: "0 7 * * *"
     resources:
       limits:
         memory: 512Mi
@@ -1461,11 +1461,11 @@ longhornMigration:
   immich:
     sourcePath: /home/rkd/.docker/immich/upload
     size: 40Gi
-    schedule: "0 0 * * *"  # Daily at 00:00
+    schedule: "0 0 * * *" # Daily at 00:00
   nextcloud:
     sourcePath: /home/rkd/.docker/nextcloud/data
     size: 80Gi
-    schedule: "0 0 * * *"  # Daily at 00:00
+    schedule: "0 0 * * *" # Daily at 00:00
   nextcloudDb:
     enabled: true
   resources:
