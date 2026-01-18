@@ -39,3 +39,28 @@ spec:
   policy:
     semver:
       range: ">=0.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: kosmos-images
+  namespace: flux-system
+spec:
+  interval: 60m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: fluxcdbot
+        email: fluxcdbot@rkd.pw
+      messageTemplate: "chore(images): bump kosmos services to {{ .images }}"
+    push:
+      branch: main
+  update:
+    path: ./apps-chart
+    strategy: Setters
