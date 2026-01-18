@@ -38,7 +38,6 @@ portainer:
     - portainer.h.rkd.pw
     - portainer.k.rkd.pw
     servicePort: 9000
-
 jackett:
   enabled: true
   image:
@@ -834,7 +833,7 @@ kosmos:
     storage:
       size: 10Gi
   backend:
-    image: docker.io/ilvar/kosmos-backend:1.3.1 # {"$imagepolicy": "flux-system:kosmos-backend"}
+    image: docker.io/ilvar/kosmos-backend:1.3.2 # {"$imagepolicy": "flux-system:kosmos-backend"}
     resources:
       limits:
         memory: 512Mi
