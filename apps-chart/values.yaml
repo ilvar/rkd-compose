@@ -864,7 +864,7 @@ kosmos:
   frontend:
     image:
       repository: ilvar/kosmos-frontend
-      tag: 0.0.0 # {"$imagepolicy": "flux-system:kosmos-frontend"}
+      tag: 1.2.34 # {"$imagepolicy": "flux-system:kosmos-frontend"}
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
