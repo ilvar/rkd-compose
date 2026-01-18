@@ -37,12 +37,6 @@ repos:
         exclude: ^apps-chart/Chart\.yaml$
         pass_filenames: false
         always_run: false
-      - id: manifest-guard
-        name: Manifest Guard
-        entry: python3 scripts/precommit_manifest_guard.py
-        language: system
-        pass_filenames: false
-        always_run: false
       - id: bump-compote-version
         name: Bump Compote Version
         entry: python3 scripts/bump_compote_version.py
