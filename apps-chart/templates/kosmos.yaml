@@ -216,6 +216,87 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: kosmos-jobprocessor
+  labels:
+    app: kosmos-jobprocessor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kosmos-jobprocessor
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: kosmos-jobprocessor
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
+      containers:
+      - name: kosmos-jobprocessor
+        image: "{{ .Values.kosmos.backend.image }}"
+        command:
+        - /bin/sh
+        - -c
+        - uv run python manage.py process_magic_import_jobs --continuous --interval 5
+        env:
+        - name: DEBUG
+          value: {{ .Values.kosmos.backend.environment.DEBUG | default "False" | quote }}
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.kosmos.backend.secrets.jwtSecret.name | default "kosmos-jwt-secret" | quote }}
+              key: {{ .Values.kosmos.backend.secrets.jwtSecret.key | default "jwt-secret" | quote }}
+        - name: DATABASE_URL
+          value: postgresql://{{ .Values.kosmos.db.environment.POSTGRES_USER }}:{{ .Values.kosmos.db.secrets.postgresPassword | default "postgres" }}@kosmos-db:5432/{{ .Values.kosmos.db.environment.POSTGRES_DB }}
+        {{- if .Values.kosmos.backend.secrets.openaiApiKey }}
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.kosmos.backend.secrets.openaiApiKey.name | default "kosmos-openai-secret" | quote }}
+              key: {{ .Values.kosmos.backend.secrets.openaiApiKey.key | default "openai-api-key" | quote }}
+        {{- end }}
+        {{- if .Values.kosmos.backend.secrets.sentryDsnToken }}
+        - name: SENTRY_DSN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.kosmos.backend.secrets.sentryDsnToken.name | default "kosmos-sentry-secret" | quote }}
+              key: {{ .Values.kosmos.backend.secrets.sentryDsnToken.key | default "sentry-dsn-token" | quote }}
+        {{- end }}
+        resources:
+          {{- if .Values.kosmos.backend.resources }}
+          {{- toYaml .Values.kosmos.backend.resources | nindent 10 }}
+          {{- end }}
+        volumeMounts:
+        - name: media
+          mountPath: /app/media
+        - name: static
+          mountPath: /app/static
+      volumes:
+      - name: media
+        persistentVolumeClaim:
+          claimName: {{ .Values.kosmos.backend.storage.media }}
+      - name: static
+        persistentVolumeClaim:
+          claimName: {{ .Values.kosmos.backend.storage.static }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: kosmos-frontend
   labels:
     app: kosmos-frontend
