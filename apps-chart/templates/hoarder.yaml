@@ -247,4 +247,113 @@ spec:
               number: {{ $.Values.hoarder.ingress.servicePort }}
   {{- end }}
 {{- end }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-hoarder-data
+  labels:
+    app: backup-hoarder
+spec:
+  schedule: "0 5 * * *"
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-hoarder
+        spec:
+          {{- include "apps-chart.excludeNodeAffinity" . | nindent 10 }}
+          serviceAccountName: hoarder-backup
+          containers:
+          - name: hoarder-backup
+            image: alpine:latest
+            imagePullPolicy: Always
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Installing rclone and curl if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip tar gzip || true
+                # Download and install rclone
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                
+                RCLONE_VERSION=$(curl -s https://api.github.com/repos/rclone/rclone/releases/latest | grep -oP '"tag_name": "v\K[^"]*' || echo "latest")
+                curl -LsSf "https://github.com/rclone/rclone/releases/latest/download/rclone-v${RCLONE_VERSION}-linux-${RCLONE_ARCH}.zip" -o /tmp/rclone.zip
+                cd /tmp && unzip -q rclone.zip && mv rclone-v*/rclone /usr/local/bin/ && chmod +x /usr/local/bin/rclone
+              fi
+
+              echo "Starting Hoarder backup..."
+              BACKUP_DIR="/tmp/hoarder-backup-$(date +%Y%m%d-%H%M%S)"
+              mkdir -p "$BACKUP_DIR/data"
+              
+              echo "Backing up database..."
+              cp /hoarder-data/db.db "$BACKUP_DIR/data/" 2>/dev/null || echo "Database not found, skipping"
+              
+              echo "Backing up assets..."
+              if [ -d "/hoarder-data/assets" ]; then
+                tar -czf "$BACKUP_DIR/assets.tar.gz" -C /hoarder-data assets/ 2>/dev/null || echo "Assets directory not found"
+              else
+                echo "Assets directory not found, creating empty archive"
+                mkdir -p /tmp/empty && tar -czf "$BACKUP_DIR/assets.tar.gz" -C /tmp empty/
+              fi
+              
+              echo "Uploading to Backblaze B2..."
+              REMOTE_PATH="homelab-rancher-backup/hoarder/$(date +%Y-%m-%d)"
+              
+              # Upload all files
+              for file in "$BACKUP_DIR"/data/* "$BACKUP_DIR"/*.tar.gz; do
+                if [ -f "$file" ]; then
+                  echo "Uploading $(basename $file)..."
+                  rclone copy "$file" "b2:${REMOTE_PATH}/" --b2-hard-delete --no-traverse
+                fi
+              done
+              
+              echo "✓ Backup complete"
+              rm -rf "$BACKUP_DIR"
+            env:
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: backblaze-credentials
+                  key: account-id
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backblaze-credentials
+                  key: application-key
+            volumeMounts:
+            - name: hoarder-data
+              mountPath: /hoarder-data
+            resources:
+              requests:
+                memory: 256Mi
+                cpu: 100m
+              limits:
+                memory: 512Mi
+                cpu: 500m
+          volumes:
+          - name: hoarder-data
+            persistentVolumeClaim:
+              claimName: hoarder-data
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hoarder-backup
 {{- end }}
