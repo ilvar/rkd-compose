@@ -24,6 +24,9 @@ jobs:
         with:
           version: '3.13.0'
 
+      - name: Update Helm Dependencies
+        run: helm dependency update apps-chart/
+
       - name: Run Helm Lint
         run: helm lint apps-chart/ --strict
 

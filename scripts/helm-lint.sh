@@ -10,6 +10,9 @@ if [ ! -d "$CHART_DIR" ]; then
   exit 1
 fi
 
+echo "📦 Updating Helm dependencies..."
+helm dependency update "$CHART_DIR"
+
 echo "🔍 Running helm lint on $CHART_DIR..."
 
 if helm lint "$CHART_DIR" --strict; then
