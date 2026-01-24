@@ -900,9 +900,9 @@ kosmos:
     ingress:
       enabled: true
       hosts:
+      - kosmos.h.rkd.pw
       - kosmos.k.rkd.pw
       - kosmos.rkd.pw
-    - kosmos.h.rkd.pw
       servicePort: 80
   notifications:
     enabled: true
