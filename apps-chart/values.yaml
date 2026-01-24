@@ -1084,7 +1084,7 @@ vmagent:
   name: vmagent
   image:
     repository: victoriametrics/vmagent
-    tag: v1.133.0
+    tag: v1.134.0
     pullPolicy: IfNotPresent
   vmsingleServiceName: vmsingle-vmsingle
   replicaCount: 1
