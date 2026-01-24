@@ -1048,7 +1048,7 @@ vmsingle:
   name: vmsingle
   image:
     repository: victoriametrics/victoria-metrics
-    tag: v1.133.0
+    tag: v1.134.0
     pullPolicy: IfNotPresent
   retentionPeriod: 30d
   resources:
