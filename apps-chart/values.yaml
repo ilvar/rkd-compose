@@ -854,19 +854,11 @@ kosmos:
     environment:
       DEBUG: 'False'
     secrets:
-      jwtSecret:
-        name: kosmos-jwt-secret
-        key: jwt-secret
-      openaiApiKey:
-        name: kosmos-openai-secret
-        key: openai-api-key
-      sentryDsnToken:
-        name: kosmos-sentry-secret
-        key: sentry-dsn-token
       SECRET_KEY:
         name: kosmos-secret
         key: SECRET_KEY
-        name: kosmos-secrets
+      jwtSecret:
+        name: kosmos-jwt-secret
         key: jwt-secret
       openaiApiKey:
         name: kosmos-openai-secret

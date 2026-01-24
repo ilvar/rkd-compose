@@ -256,6 +256,11 @@ spec:
         env:
         - name: DEBUG
           value: {{ .Values.kosmos.backend.environment.DEBUG | default "False" | quote }}
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.kosmos.backend.secrets.SECRET_KEY.name | default "kosmos-secret" | quote }}
+              key: {{ .Values.kosmos.backend.secrets.SECRET_KEY.key | default "SECRET_KEY" | quote }}
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
