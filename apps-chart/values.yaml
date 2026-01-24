@@ -115,6 +115,7 @@ jellyfin:
     - jf.h.rkd.pw
     - jellyfin.h.rkd.pw
     - jellyfin.k.rkd.pw
+    - jellyfin.k.rkd.pw
     - jellyfin.local
     servicePort: 8096
 deluge:
@@ -199,6 +200,7 @@ frigate:
     enabled: true
     hosts:
     - frigate.h.rkd.pw
+    - frigate.k.rkd.pw
     servicePort: 5000
 nodered:
   enabled: true
@@ -219,6 +221,7 @@ nodered:
     enabled: true
     hosts:
     - nodered.h.rkd.pw
+    - nodered.k.rkd.pw
     - n.h.rkd.pw
     - nodered.z85
     servicePort: 1880
@@ -641,6 +644,7 @@ bugsink:
   ingress:
     enabled: true
     hosts:
+    - bugsink.h.rkd.pw
     - bugsink.k.rkd.pw
     - bugsink.rkd.pw
     servicePort: 8000
@@ -658,6 +662,7 @@ itTools:
   ingress:
     enabled: true
     hosts:
+    - it-tools.h.rkd.pw
     - it-tools.k.rkd.pw
     servicePort: 80
 minifluxDb:
@@ -738,7 +743,9 @@ rkdPw:
     - rkd.pw
     - h.rkd.pw
     - k.rkd.pw
+    - rkd.h.rkd.pw
     - rkd.k.rkd.pw
+    - rkdpw.h.rkd.pw
     - rkdpw.k.rkd.pw
     - www.rkd.pw
     servicePort: 5000
@@ -756,6 +763,7 @@ irishSchools:
   ingress:
     enabled: true
     hosts:
+    - irish-schools.h.rkd.pw
     - irish-schools.k.rkd.pw
     - irish-schools.rkd.pw
     servicePort: 5000
@@ -777,6 +785,7 @@ changes:
   ingress:
     enabled: true
     hosts:
+    - changes.h.rkd.pw
     - changes.k.rkd.pw
     servicePort: 5000
 reloader:
@@ -875,6 +884,7 @@ kosmos:
       hosts:
       - api.kosmos.k.rkd.pw
       - api.kosmos.rkd.pw
+      - api.kosmos.h.rkd.pw
       servicePort: 8000
   frontend:
     image: docker.io/ilvar/kosmos-frontend:1.4.8 # {"$imagepolicy": "flux-system:kosmos-frontend"}
@@ -892,6 +902,7 @@ kosmos:
       hosts:
       - kosmos.k.rkd.pw
       - kosmos.rkd.pw
+    - kosmos.h.rkd.pw
       servicePort: 80
   notifications:
     enabled: true
@@ -1232,6 +1243,7 @@ zigbee2mqtt:
     hosts:
     - zigbee.d.z85
     - zigbee.h.rkd.pw
+    - zigbee.k.rkd.pw
     servicePort: 8080
   config: |
     mqtt:
@@ -1447,6 +1459,7 @@ longhorn:
     enabled: true
     hosts:
     - longhorn.h.rkd.pw
+    - longhorn.k.rkd.pw
     servicePort: 80
     tlsSecretName: homelab-wildcard-h-tls
     certManager:
