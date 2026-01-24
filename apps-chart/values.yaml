@@ -736,6 +736,8 @@ rkdPw:
     enabled: true
     hosts:
     - rkd.pw
+    - h.rkd.pw
+    - k.rkd.pw
     - rkd.k.rkd.pw
     - rkdpw.k.rkd.pw
     - www.rkd.pw
