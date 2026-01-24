@@ -855,7 +855,7 @@ kosmos:
       DEBUG: 'False'
     secrets:
       jwtSecret:
-        name: kosmos-jwt-secret
+        name: kosmos-secrets
         key: jwt-secret
       openaiApiKey:
         name: kosmos-openai-secret
@@ -866,7 +866,7 @@ kosmos:
       SECRET_KEY:
         name: kosmos-secret
         key: SECRET_KEY
-        name: kosmos-jwt-secret
+        name: kosmos-secrets
         key: jwt-secret
       openaiApiKey:
         name: kosmos-openai-secret
