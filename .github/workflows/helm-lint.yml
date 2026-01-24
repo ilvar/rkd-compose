@@ -1,0 +1,42 @@
+name: Helm Lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps-chart/**'
+      - '.github/workflows/helm-lint.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps-chart/**'
+
+jobs:
+  helm-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.13.0'
+
+      - name: Run Helm Lint
+        run: helm lint apps-chart/ --strict
+
+      - name: Check values.yaml syntax
+        run: |
+          echo "Validating YAML syntax..."
+          python3 -c "
+          import yaml
+          with open('apps-chart/values.yaml', 'r') as f:
+              try:
+                  yaml.safe_load(f)
+                  print('✅ values.yaml is valid YAML')
+              except yaml.YAMLError as e:
+                  print(f'❌ values.yaml has syntax error: {e}')
+                  exit(1)
+          "

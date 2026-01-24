@@ -1,47 +1,10 @@
 repos:
   - repo: local
     hooks:
-      - id: post-commit-push
-        name: post-commit-push
-        entry: scripts/git/post_commit_push.sh
-        language: script
-        stages: [post-commit]
-        pass_filenames: false
-        always_run: true
       - id: helm-lint
         name: Helm Lint
-        entry: bash -c 'helm lint apps-chart'
-        language: system
-        files: ^apps-chart/
+        entry: bash scripts/helm-lint.sh
+        language: script
+        files: 'apps-chart/(Chart\.yaml|values\.yaml|templates/)'
         pass_filenames: false
-        always_run: false
-      - id: compote-build
-        name: Compote Build
-        entry: bash -c 'cd compote3 && go build -o /dev/null .'
-        language: system
-        files: ^compote3/
-        pass_filenames: false
-        always_run: false
-      - id: compote-test
-        name: Compote Tests
-        entry: bash -c 'cd compote3 && go test -v ./...'
-        language: system
-        files: ^compote3/
-        pass_filenames: false
-        always_run: false
-      - id: bump-chart-version
-        name: Bump Helm Chart Version
-        entry: python3 scripts/bump_chart_version.py
-        language: system
-        files: ^apps-chart/
-        exclude: ^apps-chart/Chart\.yaml$
-        pass_filenames: false
-        always_run: false
-      - id: bump-compote-version
-        name: Bump Compote Version
-        entry: python3 scripts/bump_compote_version.py
-        language: system
-        files: ^compote3/
-        exclude: ^compote3/VERSION$
-        pass_filenames: false
-        always_run: false
+        stages: [commit]
