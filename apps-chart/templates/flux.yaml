@@ -1,3 +1,40 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: rkd-compose
+  namespace: flux-system
+spec:
+  interval: 1m
+  ref:
+    branch: main
+  secretRef:
+    name: github-credentials
+  timeout: 60s
+  url: https://github.com/ilvar/rkd-compose.git
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homelab
+  namespace: flux-system
+spec:
+  chart:
+    spec:
+      chart: ./apps-chart
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: GitRepository
+        name: rkd-compose
+        namespace: flux-system
+  install:
+    crds: Create
+  interval: 1h0m0s
+  releaseName: homelab
+  targetNamespace: default
+  timeout: 10m0s
+  upgrade:
+    crds: CreateReplace
+---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
