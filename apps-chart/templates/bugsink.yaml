@@ -92,6 +92,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Values.bugsink.storage.data }}
 spec:
+  storageClassName: local-path-retain
   accessModes:
     - ReadWriteOnce
   resources:

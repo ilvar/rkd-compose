@@ -2,6 +2,8 @@ global:
   excludeNodes:
   - rockpro64
   - orangepi5
+  # Create storage classes with Retain policy to protect PVCs from deletion
+  createStorageClasses: true
 blocky:
   enabled: true
   image:

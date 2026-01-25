@@ -375,6 +375,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Values.kosmos.backend.storage.media }}
 spec:
+  storageClassName: local-path-retain
   accessModes:
     - ReadWriteOnce
   resources:
@@ -386,6 +387,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Values.kosmos.backend.storage.static }}
 spec:
+  storageClassName: local-path-retain
   accessModes:
     - ReadWriteOnce
   resources:

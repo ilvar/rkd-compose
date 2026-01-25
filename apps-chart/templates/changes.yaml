@@ -60,6 +60,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Values.changes.storage.data }}
 spec:
+  storageClassName: local-path-retain
   accessModes:
     - ReadWriteOnce
   resources:

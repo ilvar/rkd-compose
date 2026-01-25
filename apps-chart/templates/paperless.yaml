@@ -16,6 +16,7 @@ metadata:
   labels:
     app: paperless-redis
 spec:
+  storageClassName: local-path-retain
   accessModes:
     - ReadWriteOnce
   resources:
