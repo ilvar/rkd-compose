@@ -1,3 +1,8 @@
+bootstrapDns:
+  - tcp+udp:9.9.9.9
+  - tcp+udp:8.8.8.8
+  - tcp+udp:1.1.1.1
+
 upstream:
   default:
     - https://dns.nextdns.io/c7ade2
