@@ -37,6 +37,15 @@ spec:
                 operator: In
                 values:
                 - orangepi5
+      tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "blocky"
+        effect: "NoSchedule"
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
