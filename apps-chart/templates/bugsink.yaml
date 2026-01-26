@@ -44,6 +44,21 @@ spec:
           value: {{ .Values.bugsink.environment.BEHIND_HTTPS_PROXY | quote }}
         - name: BASE_URL
           value: {{ .Values.bugsink.environment.BASE_URL | quote }}
+        - name: EMAIL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: bugsink-email
+              key: host
+        - name: EMAIL_HOST_USER
+          valueFrom:
+            secretKeyRef:
+              name: bugsink-email
+              key: username
+        - name: EMAIL_HOST_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bugsink-email
+              key: password
         resources:
           limits:
             memory: {{ .Values.bugsink.resources.limits.memory }}

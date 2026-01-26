@@ -3,8 +3,8 @@ repos:
     hooks:
       - id: helm-lint
         name: Helm Lint
-        entry: bash scripts/helm-lint.sh
+        entry: scripts/helm-lint.sh
         language: script
         files: 'apps-chart/(Chart\.yaml|values\.yaml|templates/)'
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
