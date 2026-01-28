@@ -24,9 +24,9 @@ spec:
     spec:
       {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       securityContext:
-        runAsUser: {{ include "apps-chart.userID" .Values.beszel.user | int }}
-        runAsGroup: {{ include "apps-chart.groupID" .Values.beszel.user | int }}
-        fsGroup: {{ include "apps-chart.groupID" .Values.beszel.user | int }}
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
       containers:
       - name: beszel-hub
         image: "{{ .Values.beszel.hub.image.repository }}:{{ .Values.beszel.hub.image.tag }}"
