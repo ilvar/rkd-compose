@@ -88,12 +88,10 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: local-path-retain
   resources:
     requests:
       storage: {{ .Values.beszel.hub.storage.size | default "10Gi" }}
-  {{- if .Values.beszel.hub.storage.storageClass }}
-  storageClassName: {{ .Values.beszel.hub.storage.storageClass | quote }}
-  {{- end }}
 {{- if and .Values.beszel.enabled .Values.beszel.hub.ingress.enabled (gt (len .Values.beszel.hub.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
