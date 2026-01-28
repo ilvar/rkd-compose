@@ -1,0 +1,138 @@
+{{- if .Values.beszel.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beszel-hub
+  labels:
+    app: beszel-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: beszel-hub
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: beszel-hub
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      securityContext:
+        runAsUser: {{ include "apps-chart.userID" .Values.beszel.user | int }}
+        runAsGroup: {{ include "apps-chart.groupID" .Values.beszel.user | int }}
+        fsGroup: {{ include "apps-chart.groupID" .Values.beszel.user | int }}
+      containers:
+      - name: beszel-hub
+        image: "{{ .Values.beszel.hub.image.repository }}:{{ .Values.beszel.hub.image.tag }}"
+        {{- if .Values.beszel.hub.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.beszel.hub.image.pullPolicy }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.beszel.hub.port | default 8090 }}
+          protocol: TCP
+        env:
+        {{- if .Values.beszel.hub.environment }}
+        {{- range $key, $value := .Values.beszel.hub.environment }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          {{- if .Values.beszel.hub.resources }}
+          {{- toYaml .Values.beszel.hub.resources | nindent 10 }}
+          {{- end }}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.beszel.hub.storage.data }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: beszel-hub
+  labels:
+    app: beszel-hub
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: {{ .Values.beszel.hub.servicePort | default 8090 }}
+    targetPort: {{ .Values.beszel.hub.port | default 8090 }}
+    protocol: TCP
+  selector:
+    app: beszel-hub
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.beszel.hub.storage.data }}
+  labels:
+    app: beszel-hub
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.beszel.hub.storage.size | default "10Gi" }}
+  {{- if .Values.beszel.hub.storage.storageClass }}
+  storageClassName: {{ .Values.beszel.hub.storage.storageClass | quote }}
+  {{- end }}
+{{- if and .Values.beszel.enabled .Values.beszel.hub.ingress.enabled (gt (len .Values.beszel.hub.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: beszel-hub
+  labels:
+    app: beszel-hub
+  {{- if .Values.beszel.hub.ingress.annotations }}
+  annotations:
+    {{- toYaml .Values.beszel.hub.ingress.annotations | nindent 4 }}
+  {{- end }}
+spec:
+{{- if gt (len .Values.beszel.hub.ingress.hosts) 0 }}
+  {{- if .Values.beszel.hub.ingress.tls }}
+  tls:
+  {{- range .Values.beszel.hub.ingress.tls }}
+  - hosts:
+    {{- range .hosts }}
+    - {{ . | quote }}
+    {{- end }}
+    {{- if .secretName }}
+    secretName: {{ .secretName | quote }}
+    {{- end }}
+  {{- end }}
+  {{- else if gt (len .Values.beszel.hub.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+  {{- range .Values.beszel.hub.ingress.hosts }}
+    - {{ . | quote }}
+  {{- end }}
+    secretName: homelab-wildcard-h-tls
+  {{- end }}
+{{- end }}
+  rules:
+  {{- range .Values.beszel.hub.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: beszel-hub
+            port:
+              number: {{ $.Values.beszel.hub.servicePort | default 8090 }}
+  {{- end }}
+{{- end }}
+{{- end }}

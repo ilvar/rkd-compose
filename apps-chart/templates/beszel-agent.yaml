@@ -1,0 +1,72 @@
+{{- if and .Values.beszel.enabled .Values.beszel.agent.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: beszel-agent
+  labels:
+    app: beszel-agent
+spec:
+  selector:
+    matchLabels:
+      app: beszel-agent
+  template:
+    metadata:
+      labels:
+        app: beszel-agent
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: beszel-agent
+        image: "{{ .Values.beszel.agent.image.repository }}:{{ .Values.beszel.agent.image.tag }}"
+        {{- if .Values.beszel.agent.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.beszel.agent.image.pullPolicy }}
+        {{- end }}
+        env:
+        - name: BESZEL_HUB_URL
+          value: {{ .Values.beszel.agent.hubUrl | default "http://beszel-hub:8090" | quote }}
+        {{- if .Values.beszel.agent.token }}
+        - name: BESZEL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: beszel-agent-secrets
+              key: token
+        {{- end }}
+        {{- if .Values.beszel.agent.environment }}
+        {{- range $key, $value := .Values.beszel.agent.environment }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+        volumeMounts:
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+          readOnly: true
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: sys
+          mountPath: /host/sys
+          readOnly: true
+        securityContext:
+          privileged: true
+        resources:
+          {{- if .Values.beszel.agent.resources }}
+          {{- toYaml .Values.beszel.agent.resources | nindent 10 }}
+          {{- end }}
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      - effect: NoExecute
+        operator: Exists
+{{- end }}

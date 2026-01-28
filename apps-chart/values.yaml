@@ -1043,105 +1043,57 @@ videosCleanupReport:
       memory: 256Mi
     requests:
       memory: 128Mi
-vmsingle:
+beszel:
   enabled: true
-  name: vmsingle
-  image:
-    repository: victoriametrics/victoria-metrics
-    tag: v1.133.0
-    pullPolicy: IfNotPresent
-  retentionPeriod: 30d
-  resources:
-    requests:
-      cpu: 500m
-      memory: 1Gi
-    limits:
-      cpu: 1000m
-      memory: 2Gi
-  storage:
-    size: 20Gi
-    storageClass: ""
-vlsingle:
-  enabled: true
-  name: vlsingle
-  image:
-    repository: victoriametrics/victoria-logs
-    tag: v1.43.1
-    pullPolicy: IfNotPresent
-  retentionPeriod: 30d
-  resources:
-    requests:
-      cpu: 500m
-      memory: 1Gi
-    limits:
-      cpu: 1000m
-      memory: 2Gi
-  storage:
-    size: 20Gi
-    storageClass: ""
-vmagent:
-  enabled: true
-  name: vmagent
-  image:
-    repository: victoriametrics/vmagent
-    tag: v1.133.0
-    pullPolicy: IfNotPresent
-  vmsingleServiceName: vmsingle-vmsingle
-  replicaCount: 1
-  selectAllByDefault: true
-  resources:
-    requests:
-      cpu: 200m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-  nodeExporterScrape:
+  user: "1000:1000"
+  hub:
     enabled: true
-    name: node-exporter
-    port: "http-metrics"
-    path: "/metrics"
-    interval: 10m
-  kubeStateMetricsScrape:
+    image:
+      repository: henrygd/beszel
+      tag: latest
+      pullPolicy: IfNotPresent
+    port: 8090
+    servicePort: 8090
+    environment: {}
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    storage:
+      data: beszel-hub-data
+      size: 10Gi
+      storageClass: ""
+    ingress:
+      enabled: true
+      hosts:
+      - beszel.k.rkd.pw
+      - beszel.h.rkd.pw
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      tls:
+      - hosts:
+        - beszel.k.rkd.pw
+        - beszel.h.rkd.pw
+        secretName: homelab-wildcard-h-tls
+  agent:
     enabled: true
-    name: kube-state-metrics
-    port: "http"
-    path: "/metrics"
-    interval: 10m
-    namespaceSelector:
-      matchNames:
-      - default
-  cadvisorScrape:
-    enabled: true
-    name: cadvisor
-    interval: 10m
-  podAnnotationsScrape:
-    enabled: true
-    name: pod-annotations-discovery
-    # Scrape all namespaces by default (empty selector means all)
-    namespaceSelector: {}
-vlagent:
-  enabled: true
-  name: vlagent
-  image:
-    repository: victoriametrics/vlagent
-    tag: v1.43.1
-    pullPolicy: IfNotPresent
-  vlsingleServiceName: vlsingle-vlsingle
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: 200m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-  extraArgs:
-    # Filter to collect only Warning and Error logs
-    # Excludes logs that don't contain Warning/Error patterns in the message
-    # Uses LogsQL syntax - excludeFilter excludes logs matching the pattern
-    # So we exclude logs that don't match Warning/Error patterns (keeping only Warning/Error)
-    kubernetesCollector.excludeFilter: '!(_msg:("Warning" OR "Error" OR "ERROR" OR "WARNING" OR "Fatal" OR "FATAL" OR "warn" OR "error" OR "fatal" OR "Exception"))'
+    image:
+      repository: henrygd/beszel-agent
+      tag: latest
+      pullPolicy: IfNotPresent
+    hubUrl: http://beszel-hub:8090
+    token: ""
+    environment: {}
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
 nodeExporter:
   enabled: true
   image:
@@ -1154,45 +1106,6 @@ nodeExporter:
     limits:
       cpu: 200m
       memory: 256Mi
-grafana:
-  enabled: true
-  image:
-    repository: grafana/grafana
-    tag: latest
-  port: 3000
-  servicePort: 3000
-  adminUser: admin
-  adminPassword: ""
-  secretName: grafana-secrets
-  vmsingleServiceName: vmsingle-vmsingle
-  vlsingleServiceName: vlsingle-vlsingle
-  auth:
-    anonymous:
-      enabled: false
-      orgRole: Viewer
-  resources:
-    limits:
-      memory: 512Mi
-      cpu: 500m
-    requests:
-      memory: 256Mi
-      cpu: 250m
-  storage:
-    data: grafana-data
-    size: 5Gi
-    storageClass: ""
-  ingress:
-    enabled: true
-    hosts:
-    - grafana.k.rkd.pw
-    - grafana.h.rkd.pw
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-    tls:
-    - hosts:
-      - grafana.k.rkd.pw
-      - grafana.h.rkd.pw
-      secretName: homelab-wildcard-h-tls
 mqtt:
   enabled: true
   image:
