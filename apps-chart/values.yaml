@@ -313,6 +313,8 @@ compote3:
     github:
       watcher: ilvar
     descriptions:
+    - name: beszel
+      description: System resource monitoring and tracking
     - name: blog
       description: Personal blog and website
     - name: bugsink
