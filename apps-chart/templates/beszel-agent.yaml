@@ -1,4 +1,28 @@
 {{- if and .Values.beszel.enabled .Values.beszel.agent.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: beszel-agent-key
+  namespace: default
+  labels:
+    app: beszel-agent
+type: Opaque
+stringData:
+  key: {{ .Values.beszel.agent.sshKey | quote }}
+---
+{{- if .Values.beszel.agent.token }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: beszel-agent-secrets
+  namespace: default
+  labels:
+    app: beszel-agent
+type: Opaque
+stringData:
+  token: {{ .Values.beszel.agent.token | quote }}
+---
+{{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -31,6 +55,11 @@ spec:
           value: {{ .Values.beszel.agent.hubUrl | default "https://beszel.h.rkd.pw" | quote }}
         - name: LISTEN
           value: "45876"
+        - name: KEY
+          valueFrom:
+            secretKeyRef:
+              name: beszel-agent-key
+              key: key
         {{- if .Values.beszel.agent.token }}
         - name: TOKEN
           valueFrom:

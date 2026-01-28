@@ -1090,6 +1090,7 @@ beszel:
       pullPolicy: IfNotPresent
     hubUrl: https://beszel.h.rkd.pw
     token: "051685cc-168e-4298-898a-0291d8759965"
+    sshKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL86cw2R4vYXsYum0BHO2MuSRd5ZjGrugFqFcJ1cDQ56"
     environment: {}
     resources:
       requests:
