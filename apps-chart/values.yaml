@@ -1089,7 +1089,7 @@ beszel:
       tag: latest
       pullPolicy: IfNotPresent
     hubUrl: https://beszel.h.rkd.pw
-    token: "8eff550a-0d6a-42cb-90cd-2e9c5c779434"
+    token: "051685cc-168e-4298-898a-0291d8759965"
     environment: {}
     resources:
       requests:
