@@ -145,6 +145,9 @@ spec:
         resources:
           limits:
             memory: {{ .Values.hoarder.meilisearch.resources.limits.memory }}
+          requests:
+            memory: {{ .Values.hoarder.meilisearch.resources.requests.memory }}
+            cpu: {{ .Values.hoarder.meilisearch.resources.requests.cpu }}
         volumeMounts:
         - name: data
           mountPath: /meili_data
