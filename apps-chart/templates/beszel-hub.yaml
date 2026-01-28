@@ -37,8 +37,8 @@ spec:
         - name: http
           containerPort: {{ .Values.beszel.hub.port | default 8090 }}
           protocol: TCP
-        - name: ssh
-          containerPort: 2222
+        - name: agent
+          containerPort: 45876
           protocol: TCP
         env:
         {{- if .Values.beszel.hub.environment }}
@@ -72,9 +72,9 @@ spec:
     port: {{ .Values.beszel.hub.servicePort | default 8090 }}
     targetPort: {{ .Values.beszel.hub.port | default 8090 }}
     protocol: TCP
-  - name: ssh
-    port: 2222
-    targetPort: 2222
+  - name: agent
+    port: 45876
+    targetPort: 45876
     protocol: TCP
   selector:
     app: beszel-hub

@@ -22,11 +22,17 @@ spec:
         {{- if .Values.beszel.agent.image.pullPolicy }}
         imagePullPolicy: {{ .Values.beszel.agent.image.pullPolicy }}
         {{- end }}
+        ports:
+        - name: beszel
+          containerPort: 45876
+          protocol: TCP
         env:
-        - name: BESZEL_HUB_URL
-          value: {{ .Values.beszel.agent.hubUrl | default "http://beszel-hub:8090" | quote }}
+        - name: HUB_URL
+          value: {{ .Values.beszel.agent.hubUrl | default "https://beszel.h.rkd.pw" | quote }}
+        - name: LISTEN
+          value: "45876"
         {{- if .Values.beszel.agent.token }}
-        - name: KEY
+        - name: TOKEN
           valueFrom:
             secretKeyRef:
               name: beszel-agent-secrets
