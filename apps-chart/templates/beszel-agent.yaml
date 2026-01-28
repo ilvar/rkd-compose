@@ -31,6 +31,8 @@ spec:
           value: {{ .Values.beszel.agent.hubUrl | default "https://beszel.h.rkd.pw" | quote }}
         - name: LISTEN
           value: "45876"
+        - name: KEY
+          value: ""
         {{- if .Values.beszel.agent.token }}
         - name: TOKEN
           valueFrom:
