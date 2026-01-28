@@ -272,9 +272,9 @@ hoarder:
       tag: v1.11.1
     resources:
       limits:
-        memory: 100Mi
+        memory: 500Mi
       requests:
-        memory: 100Mi
+        memory: 256Mi
         cpu: 100m
     environment:
       MEILI_NO_ANALYTICS: 'true'
