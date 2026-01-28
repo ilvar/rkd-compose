@@ -827,7 +827,7 @@ pinchflat:
     - pinchflat.k.rkd.pw
     servicePort: 8945
 kosmos:
-  enabled: true
+  enabled: false
   db:
     image:
       repository: postgres
