@@ -26,7 +26,7 @@ spec:
         - name: BESZEL_HUB_URL
           value: {{ .Values.beszel.agent.hubUrl | default "http://beszel-hub:8090" | quote }}
         {{- if .Values.beszel.agent.token }}
-        - name: BESZEL_TOKEN
+        - name: KEY
           valueFrom:
             secretKeyRef:
               name: beszel-agent-secrets
