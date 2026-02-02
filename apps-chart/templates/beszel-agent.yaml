@@ -1,28 +1,4 @@
 {{- if and .Values.beszel.enabled .Values.beszel.agent.enabled }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: beszel-agent-key
-  namespace: default
-  labels:
-    app: beszel-agent
-type: Opaque
-stringData:
-  key: {{ .Values.beszel.agent.sshKey | quote }}
----
-{{- if .Values.beszel.agent.token }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: beszel-agent-secrets
-  namespace: default
-  labels:
-    app: beszel-agent
-type: Opaque
-stringData:
-  token: {{ .Values.beszel.agent.token | quote }}
----
-{{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -58,15 +34,13 @@ spec:
         - name: KEY
           valueFrom:
             secretKeyRef:
-              name: beszel-agent-key
+              name: beszel-agent-credentials
               key: key
-        {{- if .Values.beszel.agent.token }}
         - name: TOKEN
           valueFrom:
             secretKeyRef:
-              name: beszel-agent-secrets
+              name: beszel-agent-credentials
               key: token
-        {{- end }}
         {{- if .Values.beszel.agent.environment }}
         {{- range $key, $value := .Values.beszel.agent.environment }}
         - name: {{ $key }}

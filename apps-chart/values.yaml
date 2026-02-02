@@ -1089,8 +1089,8 @@ beszel:
       tag: latest
       pullPolicy: IfNotPresent
     hubUrl: https://beszel.h.rkd.pw
-    token: "54be0ddc-b7a1-4352-b466-221bce82ec36"
-    sshKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOi2Q3T3/SvYPyqMFJJqeGa9yJ30TCA1TDt0yyNeB3Jw"
+    # Note: KEY and TOKEN are stored in external secret 'beszel-agent-credentials'
+    # Do not store credentials in this chart values
     environment: {}
     resources:
       requests:
