@@ -83,6 +83,8 @@ spec:
         - name: sys
           mountPath: /host/sys
           readOnly: true
+        - name: agent-data
+          mountPath: /var/lib/beszel-agent
         securityContext:
           privileged: true
         resources:
@@ -99,6 +101,10 @@ spec:
       - name: sys
         hostPath:
           path: /sys
+      - name: agent-data
+        hostPath:
+          path: /var/lib/beszel-agent
+          type: DirectoryOrCreate
       tolerations:
       - effect: NoSchedule
         operator: Exists
