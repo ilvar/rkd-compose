@@ -41,6 +41,8 @@ spec:
           containerPort: 45876
           protocol: TCP
         env:
+        - name: PB_DATA_DIR
+          value: "/data"
         {{- if .Values.beszel.hub.environment }}
         {{- range $key, $value := .Values.beszel.hub.environment }}
         - name: {{ $key }}
