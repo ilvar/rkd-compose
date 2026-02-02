@@ -1088,7 +1088,7 @@ beszel:
       repository: henrygd/beszel-agent
       tag: latest
       pullPolicy: IfNotPresent
-    hubUrl: http://beszel-hub.default.svc.cluster.local:8090
+    hubUrl: http://192.168.1.126:8090
     # Note: KEY and TOKEN are stored in external secret 'beszel-agent-credentials'
     # Do not store credentials in this chart values
     environment: {}

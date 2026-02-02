@@ -22,7 +22,15 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
-      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - rkd-um560
       securityContext:
         runAsUser: 0
         runAsGroup: 0
