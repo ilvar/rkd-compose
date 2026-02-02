@@ -1369,6 +1369,9 @@ backups:
     schedule: "0 4 * * *"
   storage:
     pvcName: backup-storage
+  zigbee2mqtt:
+    enabled: true
+    schedule: "0 5 * * *"
 longhorn:
   ingress:
     enabled: true

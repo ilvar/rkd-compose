@@ -1130,4 +1130,71 @@ spec:
             persistentVolumeClaim:
               claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
 {{- end }}
+
+{{- if .Values.backups.zigbee2mqtt.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-zigbee2mqtt
+  labels:
+    app: backup-zigbee2mqtt
+spec:
+  schedule: {{ .Values.backups.zigbee2mqtt.schedule | default "0 5 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-zigbee2mqtt
+        spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
+          restartPolicy: OnFailure
+          containers:
+          - name: zigbee2mqtt-backup
+            image: "alpine:latest"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Backing up zigbee2mqtt data..."
+              
+              # Create backup directory
+              BACKUP_DIR="/backups/zigbee2mqtt"
+              mkdir -p "$BACKUP_DIR"
+              
+              BACKUP_FILE="$BACKUP_DIR/zigbee2mqtt-backup-$(date +\%Y\%m\%d-\%H\%M\%S).tar.gz"
+              
+              # Install tar if needed
+              apk add --no-cache tar gzip 2>/dev/null || true
+              
+              # Create tarball of the zigbee2mqtt data
+              tar -czf "$BACKUP_FILE" -C /mnt/zigbee2mqtt-data . || echo "Backup created with warnings"
+              
+              echo "Zigbee2MQTT backup completed: $BACKUP_FILE"
+              ls -lh "$BACKUP_FILE"
+            volumeMounts:
+            - name: zigbee2mqtt-data
+              mountPath: /mnt/zigbee2mqtt-data
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              limits:
+                memory: 256Mi
+                cpu: 200m
+              requests:
+                memory: 128Mi
+                cpu: 100m
+          volumes:
+          - name: zigbee2mqtt-data
+            persistentVolumeClaim:
+              claimName: zigbee2mqtt-data
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
+{{- end }}
 {{- end }}
