@@ -16,6 +16,14 @@ spec:
     spec:
       hostNetwork: true
       hostPID: true
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+        - 127.0.0.1
+        searches:
+        - default.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
       containers:
       - name: beszel-agent
         image: "{{ .Values.beszel.agent.image.repository }}:{{ .Values.beszel.agent.image.tag }}"

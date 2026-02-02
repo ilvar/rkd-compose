@@ -22,15 +22,7 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - rkd-um560
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
       securityContext:
         runAsUser: 0
         runAsGroup: 0
@@ -44,11 +36,9 @@ spec:
         ports:
         - name: http
           containerPort: {{ .Values.beszel.hub.port | default 8090 }}
-          hostPort: {{ .Values.beszel.hub.port | default 8090 }}
           protocol: TCP
         - name: agent
           containerPort: 45876
-          hostPort: 45876
           protocol: TCP
         env:
         - name: PB_DATA_DIR
