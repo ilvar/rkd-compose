@@ -771,27 +771,6 @@ irishSchools:
     - irish-schools.k.rkd.pw
     - irish-schools.rkd.pw
     servicePort: 5000
-changes:
-  enabled: true
-  image:
-    repository: dgtlmoon/changedetection.io
-    tag: 0.52.6
-  resources:
-    limits:
-      memory: 121Mi
-    requests:
-      memory: 121Mi
-      cpu: 150m
-  environment:
-    BASE_URL: http://changes.k.rkd.pw
-  storage:
-    data: changes-data
-  ingress:
-    enabled: true
-    hosts:
-    - changes.h.rkd.pw
-    - changes.k.rkd.pw
-    servicePort: 5000
 reloader:
   enabled: true
   reloader:
