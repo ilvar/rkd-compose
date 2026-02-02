@@ -44,9 +44,11 @@ spec:
         ports:
         - name: http
           containerPort: {{ .Values.beszel.hub.port | default 8090 }}
+          hostPort: {{ .Values.beszel.hub.port | default 8090 }}
           protocol: TCP
         - name: agent
           containerPort: 45876
+          hostPort: 45876
           protocol: TCP
         env:
         - name: PB_DATA_DIR
