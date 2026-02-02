@@ -40,9 +40,7 @@ spec:
         - name: agent
           containerPort: 45876
           protocol: TCP
-        env:
-        - name: PB_DATA_DIR
-          value: "/pb_data"
+        env: []
         {{- if .Values.beszel.hub.environment }}
         {{- range $key, $value := .Values.beszel.hub.environment }}
         - name: {{ $key }}
@@ -51,7 +49,7 @@ spec:
         {{- end }}
         volumeMounts:
         - name: data
-          mountPath: /pb_data
+          mountPath: /beszel_data
         resources:
           {{- if .Values.beszel.hub.resources }}
           {{- toYaml .Values.beszel.hub.resources | nindent 10 }}
