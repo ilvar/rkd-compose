@@ -69,7 +69,6 @@ spec:
           mountPath: /var/lib/beszel-agent
         - name: dev
           mountPath: /dev
-          readOnly: true
         securityContext:
           privileged: true
           capabilities:
