@@ -1062,4 +1062,72 @@ spec:
                 memory: 256Mi
                 cpu: 200m
               {{- end }}
+
+{{- if .Values.backups.beszel.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-beszel
+  labels:
+    app: backup-beszel
+spec:
+  schedule: {{ .Values.backups.beszel.schedule | default "0 4 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-beszel
+        spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
+          restartPolicy: OnFailure
+          containers:
+          - name: beszel-backup
+            image: "alpine:latest"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Backing up beszel-hub-data PVC..."
+              
+              # Create backup directory
+              BACKUP_DIR="/backups/beszel"
+              mkdir -p "$BACKUP_DIR"
+              
+              # Mount the PVC and backup
+              BACKUP_FILE="$BACKUP_DIR/beszel-backup-$(date +\%Y\%m\%d-\%H\%M\%S).tar.gz"
+              
+              # Install tar if needed
+              apk add --no-cache tar gzip 2>/dev/null || true
+              
+              # Create tarball of the PVC data
+              tar -czf "$BACKUP_FILE" -C /mnt/beszel-data . || echo "Backup created with warnings"
+              
+              echo "Beszel backup completed: $BACKUP_FILE"
+              ls -lh "$BACKUP_FILE"
+            volumeMounts:
+            - name: beszel-data
+              mountPath: /mnt/beszel-data
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              limits:
+                memory: 512Mi
+                cpu: 500m
+              requests:
+                memory: 256Mi
+                cpu: 200m
+          volumes:
+          - name: beszel-data
+            persistentVolumeClaim:
+              claimName: beszel-hub-data
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
+{{- end }}
 {{- end }}

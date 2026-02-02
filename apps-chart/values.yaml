@@ -1364,6 +1364,9 @@ backups:
       requests:
         memory: 256Mi
         cpu: 200m
+  beszel:
+    enabled: true
+    schedule: "0 4 * * *"
 longhorn:
   ingress:
     enabled: true
