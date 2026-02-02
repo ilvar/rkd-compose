@@ -67,8 +67,16 @@ spec:
           readOnly: true
         - name: agent-data
           mountPath: /var/lib/beszel-agent
+        - name: sda
+          mountPath: /dev/sda
+        - name: nvme0
+          mountPath: /dev/nvme0
         securityContext:
           privileged: true
+          capabilities:
+            add:
+            - SYS_RAWIO
+            - SYS_ADMIN
         resources:
           {{- if .Values.beszel.agent.resources }}
           {{- toYaml .Values.beszel.agent.resources | nindent 10 }}
@@ -87,6 +95,12 @@ spec:
         hostPath:
           path: /var/lib/beszel-agent
           type: DirectoryOrCreate
+      - name: sda
+        hostPath:
+          path: /dev/sda
+      - name: nvme0
+        hostPath:
+          path: /dev/nvme0
       tolerations:
       - effect: NoSchedule
         operator: Exists
