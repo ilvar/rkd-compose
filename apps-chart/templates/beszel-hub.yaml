@@ -42,7 +42,7 @@ spec:
           protocol: TCP
         env:
         - name: PB_DATA_DIR
-          value: "/data"
+          value: "/pb_data"
         {{- if .Values.beszel.hub.environment }}
         {{- range $key, $value := .Values.beszel.hub.environment }}
         - name: {{ $key }}
@@ -51,7 +51,7 @@ spec:
         {{- end }}
         volumeMounts:
         - name: data
-          mountPath: /data
+          mountPath: /pb_data
         resources:
           {{- if .Values.beszel.hub.resources }}
           {{- toYaml .Values.beszel.hub.resources | nindent 10 }}
