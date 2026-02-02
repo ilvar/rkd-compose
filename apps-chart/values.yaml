@@ -1367,6 +1367,8 @@ backups:
   beszel:
     enabled: true
     schedule: "0 4 * * *"
+  storage:
+    pvcName: backup-storage
 longhorn:
   ingress:
     enabled: true
