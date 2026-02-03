@@ -4,9 +4,9 @@ dependencies:
   version: 2.2.7
 - name: jitsi-meet
   repository: https://jitsi-contrib.github.io/jitsi-helm/
-  version: 2.4.1
+  version: 2.6.0
 - name: headlamp
   repository: https://kubernetes-sigs.github.io/headlamp/
   version: 0.39.0
-digest: sha256:c140370ee45071dc36208f08c0f50c0b2e46e238b1163721bcd754df891b0ef8
-generated: "2026-01-19T18:09:54.505772096Z"
+digest: sha256:a88f3b293f46cfd406e824ec8eceec0eb261841a9d761cb3ac38f730af7c3228
+generated: "2026-02-03T21:34:08.792903756Z"
