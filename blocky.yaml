@@ -51,3 +51,16 @@ customDNS:
     opi5: 192.168.1.124
     hm650: 192.168.1.123
     um460: 192.168.1.249
+
+parentalControl:
+  enabled: true
+  clients: 
+    192.168.1.111:
+      - action: blockAll                                                                                                                                       
+        schedule:                                                                                                                                              
+          - start: "19:30"                                                                                                                                     
+            end: "16:00"                                                                                                                                       
+            days: weekdays                                                                                                                                     
+          - start: "20:00"                                                                                                                                     
+            end: "10:00"                                                                                                                                       
+            days: weekends        
