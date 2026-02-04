@@ -21,7 +21,7 @@ spec:
   chart:
     spec:
       chart: ./apps-chart
-      reconcileStrategy: ChartVersion
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: rkd-compose
