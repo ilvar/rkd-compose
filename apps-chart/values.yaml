@@ -1351,6 +1351,9 @@ backups:
   zigbee2mqtt:
     enabled: true
     schedule: "0 5 * * *"
+  hoarder:
+    enabled: true
+    schedule: "0 6 * * *"
 longhorn:
   ingress:
     enabled: true

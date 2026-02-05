@@ -1197,4 +1197,87 @@ spec:
             persistentVolumeClaim:
               claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
 {{- end }}
+
+{{- if .Values.backups.hoarder.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-hoarder
+  labels:
+    app: backup-hoarder
+spec:
+  schedule: {{ .Values.backups.hoarder.schedule | default "0 6 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-hoarder
+        spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
+          restartPolicy: OnFailure
+          containers:
+          - name: hoarder-backup
+            image: "alpine:latest"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Backing up hoarder data (SQLite DB)..."
+
+              # Create backup directory
+              BACKUP_DIR="/backups/hoarder"
+              mkdir -p "$BACKUP_DIR"
+
+              BACKUP_FILE="$BACKUP_DIR/hoarder-backup-$(date +\%Y\%m\%d-\%H\%M\%S).tar.gz"
+
+              # Install tar if needed
+              apk add --no-cache tar gzip sqlite 2>/dev/null || true
+
+              # Create a consistent backup of SQLite databases
+              mkdir -p /tmp/hoarder-backup
+
+              # Use sqlite3 .backup for consistent copy
+              if [ -f /mnt/hoarder-data/db.db ]; then
+                sqlite3 /mnt/hoarder-data/db.db ".backup '/tmp/hoarder-backup/db.db'"
+              fi
+
+              if [ -f /mnt/hoarder-data/queue.db ]; then
+                sqlite3 /mnt/hoarder-data/queue.db ".backup '/tmp/hoarder-backup/queue.db'"
+              fi
+
+              # Create tarball
+              tar -czf "$BACKUP_FILE" -C /tmp/hoarder-backup . || echo "Backup created with warnings"
+
+              # Cleanup
+              rm -rf /tmp/hoarder-backup
+
+              echo "Hoarder backup completed: $BACKUP_FILE"
+              ls -lh "$BACKUP_FILE"
+            volumeMounts:
+            - name: hoarder-data
+              mountPath: /mnt/hoarder-data
+              readOnly: true
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              limits:
+                memory: 256Mi
+                cpu: 200m
+              requests:
+                memory: 128Mi
+                cpu: 100m
+          volumes:
+          - name: hoarder-data
+            persistentVolumeClaim:
+              claimName: hoarder-data
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
+{{- end }}
 {{- end }}
