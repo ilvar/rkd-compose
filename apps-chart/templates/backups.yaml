@@ -29,46 +29,43 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || apt-get update && apt-get install -y curl unzip
-                curl https://rclone.org/install.sh | bash || echo "Failed to install rclone, continuing..."
-              fi
-              
+              apk add --no-cache restic 2>/dev/null || true
+
               echo "Starting Velero backup..."
-              
+
               # Create backup
               BACKUP_NAME="velero-backup-$(date +%Y%m%d-%H%M%S)"
               velero backup create $BACKUP_NAME --wait
-              
-              # Upload to Backblaze if configured
+
               {{- if .Values.backups.backblaze.enabled }}
-              echo "Uploading Velero backup to Backblaze..."
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              rclone copy /tmp/backups/velero b2:{{ .Values.backups.backblaze.bucket }}/velero/ --transfers=4 --checkers=8
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              echo "Uploading Velero backup to B2 via restic (encrypted)..."
+              cd /tmp/backups/velero
+              restic backup . --host backup-velero --compression auto
               {{- end }}
-              
+
               echo "Velero backup completed: $BACKUP_NAME"
             env:
             {{- if .Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_TYPE
-              value: b2
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ .Values.backups.backblaze.bucket }}:velero"
             {{- end }}
             resources:
               {{- if .Values.backups.velero.resources }}
@@ -114,10 +111,10 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing etcdctl and rclone if needed..."
-              
+              echo "Installing etcdctl and restic..."
+
               # Install etcdctl if not available
-              if ! command -v etcdctl &> /dev/null; then
+              if ! command -v etcdctl > /dev/null 2>&1; then
                 apk add --no-cache curl tar || true
                 ARCH=$(uname -m)
                 if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
@@ -134,65 +131,41 @@ spec:
                 chmod +x /usr/local/bin/etcdctl 2>/dev/null || true
                 rm -rf /tmp/etcd* 2>/dev/null || true
               fi
-              
-              # Install rclone if not available
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                # Download and install rclone manually (works with sh, no bash needed)
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
-                else
-                  RCLONE_ARCH="amd64"
-                fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                # Cleanup
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
-              
+
+              # Install restic
+              apk add --no-cache restic 2>/dev/null || true
+
               echo "Starting etcd backup..."
-              
-              BACKUP_DIR="/tmp/backups/etcd"
+
+              BACKUP_DIR="/tmp/backup"
               mkdir -p $BACKUP_DIR
-              
-              # Delete old backup files before creating new one
-              echo "Cleaning up old etcd backup files..."
-              rm -f $BACKUP_DIR/etcd-backup-*.db 2>/dev/null || true
-              
-              BACKUP_FILE="$BACKUP_DIR/etcd-backup-$(date +%Y%m%d-%H%M%S).db"
-              
+
+              BACKUP_FILE="$BACKUP_DIR/etcd-backup.db"
+
               # Backup etcd
               ETCD_ENDPOINTS="{{ .Values.backups.etcd.endpoints | default "https://127.0.0.1:2379" }}"
               ETCD_CA="{{ .Values.backups.etcd.ca | default "/var/lib/rancher/k3s/server/tls/etcd/server-ca.crt" }}"
               ETCD_CERT="{{ .Values.backups.etcd.cert | default "/var/lib/rancher/k3s/server/tls/etcd/server-client.crt" }}"
               ETCD_KEY="{{ .Values.backups.etcd.key | default "/var/lib/rancher/k3s/server/tls/etcd/server-client.key" }}"
-              
+
               ETCDCTL_API=3 etcdctl \
                 --endpoints=$ETCD_ENDPOINTS \
                 --cacert=$ETCD_CA \
                 --cert=$ETCD_CERT \
                 --key=$ETCD_KEY \
                 snapshot save $BACKUP_FILE
-              
+
               echo "etcd backup created: $BACKUP_FILE"
-              
+
               {{- if .Values.backups.backblaze.enabled }}
-              echo "Uploading etcd backup to Backblaze..."
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/etcd/ --transfers=4 --checkers=8
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              echo "Uploading etcd backup to B2 via restic (encrypted)..."
+              cd $BACKUP_DIR
+              restic backup . --host backup-etcd --compression auto
               {{- end }}
-              
+
               echo "etcd backup completed"
             securityContext:
               privileged: true
@@ -200,22 +173,25 @@ spec:
             - name: etcd-data
               mountPath: /var/lib/rancher/k3s/server
               readOnly: true
-            - name: tmp-backups
-              mountPath: /tmp/backups
             env:
             {{- if .Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_TYPE
-              value: b2
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ .Values.backups.backblaze.bucket }}:etcd"
             {{- end }}
             resources:
               {{- if .Values.backups.etcd.resources }}
@@ -233,8 +209,6 @@ spec:
             hostPath:
               path: /var/lib/rancher/k3s/server
               type: Directory
-          - name: tmp-backups
-            emptyDir: {}
 {{- end }}
 
 {{- if .Values.backups.postgres.enabled }}
@@ -275,37 +249,16 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                # Download and install rclone manually (works with sh, no bash needed)
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
-                else
-                  RCLONE_ARCH="amd64"
-                fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                # Cleanup
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
-              
+              apk add --no-cache restic 2>/dev/null || true
+
               echo "Starting PostgreSQL backup for {{ .name }}..."
-              
-              BACKUP_DIR="/tmp/backups/postgres"
+
+              BACKUP_DIR="/tmp/backup"
               mkdir -p $BACKUP_DIR
-              
-              # Delete old backup files before creating new one
-              echo "Cleaning up old PostgreSQL backup files..."
-              rm -f $BACKUP_DIR/{{ .name }}-*.sql.gz 2>/dev/null || true
-              
-              BACKUP_FILE="$BACKUP_DIR/{{ .name }}-$(date +%Y%m%d-%H%M%S).sql.gz"
-              
+              rm -f $BACKUP_DIR/*.sql.gz 2>/dev/null || true
+
+              BACKUP_FILE="$BACKUP_DIR/{{ .name }}.sql.gz"
+
               # Create backup
               PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
                 -h {{ .host }} \
@@ -317,21 +270,18 @@ spec:
                 {{- else }}
                 --clean --if-exists
                 {{- end }} | gzip > $BACKUP_FILE
-              
+
               echo "PostgreSQL backup created: $BACKUP_FILE"
-              
+
               {{- if $.Values.backups.backblaze.enabled }}
-              echo "Uploading PostgreSQL backup to Backblaze..."
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              rclone copy $BACKUP_FILE b2:{{ $.Values.backups.backblaze.bucket }}/postgres/{{ .name }}/ --transfers=4 --checkers=8
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              echo "Uploading PostgreSQL backup to B2 via restic (encrypted)..."
+              cd $BACKUP_DIR
+              restic backup . --host backup-postgres-{{ .name }} --compression auto
               {{- end }}
-              
+
               echo "PostgreSQL backup completed for {{ .name }}"
             env:
             - name: POSTGRES_PASSWORD
@@ -340,18 +290,23 @@ spec:
                   name: {{ .secretName }}
                   key: {{ .passwordKey | default "postgres-password" }}
             {{- if $.Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_TYPE
-              value: b2
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.backups.backblaze.secretName }}
                   key: {{ $.Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.backups.backblaze.secretName }}
                   key: {{ $.Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ $.Values.backups.backblaze.bucket }}:postgres/{{ .name }}"
             {{- end }}
             resources:
               {{- if $.Values.backups.postgres.resources }}
@@ -364,9 +319,6 @@ spec:
                 memory: 256Mi
                 cpu: 200m
               {{- end }}
-          volumes:
-          - name: tmp-backups
-            emptyDir: {}
 {{- end }}
 {{- end }}
 
@@ -402,44 +354,23 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing mysql-client and rclone if needed..."
-              
-              # Install mysql-client (contains mysqldump) and other tools
-              if ! command -v mysqldump &> /dev/null; then
-                apk add --no-cache mariadb-client curl unzip || echo "Failed to install mariadb-client"
+              echo "Installing mysql-client and restic..."
+
+              # Install mysql-client (contains mysqldump)
+              if ! command -v mysqldump > /dev/null 2>&1; then
+                apk add --no-cache mariadb-client || echo "Failed to install mariadb-client"
               fi
-              
-              # Install rclone if needed
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                # Download and install rclone manually (works with sh, no bash needed)
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
-                else
-                  RCLONE_ARCH="amd64"
-                fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                # Cleanup
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
-              
+
+              apk add --no-cache restic 2>/dev/null || true
+
               echo "Starting MySQL backup for {{ .name }}..."
-              
-              BACKUP_DIR="/tmp/backups/mysql"
+
+              BACKUP_DIR="/tmp/backup"
               mkdir -p $BACKUP_DIR
-              
-              # Delete old backup files before creating new one
-              echo "Cleaning up old MySQL backup files..."
-              rm -f $BACKUP_DIR/{{ .name }}-*.sql.gz 2>/dev/null || true
-              
-              BACKUP_FILE="$BACKUP_DIR/{{ .name }}-$(date +%Y%m%d-%H%M%S).sql.gz"
-              
+              rm -f $BACKUP_DIR/*.sql.gz 2>/dev/null || true
+
+              BACKUP_FILE="$BACKUP_DIR/{{ .name }}.sql.gz"
+
               # Create backup
               mysqldump \
                 -h {{ .host }} \
@@ -452,21 +383,18 @@ spec:
                 {{- else }}
                 --single-transaction --routines --triggers
                 {{- end }} | gzip > $BACKUP_FILE
-              
+
               echo "MySQL backup created: $BACKUP_FILE"
-              
+
               {{- if $.Values.backups.backblaze.enabled }}
-              echo "Uploading MySQL backup to Backblaze..."
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              rclone copy $BACKUP_FILE b2:{{ $.Values.backups.backblaze.bucket }}/mysql/{{ .name }}/ --transfers=4 --checkers=8
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              echo "Uploading MySQL backup to B2 via restic (encrypted)..."
+              cd $BACKUP_DIR
+              restic backup . --host backup-mysql-{{ .name }} --compression auto
               {{- end }}
-              
+
               echo "MySQL backup completed for {{ .name }}"
             env:
             - name: MYSQL_PASSWORD
@@ -475,18 +403,23 @@ spec:
                   name: {{ .secretName }}
                   key: {{ .passwordKey | default "mysql-password" }}
             {{- if $.Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_TYPE
-              value: b2
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.backups.backblaze.secretName }}
                   key: {{ $.Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.backups.backblaze.secretName }}
                   key: {{ $.Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ $.Values.backups.backblaze.bucket }}:mysql/{{ .name }}"
             {{- end }}
             resources:
               {{- if $.Values.backups.mysql.resources }}
@@ -499,9 +432,6 @@ spec:
                 memory: 256Mi
                 cpu: 200m
               {{- end }}
-          volumes:
-          - name: tmp-backups
-            emptyDir: {}
 {{- end }}
 {{- end }}
 
@@ -543,66 +473,35 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone and curl if needed..."
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                # Download and install rclone manually (works with sh, no bash needed)
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
-                else
-                  RCLONE_ARCH="amd64"
-                fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                # Cleanup
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
-              
+              apk add --no-cache curl restic 2>/dev/null || true
+
               echo "Starting Meilisearch backup for {{ .name }}..."
-              
-              BACKUP_DIR="/tmp/backups/meilisearch"
+
+              BACKUP_DIR="/tmp/backup"
               mkdir -p $BACKUP_DIR
-              
-              # Delete old backup files before creating new one
-              echo "Cleaning up old Meilisearch backup files..."
-              rm -f $BACKUP_DIR/{{ .name }}-*.tar.gz 2>/dev/null || true
-              
-              BACKUP_FILE="$BACKUP_DIR/{{ .name }}-$(date +%Y%m%d-%H%M%S).tar.gz"
-              
-              # Trigger Meilisearch dump
+
+              # Trigger Meilisearch snapshot
               MEILI_URL="http://{{ .host }}:{{ .port | default "7700" }}"
               MEILI_KEY="$MEILI_MASTER_KEY"
-              
-              # Create a snapshot/dump using Meilisearch API
+
               curl -X POST "$MEILI_URL/snapshots" \
                 -H "Authorization: Bearer $MEILI_KEY" \
                 || echo "Note: Snapshot API may not be available, using alternative method"
-              
-              # Wait a moment for snapshot to be created
+
+              # Wait for snapshot to be created
               sleep 5
-              
-              # If we have access to the data directory, backup it directly
-              # Otherwise, we'll need to use the export API if available
+
               echo "Meilisearch backup initiated for {{ .name }}"
-              
+
               {{- if $.Values.backups.backblaze.enabled }}
-              echo "Uploading Meilisearch backup to Backblaze..."
-              # Note: Actual backup method depends on Meilisearch version and access
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              rclone copy /tmp/backups/meilisearch/ b2:{{ $.Values.backups.backblaze.bucket }}/meilisearch/{{ .name }}/ --transfers=4 --checkers=8 || true
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              echo "Uploading Meilisearch backup to B2 via restic (encrypted)..."
+              cd /tmp/backup
+              restic backup . --host backup-meilisearch-{{ .name }} --compression auto || true
               {{- end }}
-              
+
               echo "Meilisearch backup completed for {{ .name }}"
             env:
             {{- if .masterKeySecret }}
@@ -616,18 +515,23 @@ spec:
               value: {{ .masterKey | quote }}
             {{- end }}
             {{- if $.Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_TYPE
-              value: b2
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.backups.backblaze.secretName }}
                   key: {{ $.Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.backups.backblaze.secretName }}
                   key: {{ $.Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.backups.backblaze.secretName }}
+                  key: {{ $.Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ $.Values.backups.backblaze.bucket }}:meilisearch/{{ .name }}"
             {{- end }}
             resources:
               {{- if $.Values.backups.meilisearch.resources }}
@@ -640,12 +544,7 @@ spec:
                 memory: 256Mi
                 cpu: 200m
               {{- end }}
-          volumes:
-          - name: tmp-backups
-            emptyDir: {}
 {{- end }}
-{{- end }}
-
 {{- end }}
 
 {{- if .Values.backups.immichData.enabled }}
@@ -683,60 +582,42 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                # Download and install rclone manually (works with sh, no bash needed)
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
-                else
-                  RCLONE_ARCH="amd64"
-                fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                # Cleanup
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
-              
-              echo "Starting Immich data directory backup..."
-              
-              # Setup rclone config
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              
-              # Sync Immich upload directory to Backblaze (incremental)
-              # Using sync instead of copy to only transfer new/changed files
-              echo "Syncing Immich data directory to Backblaze..."
-              rclone sync /immich-data b2:{{ .Values.backups.backblaze.bucket }}/immich-data/ \
-                --transfers={{ .Values.backups.immichData.transfers | default "4" }} \
-                --checkers={{ .Values.backups.immichData.checkers | default "8" }} \
-                --log-level=INFO \
-                --stats=1m \
-                --stats-log-level=INFO
-              
+              apk add --no-cache restic
+
+              echo "Starting Immich data directory backup (encrypted)..."
+
+              {{- if .Values.backups.backblaze.enabled }}
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              # Backup Immich data directory to B2 via restic
+              # Restic handles incremental/deduplicated backups automatically
+              cd /immich-data
+              restic backup . --host backup-immich-data --compression auto \
+                --verbose \
+                --exclude-caches
+              {{- end }}
+
               echo "Immich data backup completed"
             env:
             {{- if .Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ .Values.backups.backblaze.bucket }}:immich-data"
             {{- end }}
             resources:
               {{- if .Values.backups.immichData.resources }}
@@ -794,278 +675,101 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                # Download and install rclone manually (works with sh, no bash needed)
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
+              apk add --no-cache restic
+
+              BUCKET="{{ .Values.backups.backblaze.bucket }}"
+
+              echo "Starting restic backup cleanup..."
+              echo "Retention policy: 7 days daily, 12 months monthly"
+
+              prune_repo() {
+                REPO_PATH="$1"
+                echo ""
+                echo "========================================"
+                echo "Pruning repository: $REPO_PATH"
+                echo "========================================"
+                export RESTIC_REPOSITORY="b2:$BUCKET:$REPO_PATH"
+                # Only prune if the repo exists
+                if restic cat config > /dev/null 2>&1; then
+                  restic forget --keep-daily 7 --keep-monthly 12 --prune || echo "Warning: failed to prune $REPO_PATH"
                 else
-                  RCLONE_ARCH="amd64"
+                  echo "Repository $REPO_PATH does not exist, skipping"
                 fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                # Cleanup
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
-              
-              echo "Installing Python if needed..."
-              if ! command -v python3 &> /dev/null; then
-                apk add --no-cache python3 py3-pip
-              fi
-              
-              python3 << 'PYEOF'
-              import os
-              import re
-              import subprocess
-              from datetime import datetime, timedelta
-              from collections import defaultdict
-              
-              # Configuration
-              B2_BUCKET = "{{ .Values.backups.backblaze.bucket }}"
-              KEEP_DAILY_DAYS = 7
-              KEEP_MONTHLY_MONTHS = 12
-              
-              # Setup rclone config
-              os.makedirs("/root/.config/rclone", exist_ok=True)
-              with open("/root/.config/rclone/rclone.conf", "w") as f:
-                  f.write("[b2]\n")
-                  f.write("type = b2\n")
-                  f.write("account = " + os.environ.get("RCLONE_CONFIG_B2_ACCOUNT", "") + "\n")
-                  f.write("key = " + os.environ.get("RCLONE_CONFIG_B2_KEY", "") + "\n")
-              
-              def parse_date_from_filename(filename):
-                  """Extract date from filename. Supports formats like:
-                  - YYYYMMDD-HHMMSS (e.g., 20240103-023042)
-                  - YYYYMMDD (e.g., 20240103)
-                  """
-                  # Try YYYYMMDD-HHMMSS format
-                  match = re.search(r'(\d{8})-(\d{6})', filename)
-                  if match:
-                      date_str = match.group(1)
-                      try:
-                          return datetime.strptime(date_str, "%Y%m%d")
-                      except ValueError:
-                          pass
-                  
-                  # Try YYYYMMDD format
-                  match = re.search(r'(\d{8})', filename)
-                  if match:
-                      date_str = match.group(1)
-                      try:
-                          return datetime.strptime(date_str, "%Y%m%d")
-                      except ValueError:
-                          pass
-                  
-                  return None
-              
-              def list_files_in_folder(folder_path):
-                  """List all files in a B2 folder using rclone."""
-                  try:
-                      result = subprocess.run(
-                          ["rclone", "ls", f"b2:{B2_BUCKET}/{folder_path}/"],
-                          capture_output=True,
-                          text=True,
-                          check=True
-                      )
-                      files = []
-                      for line in result.stdout.strip().split("\n"):
-                          if line:
-                              parts = line.split(None, 1)
-                              if len(parts) == 2:
-                                  size, filename = parts
-                                  files.append(filename)
-                      return files
-                  except subprocess.CalledProcessError as e:
-                      print(f"Error listing files in {folder_path}: {e.stderr}")
-                      return []
-              
-              def delete_file(folder_path, filename):
-                  """Delete a file from B2 using rclone."""
-                  try:
-                      subprocess.run(
-                          ["rclone", "delete", f"b2:{B2_BUCKET}/{folder_path}/{filename}"],
-                          check=True,
-                          capture_output=True
-                      )
-                      return True
-                  except subprocess.CalledProcessError as e:
-                      print(f"Error deleting {folder_path}/{filename}: {e.stderr}")
-                      return False
-              
-              def cleanup_folder(folder_path):
-                  """Clean up backups in a folder according to retention policy."""
-                  print(f"\n{'='*80}")
-                  print(f"Cleaning up folder: {folder_path}")
-                  print(f"{'='*80}")
-                  
-                  files = list_files_in_folder(folder_path)
-                  if not files:
-                      print(f"No files found in {folder_path}")
-                      return
-                  
-                  print(f"Found {len(files)} files")
-                  
-                  # Parse dates and group files
-                  files_with_dates = []
-                  for filename in files:
-                      date = parse_date_from_filename(filename)
-                      if date:
-                          files_with_dates.append((filename, date))
-                      else:
-                          print(f"Warning: Could not parse date from {filename}, skipping")
-                  
-                  if not files_with_dates:
-                      print("No files with parseable dates found")
-                      return
-                  
-                  # Sort by date (newest first)
-                  files_with_dates.sort(key=lambda x: x[1], reverse=True)
-                  
-                  now = datetime.now()
-                  cutoff_daily = now - timedelta(days=KEEP_DAILY_DAYS)
-                  cutoff_monthly = now - timedelta(days=KEEP_DAILY_DAYS + (KEEP_MONTHLY_MONTHS * 30))
-                  
-                  # Group by day for daily retention
-                  daily_groups = defaultdict(list)
-                  monthly_groups = defaultdict(list)
-                  to_delete = []
-                  
-                  for filename, date in files_with_dates:
-                      if date >= cutoff_daily:
-                          # Keep daily backups
-                          day_key = date.strftime("%Y-%m-%d")
-                          daily_groups[day_key].append((filename, date))
-                      elif date >= cutoff_monthly:
-                          # Keep monthly backups
-                          month_key = date.strftime("%Y-%m")
-                          monthly_groups[month_key].append((filename, date))
-                      else:
-                          # Too old, mark for deletion
-                          to_delete.append((filename, date))
-                  
-                  # Keep only the newest file per day for daily backups
-                  to_keep = set()
-                  for day, files in daily_groups.items():
-                      if files:
-                          # Keep the newest file for this day
-                          newest = max(files, key=lambda x: x[1])
-                          to_keep.add(newest[0])
-                          # Mark others for deletion
-                          for filename, date in files:
-                              if filename != newest[0]:
-                                  to_delete.append((filename, date))
-                  
-                  # Keep only the newest file per month for monthly backups
-                  for month, files in monthly_groups.items():
-                      if files:
-                          # Keep the newest file for this month
-                          newest = max(files, key=lambda x: x[1])
-                          to_keep.add(newest[0])
-                          # Mark others for deletion
-                          for filename, date in files:
-                              if filename != newest[0]:
-                                  to_delete.append((filename, date))
-                  
-                  # Delete files
-                  deleted_count = 0
-                  kept_count = len(to_keep)
-                  
-                  for filename, date in to_delete:
-                      if delete_file(folder_path, filename):
-                          deleted_count += 1
-                          print(f"Deleted: {filename} (date: {date.strftime('%Y-%m-%d')})")
-                  
-                  print(f"\nSummary for {folder_path}:")
-                  print(f"  Kept: {kept_count} files")
-                  print(f"  Deleted: {deleted_count} files")
-              
-              # Cleanup all backup folders
-              folders_to_clean = []
-              
+              }
+
               {{- if .Values.backups.velero.enabled }}
-              folders_to_clean.append("velero")
+              prune_repo "velero"
               {{- end }}
-              
+
               {{- if .Values.backups.etcd.enabled }}
-              folders_to_clean.append("etcd")
+              prune_repo "etcd"
               {{- end }}
-              
-              # Add postgres databases
+
               {{- if .Values.backups.postgres.enabled }}
               {{- range .Values.backups.postgres.databases }}
-              folders_to_clean.append("postgres/{{ .name }}")
+              prune_repo "postgres/{{ .name }}"
               {{- end }}
               {{- end }}
-              
-              # Add mysql databases
+
               {{- if .Values.backups.mysql.enabled }}
               {{- range .Values.backups.mysql.databases }}
-              folders_to_clean.append("mysql/{{ .name }}")
+              prune_repo "mysql/{{ .name }}"
               {{- end }}
               {{- end }}
-              
-              # Add meilisearch instances
+
               {{- if .Values.backups.meilisearch.enabled }}
               {{- range .Values.backups.meilisearch.instances }}
-              folders_to_clean.append("meilisearch/{{ .name }}")
+              prune_repo "meilisearch/{{ .name }}"
               {{- end }}
               {{- end }}
-              
-              # Add redis instances
+
               {{- if .Values.backups.redis.enabled }}
               {{- range .Values.backups.redis.instances }}
-              folders_to_clean.append("redis/{{ .name }}")
+              prune_repo "redis/{{ .name }}"
               {{- end }}
+              {{- end }}
+
+              {{- if .Values.backups.immichData.enabled }}
+              prune_repo "immich-data"
               {{- end }}
 
               {{- if .Values.backups.beszel.enabled }}
-              folders_to_clean.append("beszel")
+              prune_repo "beszel"
               {{- end }}
 
               {{- if .Values.backups.zigbee2mqtt.enabled }}
-              folders_to_clean.append("zigbee2mqtt")
+              prune_repo "zigbee2mqtt"
               {{- end }}
 
               {{- if .Values.backups.hoarder.enabled }}
-              folders_to_clean.append("hoarder")
+              prune_repo "hoarder"
               {{- end }}
 
               {{- if .Values.backups.bugsink.enabled }}
-              folders_to_clean.append("bugsink")
+              prune_repo "bugsink"
               {{- end }}
 
-              print("Starting backup cleanup...")
-              print(f"Retention policy: {KEEP_DAILY_DAYS} days daily, {KEEP_MONTHLY_MONTHS} months monthly")
-              
-              for folder in folders_to_clean:
-                  try:
-                      cleanup_folder(folder)
-                  except Exception as e:
-                      print(f"Error cleaning up {folder}: {e}")
-                      continue
-              
-              print("\n" + "="*80)
-              print("Backup cleanup completed")
-              print("="*80)
-              PYEOF
+              echo ""
+              echo "========================================"
+              echo "Backup cleanup completed"
+              echo "========================================"
             env:
             {{- if .Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
             {{- end }}
             resources:
               {{- if .Values.backups.cleanup.resources }}
@@ -1078,6 +782,7 @@ spec:
                 memory: 256Mi
                 cpu: 200m
               {{- end }}
+{{- end }}
 
 {{- if .Values.backups.beszel.enabled }}
 ---
@@ -1108,74 +813,42 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
-                else
-                  RCLONE_ARCH="amd64"
-                fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
+              apk add --no-cache restic
 
-              echo "Backing up beszel-hub-data PVC..."
-
-              BACKUP_DIR="/tmp/backups/beszel"
-              mkdir -p "$BACKUP_DIR"
-
-              # Delete old backup files before creating new one
-              echo "Cleaning up old beszel backup files..."
-              rm -f $BACKUP_DIR/beszel-backup-*.tar.gz 2>/dev/null || true
-
-              BACKUP_FILE="$BACKUP_DIR/beszel-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
-
-              # Install tar if needed
-              apk add --no-cache tar gzip 2>/dev/null || true
-
-              # Create tarball of the PVC data
-              tar -czf "$BACKUP_FILE" -C /mnt/beszel-data . || echo "Backup created with warnings"
-
-              echo "Beszel backup created: $BACKUP_FILE"
-              ls -lh "$BACKUP_FILE"
+              echo "Backing up beszel-hub-data PVC (encrypted)..."
 
               {{- if .Values.backups.backblaze.enabled }}
-              echo "Uploading beszel backup to Backblaze..."
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/beszel/ --transfers=4 --checkers=8
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              cd /mnt/beszel-data
+              restic backup . --host backup-beszel --compression auto
               {{- end }}
 
               echo "Beszel backup completed"
             volumeMounts:
             - name: beszel-data
               mountPath: /mnt/beszel-data
+              readOnly: true
             env:
             {{- if .Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_TYPE
-              value: b2
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ .Values.backups.backblaze.bucket }}:beszel"
             {{- end }}
             resources:
               limits:
@@ -1219,74 +892,42 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
-                else
-                  RCLONE_ARCH="amd64"
-                fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
+              apk add --no-cache restic
 
-              echo "Backing up zigbee2mqtt data..."
-
-              BACKUP_DIR="/tmp/backups/zigbee2mqtt"
-              mkdir -p "$BACKUP_DIR"
-
-              # Delete old backup files before creating new one
-              echo "Cleaning up old zigbee2mqtt backup files..."
-              rm -f $BACKUP_DIR/zigbee2mqtt-backup-*.tar.gz 2>/dev/null || true
-
-              BACKUP_FILE="$BACKUP_DIR/zigbee2mqtt-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
-
-              # Install tar if needed
-              apk add --no-cache tar gzip 2>/dev/null || true
-
-              # Create tarball of the zigbee2mqtt data
-              tar -czf "$BACKUP_FILE" -C /mnt/zigbee2mqtt-data . || echo "Backup created with warnings"
-
-              echo "Zigbee2MQTT backup created: $BACKUP_FILE"
-              ls -lh "$BACKUP_FILE"
+              echo "Backing up zigbee2mqtt data (encrypted)..."
 
               {{- if .Values.backups.backblaze.enabled }}
-              echo "Uploading zigbee2mqtt backup to Backblaze..."
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/zigbee2mqtt/ --transfers=4 --checkers=8
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              cd /mnt/zigbee2mqtt-data
+              restic backup . --host backup-zigbee2mqtt --compression auto
               {{- end }}
 
               echo "Zigbee2MQTT backup completed"
             volumeMounts:
             - name: zigbee2mqtt-data
               mountPath: /mnt/zigbee2mqtt-data
+              readOnly: true
             env:
             {{- if .Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_TYPE
-              value: b2
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ .Values.backups.backblaze.bucket }}:zigbee2mqtt"
             {{- end }}
             resources:
               limits:
@@ -1330,70 +971,33 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
-                else
-                  RCLONE_ARCH="amd64"
-                fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
+              apk add --no-cache restic sqlite 2>/dev/null || true
 
-              echo "Backing up bugsink data (SQLite DB)..."
+              echo "Backing up bugsink data (SQLite DB, encrypted)..."
 
-              BACKUP_DIR="/tmp/backups/bugsink"
+              BACKUP_DIR="/tmp/backup"
               mkdir -p "$BACKUP_DIR"
-
-              # Delete old backup files before creating new one
-              echo "Cleaning up old bugsink backup files..."
-              rm -f $BACKUP_DIR/bugsink-backup-*.tar.gz 2>/dev/null || true
-
-              BACKUP_FILE="$BACKUP_DIR/bugsink-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
-
-              # Install tar if needed
-              apk add --no-cache tar gzip sqlite 2>/dev/null || true
-
-              # Create a consistent backup of SQLite database
-              mkdir -p /tmp/bugsink-backup
 
               # Use sqlite3 .backup for consistent copy of all .db files
               for db in /mnt/bugsink-data/*.db; do
                 if [ -f "$db" ]; then
                   BASENAME=$(basename "$db")
-                  sqlite3 "$db" ".backup '/tmp/bugsink-backup/$BASENAME'"
+                  sqlite3 "$db" ".backup '$BACKUP_DIR/$BASENAME'"
                   echo "Backed up $BASENAME"
                 fi
               done
 
-              # Create tarball
-              tar -czf "$BACKUP_FILE" -C /tmp/bugsink-backup . || echo "Backup created with warnings"
+              {{- if .Values.backups.backblaze.enabled }}
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              echo "Uploading bugsink backup to B2 via restic (encrypted)..."
+              cd $BACKUP_DIR
+              restic backup . --host backup-bugsink --compression auto
+              {{- end }}
 
               # Cleanup
-              rm -rf /tmp/bugsink-backup
-
-              echo "Bugsink backup created: $BACKUP_FILE"
-              ls -lh "$BACKUP_FILE"
-
-              {{- if .Values.backups.backblaze.enabled }}
-              echo "Uploading bugsink backup to Backblaze..."
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/bugsink/ --transfers=4 --checkers=8
-              {{- end }}
+              rm -rf "$BACKUP_DIR"
 
               echo "Bugsink backup completed"
             volumeMounts:
@@ -1402,18 +1006,23 @@ spec:
               readOnly: true
             env:
             {{- if .Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_TYPE
-              value: b2
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ .Values.backups.backblaze.bucket }}:bugsink"
             {{- end }}
             resources:
               limits:
@@ -1457,70 +1066,35 @@ spec:
             - -c
             - |
               set -e
-              echo "Installing rclone if needed..."
-              if ! command -v rclone &> /dev/null; then
-                apk add --no-cache curl unzip || true
-                ARCH=$(uname -m)
-                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-                  RCLONE_ARCH="amd64"
-                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                  RCLONE_ARCH="arm64"
-                else
-                  RCLONE_ARCH="amd64"
-                fi
-                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
-                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
-                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
-                chmod +x /usr/local/bin/rclone 2>/dev/null || true
-                rm -rf /tmp/rclone* 2>/dev/null || true
-              fi
+              apk add --no-cache restic sqlite 2>/dev/null || true
 
-              echo "Backing up hoarder data (SQLite DB)..."
+              echo "Backing up hoarder data (SQLite DB, encrypted)..."
 
-              BACKUP_DIR="/tmp/backups/hoarder"
+              BACKUP_DIR="/tmp/backup"
               mkdir -p "$BACKUP_DIR"
-
-              # Delete old backup files before creating new one
-              echo "Cleaning up old hoarder backup files..."
-              rm -f $BACKUP_DIR/hoarder-backup-*.tar.gz 2>/dev/null || true
-
-              BACKUP_FILE="$BACKUP_DIR/hoarder-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
-
-              # Install tar if needed
-              apk add --no-cache tar gzip sqlite 2>/dev/null || true
-
-              # Create a consistent backup of SQLite databases
-              mkdir -p /tmp/hoarder-backup
 
               # Use sqlite3 .backup for consistent copy
               if [ -f /mnt/hoarder-data/db.db ]; then
-                sqlite3 /mnt/hoarder-data/db.db ".backup '/tmp/hoarder-backup/db.db'"
+                sqlite3 /mnt/hoarder-data/db.db ".backup '$BACKUP_DIR/db.db'"
+                echo "Backed up db.db"
               fi
 
               if [ -f /mnt/hoarder-data/queue.db ]; then
-                sqlite3 /mnt/hoarder-data/queue.db ".backup '/tmp/hoarder-backup/queue.db'"
+                sqlite3 /mnt/hoarder-data/queue.db ".backup '$BACKUP_DIR/queue.db'"
+                echo "Backed up queue.db"
               fi
 
-              # Create tarball
-              tar -czf "$BACKUP_FILE" -C /tmp/hoarder-backup . || echo "Backup created with warnings"
+              {{- if .Values.backups.backblaze.enabled }}
+              # Initialize restic repository if needed
+              restic cat config > /dev/null 2>&1 || restic init
+
+              echo "Uploading hoarder backup to B2 via restic (encrypted)..."
+              cd $BACKUP_DIR
+              restic backup . --host backup-hoarder --compression auto
+              {{- end }}
 
               # Cleanup
-              rm -rf /tmp/hoarder-backup
-
-              echo "Hoarder backup created: $BACKUP_FILE"
-              ls -lh "$BACKUP_FILE"
-
-              {{- if .Values.backups.backblaze.enabled }}
-              echo "Uploading hoarder backup to Backblaze..."
-              mkdir -p /root/.config/rclone
-              cat > /root/.config/rclone/rclone.conf <<EOF
-              [b2]
-              type = b2
-              account = $RCLONE_CONFIG_B2_ACCOUNT
-              key = $RCLONE_CONFIG_B2_KEY
-              EOF
-              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/hoarder/ --transfers=4 --checkers=8
-              {{- end }}
+              rm -rf "$BACKUP_DIR"
 
               echo "Hoarder backup completed"
             volumeMounts:
@@ -1529,18 +1103,23 @@ spec:
               readOnly: true
             env:
             {{- if .Values.backups.backblaze.enabled }}
-            - name: RCLONE_CONFIG_B2_TYPE
-              value: b2
-            - name: RCLONE_CONFIG_B2_ACCOUNT
+            - name: B2_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: RCLONE_CONFIG_B2_KEY
+            - name: B2_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backups.backblaze.secretName }}
                   key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
+            - name: RESTIC_REPOSITORY
+              value: "b2:{{ .Values.backups.backblaze.bucket }}:hoarder"
             {{- end }}
             resources:
               limits:
