@@ -1198,6 +1198,89 @@ spec:
               claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
 {{- end }}
 
+{{- if .Values.backups.bugsink.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-bugsink
+  labels:
+    app: backup-bugsink
+spec:
+  schedule: {{ .Values.backups.bugsink.schedule | default "0 4 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-bugsink
+        spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
+          restartPolicy: OnFailure
+          containers:
+          - name: bugsink-backup
+            image: "alpine:latest"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Backing up bugsink data (SQLite DB)..."
+
+              # Create backup directory
+              BACKUP_DIR="/backups/bugsink"
+              mkdir -p "$BACKUP_DIR"
+
+              BACKUP_FILE="$BACKUP_DIR/bugsink-backup-$(date +\%Y\%m\%d-\%H\%M\%S).tar.gz"
+
+              # Install tar if needed
+              apk add --no-cache tar gzip sqlite 2>/dev/null || true
+
+              # Create a consistent backup of SQLite database
+              mkdir -p /tmp/bugsink-backup
+
+              # Use sqlite3 .backup for consistent copy of all .db files
+              for db in /mnt/bugsink-data/*.db; do
+                if [ -f "$db" ]; then
+                  BASENAME=$(basename "$db")
+                  sqlite3 "$db" ".backup '/tmp/bugsink-backup/$BASENAME'"
+                  echo "Backed up $BASENAME"
+                fi
+              done
+
+              # Create tarball
+              tar -czf "$BACKUP_FILE" -C /tmp/bugsink-backup . || echo "Backup created with warnings"
+
+              # Cleanup
+              rm -rf /tmp/bugsink-backup
+
+              echo "Bugsink backup completed: $BACKUP_FILE"
+              ls -lh "$BACKUP_FILE"
+            volumeMounts:
+            - name: bugsink-data
+              mountPath: /mnt/bugsink-data
+              readOnly: true
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              limits:
+                memory: 256Mi
+                cpu: 200m
+              requests:
+                memory: 128Mi
+                cpu: 100m
+          volumes:
+          - name: bugsink-data
+            persistentVolumeClaim:
+              claimName: {{ .Values.bugsink.storage.data }}
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
+{{- end }}
+
 {{- if .Values.backups.hoarder.enabled }}
 ---
 apiVersion: batch/v1
