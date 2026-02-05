@@ -1023,7 +1023,23 @@ spec:
               folders_to_clean.append("redis/{{ .name }}")
               {{- end }}
               {{- end }}
-              
+
+              {{- if .Values.backups.beszel.enabled }}
+              folders_to_clean.append("beszel")
+              {{- end }}
+
+              {{- if .Values.backups.zigbee2mqtt.enabled }}
+              folders_to_clean.append("zigbee2mqtt")
+              {{- end }}
+
+              {{- if .Values.backups.hoarder.enabled }}
+              folders_to_clean.append("hoarder")
+              {{- end }}
+
+              {{- if .Values.backups.bugsink.enabled }}
+              folders_to_clean.append("bugsink")
+              {{- end }}
+
               print("Starting backup cleanup...")
               print(f"Retention policy: {KEEP_DAILY_DAYS} days daily, {KEEP_MONTHLY_MONTHS} months monthly")
               
@@ -1083,7 +1099,6 @@ spec:
           labels:
             app: backup-beszel
         spec:
-          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: beszel-backup
@@ -1093,28 +1108,75 @@ spec:
             - -c
             - |
               set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip || true
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                rm -rf /tmp/rclone* 2>/dev/null || true
+              fi
+
               echo "Backing up beszel-hub-data PVC..."
-              
-              # Create backup directory
-              BACKUP_DIR="/backups/beszel"
+
+              BACKUP_DIR="/tmp/backups/beszel"
               mkdir -p "$BACKUP_DIR"
-              
-              # Mount the PVC and backup
-              BACKUP_FILE="$BACKUP_DIR/beszel-backup-$(date +\%Y\%m\%d-\%H\%M\%S).tar.gz"
-              
+
+              # Delete old backup files before creating new one
+              echo "Cleaning up old beszel backup files..."
+              rm -f $BACKUP_DIR/beszel-backup-*.tar.gz 2>/dev/null || true
+
+              BACKUP_FILE="$BACKUP_DIR/beszel-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+
               # Install tar if needed
               apk add --no-cache tar gzip 2>/dev/null || true
-              
+
               # Create tarball of the PVC data
               tar -czf "$BACKUP_FILE" -C /mnt/beszel-data . || echo "Backup created with warnings"
-              
-              echo "Beszel backup completed: $BACKUP_FILE"
+
+              echo "Beszel backup created: $BACKUP_FILE"
               ls -lh "$BACKUP_FILE"
+
+              {{- if .Values.backups.backblaze.enabled }}
+              echo "Uploading beszel backup to Backblaze..."
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/beszel/ --transfers=4 --checkers=8
+              {{- end }}
+
+              echo "Beszel backup completed"
             volumeMounts:
             - name: beszel-data
               mountPath: /mnt/beszel-data
-            - name: backup-storage
-              mountPath: /backups
+            env:
+            {{- if .Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
             resources:
               limits:
                 memory: 512Mi
@@ -1126,9 +1188,6 @@ spec:
           - name: beszel-data
             persistentVolumeClaim:
               claimName: beszel-hub-data
-          - name: backup-storage
-            persistentVolumeClaim:
-              claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
 {{- end }}
 
 {{- if .Values.backups.zigbee2mqtt.enabled }}
@@ -1151,7 +1210,6 @@ spec:
           labels:
             app: backup-zigbee2mqtt
         spec:
-          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: zigbee2mqtt-backup
@@ -1161,27 +1219,75 @@ spec:
             - -c
             - |
               set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip || true
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                rm -rf /tmp/rclone* 2>/dev/null || true
+              fi
+
               echo "Backing up zigbee2mqtt data..."
-              
-              # Create backup directory
-              BACKUP_DIR="/backups/zigbee2mqtt"
+
+              BACKUP_DIR="/tmp/backups/zigbee2mqtt"
               mkdir -p "$BACKUP_DIR"
-              
-              BACKUP_FILE="$BACKUP_DIR/zigbee2mqtt-backup-$(date +\%Y\%m\%d-\%H\%M\%S).tar.gz"
-              
+
+              # Delete old backup files before creating new one
+              echo "Cleaning up old zigbee2mqtt backup files..."
+              rm -f $BACKUP_DIR/zigbee2mqtt-backup-*.tar.gz 2>/dev/null || true
+
+              BACKUP_FILE="$BACKUP_DIR/zigbee2mqtt-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+
               # Install tar if needed
               apk add --no-cache tar gzip 2>/dev/null || true
-              
+
               # Create tarball of the zigbee2mqtt data
               tar -czf "$BACKUP_FILE" -C /mnt/zigbee2mqtt-data . || echo "Backup created with warnings"
-              
-              echo "Zigbee2MQTT backup completed: $BACKUP_FILE"
+
+              echo "Zigbee2MQTT backup created: $BACKUP_FILE"
               ls -lh "$BACKUP_FILE"
+
+              {{- if .Values.backups.backblaze.enabled }}
+              echo "Uploading zigbee2mqtt backup to Backblaze..."
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/zigbee2mqtt/ --transfers=4 --checkers=8
+              {{- end }}
+
+              echo "Zigbee2MQTT backup completed"
             volumeMounts:
             - name: zigbee2mqtt-data
               mountPath: /mnt/zigbee2mqtt-data
-            - name: backup-storage
-              mountPath: /backups
+            env:
+            {{- if .Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
             resources:
               limits:
                 memory: 256Mi
@@ -1193,9 +1299,6 @@ spec:
           - name: zigbee2mqtt-data
             persistentVolumeClaim:
               claimName: zigbee2mqtt-data
-          - name: backup-storage
-            persistentVolumeClaim:
-              claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
 {{- end }}
 
 {{- if .Values.backups.bugsink.enabled }}
@@ -1218,7 +1321,6 @@ spec:
           labels:
             app: backup-bugsink
         spec:
-          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: bugsink-backup
@@ -1228,13 +1330,34 @@ spec:
             - -c
             - |
               set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip || true
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                rm -rf /tmp/rclone* 2>/dev/null || true
+              fi
+
               echo "Backing up bugsink data (SQLite DB)..."
 
-              # Create backup directory
-              BACKUP_DIR="/backups/bugsink"
+              BACKUP_DIR="/tmp/backups/bugsink"
               mkdir -p "$BACKUP_DIR"
 
-              BACKUP_FILE="$BACKUP_DIR/bugsink-backup-$(date +\%Y\%m\%d-\%H\%M\%S).tar.gz"
+              # Delete old backup files before creating new one
+              echo "Cleaning up old bugsink backup files..."
+              rm -f $BACKUP_DIR/bugsink-backup-*.tar.gz 2>/dev/null || true
+
+              BACKUP_FILE="$BACKUP_DIR/bugsink-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
 
               # Install tar if needed
               apk add --no-cache tar gzip sqlite 2>/dev/null || true
@@ -1257,14 +1380,41 @@ spec:
               # Cleanup
               rm -rf /tmp/bugsink-backup
 
-              echo "Bugsink backup completed: $BACKUP_FILE"
+              echo "Bugsink backup created: $BACKUP_FILE"
               ls -lh "$BACKUP_FILE"
+
+              {{- if .Values.backups.backblaze.enabled }}
+              echo "Uploading bugsink backup to Backblaze..."
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/bugsink/ --transfers=4 --checkers=8
+              {{- end }}
+
+              echo "Bugsink backup completed"
             volumeMounts:
             - name: bugsink-data
               mountPath: /mnt/bugsink-data
               readOnly: true
-            - name: backup-storage
-              mountPath: /backups
+            env:
+            {{- if .Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
             resources:
               limits:
                 memory: 256Mi
@@ -1276,9 +1426,6 @@ spec:
           - name: bugsink-data
             persistentVolumeClaim:
               claimName: {{ .Values.bugsink.storage.data }}
-          - name: backup-storage
-            persistentVolumeClaim:
-              claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
 {{- end }}
 
 {{- if .Values.backups.hoarder.enabled }}
@@ -1301,7 +1448,6 @@ spec:
           labels:
             app: backup-hoarder
         spec:
-          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: hoarder-backup
@@ -1311,13 +1457,34 @@ spec:
             - -c
             - |
               set -e
+              echo "Installing rclone if needed..."
+              if ! command -v rclone &> /dev/null; then
+                apk add --no-cache curl unzip || true
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+                  RCLONE_ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                  RCLONE_ARCH="arm64"
+                else
+                  RCLONE_ARCH="amd64"
+                fi
+                curl -L https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip -o /tmp/rclone.zip 2>/dev/null || echo "Failed to download rclone"
+                unzip -q /tmp/rclone.zip -d /tmp 2>/dev/null || echo "Failed to unzip rclone"
+                cp /tmp/rclone-*-linux-${RCLONE_ARCH}/rclone /usr/local/bin/ 2>/dev/null || echo "Failed to copy rclone"
+                chmod +x /usr/local/bin/rclone 2>/dev/null || true
+                rm -rf /tmp/rclone* 2>/dev/null || true
+              fi
+
               echo "Backing up hoarder data (SQLite DB)..."
 
-              # Create backup directory
-              BACKUP_DIR="/backups/hoarder"
+              BACKUP_DIR="/tmp/backups/hoarder"
               mkdir -p "$BACKUP_DIR"
 
-              BACKUP_FILE="$BACKUP_DIR/hoarder-backup-$(date +\%Y\%m\%d-\%H\%M\%S).tar.gz"
+              # Delete old backup files before creating new one
+              echo "Cleaning up old hoarder backup files..."
+              rm -f $BACKUP_DIR/hoarder-backup-*.tar.gz 2>/dev/null || true
+
+              BACKUP_FILE="$BACKUP_DIR/hoarder-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
 
               # Install tar if needed
               apk add --no-cache tar gzip sqlite 2>/dev/null || true
@@ -1340,14 +1507,41 @@ spec:
               # Cleanup
               rm -rf /tmp/hoarder-backup
 
-              echo "Hoarder backup completed: $BACKUP_FILE"
+              echo "Hoarder backup created: $BACKUP_FILE"
               ls -lh "$BACKUP_FILE"
+
+              {{- if .Values.backups.backblaze.enabled }}
+              echo "Uploading hoarder backup to Backblaze..."
+              mkdir -p /root/.config/rclone
+              cat > /root/.config/rclone/rclone.conf <<EOF
+              [b2]
+              type = b2
+              account = $RCLONE_CONFIG_B2_ACCOUNT
+              key = $RCLONE_CONFIG_B2_KEY
+              EOF
+              rclone copy $BACKUP_FILE b2:{{ .Values.backups.backblaze.bucket }}/hoarder/ --transfers=4 --checkers=8
+              {{- end }}
+
+              echo "Hoarder backup completed"
             volumeMounts:
             - name: hoarder-data
               mountPath: /mnt/hoarder-data
               readOnly: true
-            - name: backup-storage
-              mountPath: /backups
+            env:
+            {{- if .Values.backups.backblaze.enabled }}
+            - name: RCLONE_CONFIG_B2_TYPE
+              value: b2
+            - name: RCLONE_CONFIG_B2_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
+            - name: RCLONE_CONFIG_B2_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backups.backblaze.secretName }}
+                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
+            {{- end }}
             resources:
               limits:
                 memory: 256Mi
@@ -1359,8 +1553,5 @@ spec:
           - name: hoarder-data
             persistentVolumeClaim:
               claimName: hoarder-data
-          - name: backup-storage
-            persistentVolumeClaim:
-              claimName: {{ .Values.backups.storage.pvcName | default "backup-storage" }}
 {{- end }}
 {{- end }}
