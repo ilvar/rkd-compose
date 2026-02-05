@@ -262,9 +262,9 @@ hoarder:
       tag: '124'
     resources:
       limits:
-        memory: 100Mi
+        memory: 1Gi
       requests:
-        memory: 100Mi
+        memory: 512Mi
         cpu: 150m
   meilisearch:
     image:
