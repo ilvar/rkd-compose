@@ -30,5 +30,5 @@ dependencies:
     version: "2.4.1"
     repository: "https://jitsi-contrib.github.io/jitsi-helm/"
   - name: headlamp
-    version: "0.39.0"
+    version: "0.40.0"
     repository: "https://kubernetes-sigs.github.io/headlamp/"
