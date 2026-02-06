@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/gin-gonic/gin v1.11.0
-	github.com/google/go-github/v56 v56.0.0
+	github.com/google/go-github/v82 v82.0.0
 	github.com/google/go-github/v82 v82.0.0
 	golang.org/x/oauth2 v0.34.0
 	gopkg.in/yaml.v3 v3.0.1
