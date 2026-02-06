@@ -4,8 +4,8 @@ go 1.25.0
 
 require (
 	github.com/gin-gonic/gin v1.11.0
-	github.com/google/go-github/v81 v81.0.0
-	github.com/google/go-github/v81 v81.0.0
+	github.com/google/go-github/v56 v56.0.0
+	github.com/google/go-github/v82 v82.0.0
 	golang.org/x/oauth2 v0.34.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.35.0
@@ -35,7 +35,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
