@@ -1183,6 +1183,7 @@ backups:
     secretName: backblaze-credentials
     accountIdKey: account-id
     applicationKeyKey: application-key
+    resticPasswordKey: restic-password
   velero:
     enabled: false
     schedule: "0 2 * * *"

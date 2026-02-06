@@ -3,13 +3,16 @@
 Backup Restore TUI for Kubernetes homelab.
 
 Reads apps-chart/values.yaml to discover backup configuration,
-lists files in B2 via rclone, and restores selected backups.
+lists snapshots in restic repositories on B2, and restores selected backups.
 
-Requirements: kubectl, rclone (configured with b2 remote), python3 (3.8+)
+Requirements: kubectl, restic, python3 (3.8+)
+Environment: B2_ACCOUNT_ID, B2_ACCOUNT_KEY, RESTIC_PASSWORD
+  (or access to kubectl to read from backblaze-credentials secret)
 No pip dependencies required (uses stdlib curses + yaml parsing).
 """
 
 import argparse
+import base64
 import curses
 import json
 import os
@@ -172,26 +175,23 @@ def load_values(chart_dir: str) -> dict:
 # ---------------------------------------------------------------------------
 
 @dataclass
-class BackupFile:
-    name: str
-    size: int
-    mod_time: str
+class BackupSnapshot:
+    id: str
+    short_id: str
+    time: str
+    hostname: str
+    paths: list[str] = field(default_factory=list)
 
     @property
-    def size_human(self) -> str:
-        s = self.size
-        for unit in ("B", "KB", "MB", "GB", "TB"):
-            if abs(s) < 1024:
-                return f"{s:.1f} {unit}"
-            s /= 1024
-        return f"{s:.1f} PB"
+    def display_time(self) -> str:
+        return self.time[:19].replace("T", " ")
 
 
 @dataclass
 class BackupGroup:
     name: str
-    b2_path: str
-    restore_type: str  # postgres, mysql, sqlite, tar, etcd, meilisearch, immich-data
+    restic_repo: str
+    restore_type: str  # postgres, mysql, sqlite, tar, etcd, meilisearch, immich-data, dir
     # Restore target info
     workload_type: str = ""  # deployment, statefulset
     workload_name: str = ""
@@ -204,32 +204,37 @@ class BackupGroup:
     db_name: str = ""
     secret_name: str = ""
     password_key: str = ""
-    # Files discovered from B2
-    files: list[BackupFile] = field(default_factory=list)
+    # Mount path for dir-based restores
+    mount_path: str = "/data"
+    # Snapshots discovered from restic
+    snapshots: list[BackupSnapshot] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
-# B2 / rclone helpers
+# restic helpers
 # ---------------------------------------------------------------------------
 
-def rclone_lsjson(b2_path: str) -> list[dict]:
-    """List files in a B2 path using rclone lsjson."""
+def restic_snapshots(repo: str) -> list[dict]:
+    """List snapshots in a restic repository."""
     try:
         result = subprocess.run(
-            ["rclone", "lsjson", b2_path],
+            ["restic", "-r", repo, "snapshots", "--json"],
             capture_output=True, text=True, timeout=30,
+            env={**os.environ},
         )
         if result.returncode != 0:
             return []
-        return json.loads(result.stdout)
+        data = json.loads(result.stdout)
+        return data if isinstance(data, list) else []
     except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError):
         return []
 
 
-def rclone_copy(src: str, dst: str) -> bool:
-    """Copy a file using rclone."""
+def restic_restore(repo: str, snapshot_id: str, target: str) -> bool:
+    """Restore a restic snapshot to a target directory."""
     result = subprocess.run(
-        ["rclone", "copy", src, dst, "--progress"],
+        ["restic", "-r", repo, "restore", snapshot_id, "--target", target],
+        env={**os.environ},
         timeout=600,
     )
     return result.returncode == 0
@@ -263,6 +268,45 @@ def get_pod_name(label_selector: str, namespace: str = "default") -> Optional[st
 
 
 # ---------------------------------------------------------------------------
+# Environment setup
+# ---------------------------------------------------------------------------
+
+def ensure_restic_env(values: dict) -> bool:
+    """Ensure restic environment variables are set, reading from k8s secret if needed."""
+    bb = values.get("backups", {}).get("backblaze", {})
+    secret_name = bb.get("secretName", "backblaze-credentials")
+
+    key_mapping = {
+        "B2_ACCOUNT_ID": bb.get("accountIdKey", "account-id"),
+        "B2_ACCOUNT_KEY": bb.get("applicationKeyKey", "application-key"),
+        "RESTIC_PASSWORD": bb.get("resticPasswordKey", "restic-password"),
+    }
+
+    missing = [v for v in key_mapping if not os.environ.get(v)]
+    if not missing:
+        return True
+
+    # Try to get from k8s secret
+    print(f"Reading credentials from k8s secret '{secret_name}'...")
+    for env_var in missing:
+        secret_key = key_mapping[env_var]
+        result = kubectl("get", "secret", secret_name,
+                        "-o", f'jsonpath={{.data["{secret_key}"]}}',
+                        capture=True)
+        if result.returncode == 0 and result.stdout.strip():
+            os.environ[env_var] = base64.b64decode(result.stdout.strip()).decode()
+        else:
+            print(f"ERROR: {env_var} not set and could not read key '{secret_key}' from secret '{secret_name}'")
+            print(f"Set environment variables manually:")
+            print(f"  export B2_ACCOUNT_ID=...")
+            print(f"  export B2_ACCOUNT_KEY=...")
+            print(f"  export RESTIC_PASSWORD=...")
+            return False
+
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Build backup groups from values.yaml
 # ---------------------------------------------------------------------------
 
@@ -277,13 +321,16 @@ def build_groups(values: dict) -> list[BackupGroup]:
     if not bucket:
         return groups
 
+    def repo(path: str) -> str:
+        return f"b2:{bucket}:{path}"
+
     # Postgres databases
     pg = backups.get("postgres", {})
     if pg.get("enabled"):
         for db in pg.get("databases", []):
             groups.append(BackupGroup(
                 name=f"postgres/{db['name']}",
-                b2_path=f"b2:{bucket}/postgres/{db['name']}/",
+                restic_repo=repo(f"postgres/{db['name']}"),
                 restore_type="postgres",
                 db_host=db.get("host", ""),
                 db_port=str(db.get("port", "5432")),
@@ -299,7 +346,7 @@ def build_groups(values: dict) -> list[BackupGroup]:
         for db in mysql.get("databases", []):
             groups.append(BackupGroup(
                 name=f"mysql/{db['name']}",
-                b2_path=f"b2:{bucket}/mysql/{db['name']}/",
+                restic_repo=repo(f"mysql/{db['name']}"),
                 restore_type="mysql",
                 db_host=db.get("host", ""),
                 db_port=str(db.get("port", "3306")),
@@ -314,7 +361,7 @@ def build_groups(values: dict) -> list[BackupGroup]:
     if etcd.get("enabled"):
         groups.append(BackupGroup(
             name="etcd",
-            b2_path=f"b2:{bucket}/etcd/",
+            restic_repo=repo("etcd"),
             restore_type="etcd",
         ))
 
@@ -324,30 +371,32 @@ def build_groups(values: dict) -> list[BackupGroup]:
         for inst in meili.get("instances", []):
             groups.append(BackupGroup(
                 name=f"meilisearch/{inst['name']}",
-                b2_path=f"b2:{bucket}/meilisearch/{inst['name']}/",
+                restic_repo=repo(f"meilisearch/{inst['name']}"),
                 restore_type="meilisearch",
             ))
 
-    # Beszel (tar.gz)
+    # Beszel (directory backup)
     beszel = backups.get("beszel", {})
     if beszel.get("enabled"):
         groups.append(BackupGroup(
             name="beszel",
-            b2_path=f"b2:{bucket}/beszel/",
-            restore_type="tar",
+            restic_repo=repo("beszel"),
+            restore_type="dir",
             workload_type="deployment",
             workload_name="beszel-hub",
+            mount_path="/beszel_data",
         ))
 
-    # Zigbee2mqtt (tar.gz)
+    # Zigbee2mqtt (directory backup)
     z2m = backups.get("zigbee2mqtt", {})
     if z2m.get("enabled"):
         groups.append(BackupGroup(
             name="zigbee2mqtt",
-            b2_path=f"b2:{bucket}/zigbee2mqtt/",
-            restore_type="tar",
+            restic_repo=repo("zigbee2mqtt"),
+            restore_type="dir",
             workload_type="deployment",
             workload_name="zigbee2mqtt",
+            mount_path="/app/data",
         ))
 
     # Hoarder (sqlite)
@@ -355,10 +404,11 @@ def build_groups(values: dict) -> list[BackupGroup]:
     if hoarder.get("enabled"):
         groups.append(BackupGroup(
             name="hoarder",
-            b2_path=f"b2:{bucket}/hoarder/",
+            restic_repo=repo("hoarder"),
             restore_type="sqlite",
             workload_type="deployment",
             workload_name="hoarder-web",
+            mount_path="/data",
         ))
 
     # Bugsink (sqlite)
@@ -366,10 +416,11 @@ def build_groups(values: dict) -> list[BackupGroup]:
     if bugsink.get("enabled"):
         groups.append(BackupGroup(
             name="bugsink",
-            b2_path=f"b2:{bucket}/bugsink/",
+            restic_repo=repo("bugsink"),
             restore_type="sqlite",
             workload_type="deployment",
             workload_name="bugsink",
+            mount_path="/data",
         ))
 
     # Redis
@@ -378,7 +429,7 @@ def build_groups(values: dict) -> list[BackupGroup]:
         for inst in redis_cfg.get("instances", []):
             groups.append(BackupGroup(
                 name=f"redis/{inst['name']}",
-                b2_path=f"b2:{bucket}/redis/{inst['name']}/",
+                restic_repo=repo(f"redis/{inst['name']}"),
                 restore_type="redis",
             ))
 
@@ -387,98 +438,110 @@ def build_groups(values: dict) -> list[BackupGroup]:
     if immich.get("enabled"):
         groups.append(BackupGroup(
             name="immich-data",
-            b2_path=f"b2:{bucket}/immich-data/",
+            restic_repo=repo("immich-data"),
             restore_type="immich-data",
         ))
 
     return groups
 
 
-def fetch_files(group: BackupGroup):
-    """Populate group.files from B2."""
-    entries = rclone_lsjson(group.b2_path)
-    group.files = []
+def fetch_snapshots(group: BackupGroup):
+    """Populate group.snapshots from restic repository."""
+    entries = restic_snapshots(group.restic_repo)
+    group.snapshots = []
     for entry in entries:
-        if entry.get("IsDir"):
-            continue
-        group.files.append(BackupFile(
-            name=entry.get("Name", ""),
-            size=entry.get("Size", 0),
-            mod_time=entry.get("ModTime", "")[:19].replace("T", " "),
+        group.snapshots.append(BackupSnapshot(
+            id=entry.get("id", ""),
+            short_id=entry.get("short_id", entry.get("id", "")[:8]),
+            time=entry.get("time", ""),
+            hostname=entry.get("hostname", ""),
+            paths=entry.get("paths", []),
         ))
     # Sort newest first
-    group.files.sort(key=lambda f: f.mod_time, reverse=True)
+    group.snapshots.sort(key=lambda s: s.time, reverse=True)
 
 
 # ---------------------------------------------------------------------------
 # Restore implementations
 # ---------------------------------------------------------------------------
 
-def restore_postgres(group: BackupGroup, backup_file: BackupFile):
-    """Restore a PostgreSQL backup by piping into the database pod."""
+def restore_postgres(group: BackupGroup, snapshot: BackupSnapshot):
+    """Restore a PostgreSQL backup from restic snapshot."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        print(f"  Downloading {backup_file.name}...")
-        if not rclone_copy(f"{group.b2_path}{backup_file.name}", tmpdir):
-            print("  ERROR: Failed to download backup file")
+        print(f"  Restoring snapshot {snapshot.short_id}...")
+        if not restic_restore(group.restic_repo, snapshot.id, tmpdir):
+            print("  ERROR: Failed to restore snapshot")
             return
 
-        local_file = os.path.join(tmpdir, backup_file.name)
-        print(f"  Restoring to {group.db_host}:{group.db_port}/{group.db_name}...")
+        # Find the backup file (e.g., immich.sql.gz)
+        sql_files = []
+        for f in os.listdir(tmpdir):
+            if f.endswith(".sql") or f.endswith(".sql.gz"):
+                sql_files.append(f)
+        if not sql_files:
+            print(f"  ERROR: No .sql or .sql.gz files found in restored snapshot")
+            return
+
+        local_file = os.path.join(tmpdir, sql_files[0])
+        backup_filename = sql_files[0]
+        print(f"  Restoring {backup_filename} to {group.db_host}:{group.db_port}/{group.db_name}...")
 
         # Get password from secret
         pw_result = kubectl("get", "secret", group.secret_name,
-                           "-o", f"jsonpath={{.data.{group.password_key}}}",
+                           "-o", f'jsonpath={{.data["{group.password_key}"]}}',
                            capture=True, namespace=group.namespace)
         if pw_result.returncode != 0:
             print(f"  ERROR: Could not get password from secret {group.secret_name}")
             return
 
-        import base64
         password = base64.b64decode(pw_result.stdout).decode()
 
-        # Find a postgres pod or use the host directly via a temporary pod
-        # Simpler: use kubectl exec on the database pod itself
         pod_name = get_pod_name(f"app={group.db_host.split('-')[0]}", namespace=group.namespace)
         if not pod_name:
-            # Try matching the host as a service name, find pod by service
             pod_name = get_pod_name(f"app.kubernetes.io/name={group.db_host}", namespace=group.namespace)
 
         if pod_name:
             print(f"  Using pod: {pod_name}")
-            # Copy file to pod, then restore
-            kubectl("cp", local_file, f"{group.namespace}/{pod_name}:/tmp/{backup_file.name}",
+            kubectl("cp", local_file, f"{group.namespace}/{pod_name}:/tmp/{backup_filename}",
                     namespace=group.namespace)
 
-            if backup_file.name.endswith(".gz"):
-                restore_cmd = f"gunzip -c /tmp/{backup_file.name} | PGPASSWORD='{password}' psql -h localhost -U {group.db_user} -d {group.db_name}"
+            if backup_filename.endswith(".gz"):
+                restore_cmd = f"gunzip -c /tmp/{backup_filename} | PGPASSWORD='{password}' psql -h localhost -U {group.db_user} -d {group.db_name}"
             else:
-                restore_cmd = f"PGPASSWORD='{password}' psql -h localhost -U {group.db_user} -d {group.db_name} < /tmp/{backup_file.name}"
+                restore_cmd = f"PGPASSWORD='{password}' psql -h localhost -U {group.db_user} -d {group.db_name} < /tmp/{backup_filename}"
 
             kubectl("exec", pod_name, "--", "sh", "-c", restore_cmd, namespace=group.namespace)
-            kubectl("exec", pod_name, "--", "rm", "-f", f"/tmp/{backup_file.name}", namespace=group.namespace)
+            kubectl("exec", pod_name, "--", "rm", "-f", f"/tmp/{backup_filename}", namespace=group.namespace)
             print("  PostgreSQL restore completed")
         else:
             print(f"  ERROR: Could not find pod for {group.db_host}")
 
 
-def restore_mysql(group: BackupGroup, backup_file: BackupFile):
-    """Restore a MySQL backup."""
+def restore_mysql(group: BackupGroup, snapshot: BackupSnapshot):
+    """Restore a MySQL backup from restic snapshot."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        print(f"  Downloading {backup_file.name}...")
-        if not rclone_copy(f"{group.b2_path}{backup_file.name}", tmpdir):
-            print("  ERROR: Failed to download backup file")
+        print(f"  Restoring snapshot {snapshot.short_id}...")
+        if not restic_restore(group.restic_repo, snapshot.id, tmpdir):
+            print("  ERROR: Failed to restore snapshot")
             return
 
-        local_file = os.path.join(tmpdir, backup_file.name)
+        sql_files = [f for f in os.listdir(tmpdir)
+                     if f.endswith(".sql") or f.endswith(".sql.gz")]
+        if not sql_files:
+            print("  ERROR: No .sql or .sql.gz files found in restored snapshot")
+            return
+
+        local_file = os.path.join(tmpdir, sql_files[0])
+        backup_filename = sql_files[0]
+
         pod_name = get_pod_name(f"app={group.db_host}", namespace=group.namespace)
         if not pod_name:
             print(f"  ERROR: Could not find pod for {group.db_host}")
             return
 
         # Get password
-        import base64
         pw_result = kubectl("get", "secret", group.secret_name,
-                           "-o", f"jsonpath={{.data.{group.password_key}}}",
+                           "-o", f'jsonpath={{.data["{group.password_key}"]}}',
                            capture=True, namespace=group.namespace)
         if pw_result.returncode != 0:
             print(f"  ERROR: Could not get password from secret {group.secret_name}")
@@ -487,89 +550,63 @@ def restore_mysql(group: BackupGroup, backup_file: BackupFile):
         password = base64.b64decode(pw_result.stdout).decode()
 
         print(f"  Using pod: {pod_name}")
-        kubectl("cp", local_file, f"{group.namespace}/{pod_name}:/tmp/{backup_file.name}",
+        kubectl("cp", local_file, f"{group.namespace}/{pod_name}:/tmp/{backup_filename}",
                 namespace=group.namespace)
 
-        if backup_file.name.endswith(".gz"):
-            restore_cmd = f"gunzip -c /tmp/{backup_file.name} | mysql -h localhost -u {group.db_user} -p'{password}' {group.db_name}"
+        if backup_filename.endswith(".gz"):
+            restore_cmd = f"gunzip -c /tmp/{backup_filename} | mysql -h localhost -u {group.db_user} -p'{password}' {group.db_name}"
         else:
-            restore_cmd = f"mysql -h localhost -u {group.db_user} -p'{password}' {group.db_name} < /tmp/{backup_file.name}"
+            restore_cmd = f"mysql -h localhost -u {group.db_user} -p'{password}' {group.db_name} < /tmp/{backup_filename}"
 
         kubectl("exec", pod_name, "--", "sh", "-c", restore_cmd, namespace=group.namespace)
-        kubectl("exec", pod_name, "--", "rm", "-f", f"/tmp/{backup_file.name}", namespace=group.namespace)
+        kubectl("exec", pod_name, "--", "rm", "-f", f"/tmp/{backup_filename}", namespace=group.namespace)
         print("  MySQL restore completed")
 
 
-def restore_tar(group: BackupGroup, backup_file: BackupFile):
-    """Restore a tar.gz backup by scaling down, kubectl cp, scaling back up."""
+def restore_dir(group: BackupGroup, snapshot: BackupSnapshot):
+    """Restore a directory backup by restoring snapshot, scaling down, kubectl cp, scaling back up."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        print(f"  Downloading {backup_file.name}...")
-        if not rclone_copy(f"{group.b2_path}{backup_file.name}", tmpdir):
-            print("  ERROR: Failed to download backup file")
+        print(f"  Restoring snapshot {snapshot.short_id}...")
+        if not restic_restore(group.restic_repo, snapshot.id, tmpdir):
+            print("  ERROR: Failed to restore snapshot")
             return
-
-        local_file = os.path.join(tmpdir, backup_file.name)
-
-        # Extract locally
-        extract_dir = os.path.join(tmpdir, "extracted")
-        os.makedirs(extract_dir)
-        subprocess.run(["tar", "-xzf", local_file, "-C", extract_dir], check=True)
 
         # Scale down
         scale_workload(group.workload_type, group.workload_name, 0, group.namespace)
 
-        # Find the pod with the PVC (we need to use a temporary pod or the existing one)
-        # After scaling to 0, there's no pod. We'll use kubectl cp via a temporary debug pod
-        # or just scale back up and copy. Better approach: scale up, copy, restart.
+        # Scale back up to copy files
         print("  Scaling back up to copy files...")
         scale_workload(group.workload_type, group.workload_name, 1, group.namespace)
 
-        # Wait for pod to be ready
         import time
         time.sleep(5)
 
         pod_name = get_pod_name(f"app={group.workload_name}", namespace=group.namespace)
         if not pod_name:
-            # Try alternative label
             pod_name = get_pod_name(f"app.kubernetes.io/name={group.workload_name}", namespace=group.namespace)
 
         if not pod_name:
             print(f"  ERROR: Could not find pod for {group.workload_name}")
             return
 
-        print(f"  Copying files to pod {pod_name}...")
-        # Copy extracted files into the pod's data directory
-        # Determine the mount path based on the workload
-        mount_path = "/data"
-        if group.workload_name == "beszel-hub":
-            mount_path = "/beszel_data"
-        elif group.workload_name == "zigbee2mqtt":
-            mount_path = "/app/data"
-
-        for item in os.listdir(extract_dir):
-            src = os.path.join(extract_dir, item)
-            kubectl("cp", src, f"{group.namespace}/{pod_name}:{mount_path}/{item}",
+        print(f"  Copying files to pod {pod_name}:{group.mount_path}/...")
+        for item in os.listdir(tmpdir):
+            src = os.path.join(tmpdir, item)
+            kubectl("cp", src, f"{group.namespace}/{pod_name}:{group.mount_path}/{item}",
                     namespace=group.namespace)
 
         # Restart the pod to pick up new files
         kubectl("delete", "pod", pod_name, namespace=group.namespace)
-        print("  Tar restore completed, pod restarting")
+        print("  Directory restore completed, pod restarting")
 
 
-def restore_sqlite(group: BackupGroup, backup_file: BackupFile):
-    """Restore SQLite databases by scaling down, copying .db files, scaling up."""
+def restore_sqlite(group: BackupGroup, snapshot: BackupSnapshot):
+    """Restore SQLite databases from restic snapshot."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        print(f"  Downloading {backup_file.name}...")
-        if not rclone_copy(f"{group.b2_path}{backup_file.name}", tmpdir):
-            print("  ERROR: Failed to download backup file")
+        print(f"  Restoring snapshot {snapshot.short_id}...")
+        if not restic_restore(group.restic_repo, snapshot.id, tmpdir):
+            print("  ERROR: Failed to restore snapshot")
             return
-
-        local_file = os.path.join(tmpdir, backup_file.name)
-
-        # Extract locally
-        extract_dir = os.path.join(tmpdir, "extracted")
-        os.makedirs(extract_dir)
-        subprocess.run(["tar", "-xzf", local_file, "-C", extract_dir], check=True)
 
         # Scale down
         scale_workload(group.workload_type, group.workload_name, 0, group.namespace)
@@ -589,17 +626,11 @@ def restore_sqlite(group: BackupGroup, backup_file: BackupFile):
             print(f"  ERROR: Could not find pod for {group.workload_name}")
             return
 
-        mount_path = "/data"
-        if group.workload_name == "hoarder-web":
-            mount_path = "/data"
-        elif group.workload_name == "bugsink":
-            mount_path = "/data"
-
-        print(f"  Copying .db files to pod {pod_name}:{mount_path}/...")
-        for item in os.listdir(extract_dir):
+        print(f"  Copying .db files to pod {pod_name}:{group.mount_path}/...")
+        for item in os.listdir(tmpdir):
             if item.endswith(".db"):
-                src = os.path.join(extract_dir, item)
-                kubectl("cp", src, f"{group.namespace}/{pod_name}:{mount_path}/{item}",
+                src = os.path.join(tmpdir, item)
+                kubectl("cp", src, f"{group.namespace}/{pod_name}:{group.mount_path}/{item}",
                         namespace=group.namespace)
                 print(f"    Copied {item}")
 
@@ -608,17 +639,23 @@ def restore_sqlite(group: BackupGroup, backup_file: BackupFile):
         print("  SQLite restore completed, pod restarting")
 
 
-def restore_etcd(group: BackupGroup, backup_file: BackupFile):
-    """Download etcd snapshot and print manual restore instructions."""
+def restore_etcd(group: BackupGroup, snapshot: BackupSnapshot):
+    """Restore etcd snapshot and print manual restore instructions."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        print(f"  Downloading {backup_file.name}...")
-        if not rclone_copy(f"{group.b2_path}{backup_file.name}", tmpdir):
-            print("  ERROR: Failed to download backup file")
+        print(f"  Restoring snapshot {snapshot.short_id}...")
+        if not restic_restore(group.restic_repo, snapshot.id, tmpdir):
+            print("  ERROR: Failed to restore snapshot")
             return
 
-        local_file = os.path.join(tmpdir, backup_file.name)
-        dest = os.path.expanduser(f"~/etcd-restore-{backup_file.name}")
-        subprocess.run(["cp", local_file, dest])
+        # Find the .db file
+        db_files = [f for f in os.listdir(tmpdir) if f.endswith(".db")]
+        if not db_files:
+            print("  ERROR: No .db files found in restored snapshot")
+            return
+
+        src = os.path.join(tmpdir, db_files[0])
+        dest = os.path.expanduser(f"~/etcd-restore-{db_files[0]}")
+        subprocess.run(["cp", src, dest])
 
         print(f"\n  Snapshot saved to: {dest}")
         print("\n  MANUAL RESTORE INSTRUCTIONS:")
@@ -631,41 +668,41 @@ def restore_etcd(group: BackupGroup, backup_file: BackupFile):
         print("\n  WARNING: This will replace ALL cluster state!")
 
 
-def restore_meilisearch(group: BackupGroup, backup_file: BackupFile):
-    """Download meilisearch backup and print instructions."""
+def restore_meilisearch(group: BackupGroup, snapshot: BackupSnapshot):
+    """Restore meilisearch backup and print instructions."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        print(f"  Downloading {backup_file.name}...")
-        if not rclone_copy(f"{group.b2_path}{backup_file.name}", tmpdir):
-            print("  ERROR: Failed to download backup file")
+        print(f"  Restoring snapshot {snapshot.short_id}...")
+        if not restic_restore(group.restic_repo, snapshot.id, tmpdir):
+            print("  ERROR: Failed to restore snapshot")
             return
 
-        local_file = os.path.join(tmpdir, backup_file.name)
-        dest = os.path.expanduser(f"~/meilisearch-restore-{backup_file.name}")
-        subprocess.run(["cp", local_file, dest])
+        dest_dir = os.path.expanduser(f"~/meilisearch-restore-{snapshot.short_id}")
+        subprocess.run(["cp", "-r", tmpdir, dest_dir])
 
-        print(f"\n  Backup saved to: {dest}")
+        print(f"\n  Backup saved to: {dest_dir}")
         print("\n  MANUAL RESTORE INSTRUCTIONS:")
         print("  Meilisearch restore requires importing dumps/snapshots via the API.")
         print("  See: https://www.meilisearch.com/docs/learn/advanced/snapshots")
 
 
-def do_restore(group: BackupGroup, backup_file: BackupFile):
+def do_restore(group: BackupGroup, snapshot: BackupSnapshot):
     """Dispatch restore based on type."""
-    print(f"\nRestoring {group.name}: {backup_file.name}")
+    print(f"\nRestoring {group.name}: snapshot {snapshot.short_id}")
     print(f"  Type: {group.restore_type}")
-    print(f"  Size: {backup_file.size_human}")
+    print(f"  Time: {snapshot.display_time}")
+    print(f"  Host: {snapshot.hostname}")
     print()
 
     if group.restore_type == "immich-data":
         print("  SKIPPED: immich-data is too large for automated restore.")
-        print("  Use rclone sync manually:")
-        print(f"    rclone sync {group.b2_path} /path/to/immich/upload/")
+        print("  Use restic restore manually:")
+        print(f"    restic -r {group.restic_repo} restore latest --target /path/to/immich/upload/")
         return
 
     handlers = {
         "postgres": restore_postgres,
         "mysql": restore_mysql,
-        "tar": restore_tar,
+        "dir": restore_dir,
         "sqlite": restore_sqlite,
         "etcd": restore_etcd,
         "meilisearch": restore_meilisearch,
@@ -673,7 +710,7 @@ def do_restore(group: BackupGroup, backup_file: BackupFile):
 
     handler = handlers.get(group.restore_type)
     if handler:
-        handler(group, backup_file)
+        handler(group, snapshot)
     else:
         print(f"  ERROR: Unknown restore type: {group.restore_type}")
 
@@ -688,7 +725,7 @@ class TUI:
         self.expanded: set[int] = set()
         self.cursor = 0
         self.scroll_offset = 0
-        self.items: list[tuple[int, Optional[int]]] = []  # (group_idx, file_idx or None)
+        self.items: list[tuple[int, Optional[int]]] = []  # (group_idx, snapshot_idx or None)
         self._rebuild_items()
 
     def _rebuild_items(self):
@@ -696,8 +733,8 @@ class TUI:
         for gi, group in enumerate(self.groups):
             self.items.append((gi, None))
             if gi in self.expanded:
-                for fi in range(len(group.files)):
-                    self.items.append((gi, fi))
+                for si in range(len(group.snapshots)):
+                    self.items.append((gi, si))
         if self.cursor >= len(self.items):
             self.cursor = max(0, len(self.items) - 1)
 
@@ -716,7 +753,7 @@ class TUI:
             h, w = stdscr.getmaxyx()
 
             # Header
-            header = " Backup Restore TUI - Press Enter to expand/restore, q to quit "
+            header = " Backup Restore TUI (restic) - Press Enter to expand/restore, q to quit "
             stdscr.addstr(0, 0, header[:w].ljust(w), curses.A_REVERSE)
 
             # Visible area
@@ -731,19 +768,19 @@ class TUI:
                 if item_idx >= len(self.items):
                     break
 
-                gi, fi = self.items[item_idx]
+                gi, si = self.items[item_idx]
                 y = row_idx + 1
 
                 is_selected = item_idx == self.cursor
                 attr = curses.A_REVERSE if is_selected else 0
 
-                if fi is None:
+                if si is None:
                     # Group header
                     group = self.groups[gi]
                     arrow = "v" if gi in self.expanded else ">"
                     type_tag = f"[{group.restore_type}]"
-                    file_count = f"({len(group.files)} files)" if group.files else "(loading...)" if gi in self.expanded else ""
-                    line = f" {arrow} {group.name} {type_tag} {file_count}"
+                    snap_count = f"({len(group.snapshots)} snapshots)" if group.snapshots else "(loading...)" if gi in self.expanded else ""
+                    line = f" {arrow} {group.name} {type_tag} {snap_count}"
 
                     color = curses.color_pair(1) if curses.has_colors() else 0
                     try:
@@ -751,10 +788,10 @@ class TUI:
                     except curses.error:
                         pass
                 else:
-                    # File entry
+                    # Snapshot entry
                     group = self.groups[gi]
-                    bf = group.files[fi]
-                    line = f"     {bf.name}  ({bf.size_human})  {bf.mod_time}"
+                    snap = group.snapshots[si]
+                    line = f"     {snap.short_id}  {snap.display_time}  ({snap.hostname})"
                     color = curses.color_pair(2) if curses.has_colors() else 0
                     try:
                         stdscr.addstr(y, 0, line[:w].ljust(w), attr | color)
@@ -792,38 +829,38 @@ class TUI:
             elif key in (ord("\n"), curses.KEY_ENTER, 10, 13):
                 if not self.items:
                     continue
-                gi, fi = self.items[self.cursor]
+                gi, si = self.items[self.cursor]
 
-                if fi is None:
+                if si is None:
                     # Toggle expand
                     if gi in self.expanded:
                         self.expanded.discard(gi)
                     else:
                         self.expanded.add(gi)
-                        if not self.groups[gi].files:
-                            # Fetch files
-                            stdscr.addstr(0, 0, " Fetching file list...".ljust(w), curses.A_REVERSE)
+                        if not self.groups[gi].snapshots:
+                            # Fetch snapshots
+                            stdscr.addstr(0, 0, " Fetching snapshots...".ljust(w), curses.A_REVERSE)
                             stdscr.refresh()
-                            fetch_files(self.groups[gi])
+                            fetch_snapshots(self.groups[gi])
                     self._rebuild_items()
                 else:
-                    # Selected a file - confirm restore
+                    # Selected a snapshot - confirm restore
                     group = self.groups[gi]
-                    bf = group.files[fi]
+                    snap = group.snapshots[si]
 
                     stdscr.clear()
                     stdscr.addstr(0, 0, " CONFIRM RESTORE ".center(w), curses.A_REVERSE)
-                    stdscr.addstr(2, 2, f"Group:  {group.name}")
-                    stdscr.addstr(3, 2, f"File:   {bf.name}")
-                    stdscr.addstr(4, 2, f"Size:   {bf.size_human}")
-                    stdscr.addstr(5, 2, f"Date:   {bf.mod_time}")
-                    stdscr.addstr(6, 2, f"Type:   {group.restore_type}")
+                    stdscr.addstr(2, 2, f"Group:    {group.name}")
+                    stdscr.addstr(3, 2, f"Snapshot: {snap.short_id}")
+                    stdscr.addstr(4, 2, f"Time:     {snap.display_time}")
+                    stdscr.addstr(5, 2, f"Host:     {snap.hostname}")
+                    stdscr.addstr(6, 2, f"Type:     {group.restore_type}")
                     stdscr.addstr(8, 2, "Press 'y' to confirm, any other key to cancel")
                     stdscr.refresh()
 
                     confirm = stdscr.getch()
                     if confirm in (ord("y"), ord("Y")):
-                        return (group, bf)
+                        return (group, snap)
 
 
 # ---------------------------------------------------------------------------
@@ -846,26 +883,34 @@ def find_chart_dir() -> str:
 def cmd_list(args):
     """List all available backups."""
     values = load_values(args.chart_dir)
+
+    if not ensure_restic_env(values):
+        sys.exit(1)
+
     groups = build_groups(values)
 
     if not groups:
         print("No backup groups found in values.yaml")
         return
 
-    print(f"Fetching file lists from B2...")
+    print(f"Fetching snapshots from restic repositories...")
     for group in groups:
-        fetch_files(group)
-        print(f"\n{group.name} [{group.restore_type}]")
-        if group.files:
-            for bf in group.files:
-                print(f"  {bf.name}  ({bf.size_human})  {bf.mod_time}")
+        fetch_snapshots(group)
+        print(f"\n{group.name} [{group.restore_type}] repo={group.restic_repo}")
+        if group.snapshots:
+            for snap in group.snapshots:
+                print(f"  {snap.short_id}  {snap.display_time}  ({snap.hostname})")
         else:
-            print("  (no files found)")
+            print("  (no snapshots found)")
 
 
 def cmd_tui(args):
     """Launch the interactive TUI."""
     values = load_values(args.chart_dir)
+
+    if not ensure_restic_env(values):
+        sys.exit(1)
+
     groups = build_groups(values)
 
     if not groups:
@@ -879,16 +924,21 @@ def cmd_tui(args):
         print("Cancelled.")
         return
 
-    group, backup_file = result
+    group, snapshot = result
     print()  # clear line after curses
-    do_restore(group, backup_file)
+    do_restore(group, snapshot)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Restore backups from B2 for Kubernetes homelab",
+        description="Restore encrypted restic backups from B2 for Kubernetes homelab",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Environment variables (read from k8s secret if not set):
+  B2_ACCOUNT_ID      Backblaze B2 account ID
+  B2_ACCOUNT_KEY     Backblaze B2 application key
+  RESTIC_PASSWORD    Restic repository encryption password
+
 Examples:
   %(prog)s                   Launch interactive TUI
   %(prog)s --list            List all available backups
@@ -903,7 +953,7 @@ Examples:
     args = parser.parse_args()
 
     # Verify prerequisites
-    for tool in ("kubectl", "rclone"):
+    for tool in ("kubectl", "restic"):
         if not subprocess.run(["which", tool], capture_output=True).returncode == 0:
             print(f"ERROR: {tool} not found in PATH. Please install it first.")
             sys.exit(1)
