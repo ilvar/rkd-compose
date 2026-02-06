@@ -41,7 +41,6 @@ APP_MAPPINGS = {
     "paperless-webserver": "paperless.webserver",
     "paperless-redis": "paperless.redis",
     "pinchflat": "pinchflat",
-    "portainer": "portainer",
     "radarr": "radarr",
     "rkd-pw": "rkdPw",
     "termix": "termix",

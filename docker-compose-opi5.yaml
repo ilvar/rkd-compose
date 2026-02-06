@@ -51,16 +51,6 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
 
-  portainer-agent:
-    image: portainer/agent:2.37.0
-    ports:
-      - "9011:9001"
-    restart: always
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "/var/lib/docker/volumes"
-      - "/:/host"
-
   zigbee2mqtt:
     container_name: zigbee2mqtt
     restart: unless-stopped

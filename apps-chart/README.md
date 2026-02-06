@@ -10,7 +10,6 @@ This chart includes the following applications, organized by category:
 - **Blocky** - DNS server with ad-blocking capabilities
 
 ### Management & Monitoring
-- **Portainer** - Container management UI
 - **Kuma (Uptime Kuma)** - Uptime monitoring dashboard
 - **Changes** - Website change detection and monitoring
 

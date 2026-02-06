@@ -21,25 +21,6 @@ blocky:
     requests:
       memory: 128Mi
       cpu: 100m
-portainer:
-  enabled: true
-  image:
-    repository: portainer/portainer-ce
-    tag: latest
-  resources:
-    limits:
-      memory: 256Mi
-    requests:
-      memory: 128Mi
-      cpu: 100m
-  storage:
-    data: portainer-data
-  ingress:
-    enabled: true
-    hosts:
-    - portainer.h.rkd.pw
-    - portainer.k.rkd.pw
-    servicePort: 9000
 jackett:
   enabled: true
   image:
@@ -367,8 +348,6 @@ compote3:
       description: Document management system
     - name: pinchflat
       description: YouTube subscription manager
-    - name: portainer
-      description: Container management and Docker GUI
     - name: radarr
       description: Movie collection manager and downloader
     - name: rancher

@@ -13,7 +13,6 @@ from typing import Dict, Tuple
 # Mapping of container names to values.yaml keys
 # Format: {container_name: (yaml_path, subkey)}
 CONTAINER_MAPPINGS = {
-    "portainer": ("portainer", "resources.limits.memory"),
     "jackett": ("jackett", "resources.limits.memory"),
     "radarr": ("radarr", "resources.limits.memory"),
     "jellyfin": ("jellyfin", "resources.limits.memory"),

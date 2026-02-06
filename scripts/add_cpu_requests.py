@@ -16,7 +16,6 @@ CPU_REQUESTS = {
     "compote3": "50m",
     "itTools": "100m",
     "miniflux": "100m",
-    "portainer": "100m",
     "kuma": "100m",
     "irishSchools": "50m",
     "rkdPw": "100m",
