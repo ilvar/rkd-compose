@@ -1,4 +1,11 @@
 {{- if .Values.backups.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.backups.serviceAccountName | default "backup" }}
+  labels:
+    app: backup
 {{- if .Values.backups.velero.enabled }}
 ---
 apiVersion: batch/v1
@@ -100,6 +107,7 @@ spec:
           labels:
             app: backup-etcd
         spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           hostNetwork: true
           hostPID: true
           restartPolicy: OnFailure
@@ -234,6 +242,7 @@ spec:
             app: backup-postgres
             database: {{ .name }}
         spec:
+          serviceAccountName: {{ $.Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           {{- if and $.Values.backups $.Values.backups.immichData $.Values.backups.immichData.affinity }}
           affinity:
@@ -345,6 +354,7 @@ spec:
             app: backup-mysql
             database: {{ .name }}
         spec:
+          serviceAccountName: {{ $.Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: mysql-backup
@@ -458,6 +468,7 @@ spec:
             app: backup-meilisearch
             instance: {{ .name }}
         spec:
+          serviceAccountName: {{ $.Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           securityContext:
             runAsUser: 0
@@ -567,6 +578,7 @@ spec:
           labels:
             app: backup-immich-data
         spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           {{- if .Values.backups.immichData.affinity }}
           affinity:
@@ -666,6 +678,7 @@ spec:
           labels:
             app: backup-cleanup
         spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: cleanup
@@ -804,6 +817,7 @@ spec:
           labels:
             app: backup-beszel
         spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: beszel-backup
@@ -883,6 +897,7 @@ spec:
           labels:
             app: backup-zigbee2mqtt
         spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: zigbee2mqtt-backup
@@ -962,6 +977,7 @@ spec:
           labels:
             app: backup-bugsink
         spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: bugsink-backup
@@ -1057,6 +1073,7 @@ spec:
           labels:
             app: backup-hoarder
         spec:
+          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
           restartPolicy: OnFailure
           containers:
           - name: hoarder-backup
