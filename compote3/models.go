@@ -29,3 +29,13 @@ type APIResponse struct {
 	GitHubWatched  []GitHubRepo  `json:"github_watched"`
 }
 
+// TemplateParseRequest is the request body for template variable extraction
+type TemplateParseRequest struct {
+	Template string `json:"template"`
+}
+
+// TemplateParseResponse is the response for template variable extraction
+type TemplateParseResponse struct {
+	Variables []string `json:"variables"`
+}
+

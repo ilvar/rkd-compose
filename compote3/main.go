@@ -37,6 +37,20 @@ func main() {
 		c.JSON(http.StatusOK, data)
 	})
 
+	// Template variable extraction endpoint
+	r.POST("/api/templates/parse", func(c *gin.Context) {
+		var req TemplateParseRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+			return
+		}
+		vars := ExtractTemplateVariables(req.Template)
+		if vars == nil {
+			vars = []string{}
+		}
+		c.JSON(http.StatusOK, TemplateParseResponse{Variables: vars})
+	})
+
 	// Frontend page (data loaded via JavaScript)
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
