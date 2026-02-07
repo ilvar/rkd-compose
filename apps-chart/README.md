@@ -31,6 +31,9 @@ This chart includes the following applications, organized by category:
 ### Home Automation
 - **Home Assistant** - Home automation platform
 
+### Security
+- **Vaultwarden** - Lightweight Bitwarden-compatible password manager
+
 ### Development & Tools
 - **Bugsink** - Bug tracking and issue management
 - **IT-Tools** - Collection of useful IT tools

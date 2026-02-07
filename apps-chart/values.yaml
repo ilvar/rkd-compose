@@ -379,6 +379,8 @@ compote3:
       description: GitOps automation dashboard
     - name: syncthing
       description: File synchronization
+    - name: vaultwarden
+      description: Bitwarden-compatible password manager
     - name: termix
       description: Terminal emulator for web
     - name: tessie
@@ -652,6 +654,30 @@ bugsink:
     - bugsink.k.rkd.pw
     - bugsink.rkd.pw
     servicePort: 8000
+vaultwarden:
+  enabled: true
+  image:
+    repository: vaultwarden/server
+    tag: latest
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      memory: 128Mi
+      cpu: 100m
+  environment:
+    DOMAIN: https://vaultwarden.h.rkd.pw
+    SIGNUPS_ALLOWED: 'false'
+    WEBSOCKET_ENABLED: 'true'
+  storage:
+    data: vaultwarden-data
+  ingress:
+    enabled: true
+    hosts:
+    - vaultwarden.h.rkd.pw
+    - vaultwarden.k.rkd.pw
+    - vw.h.rkd.pw
+    servicePort: 80
 itTools:
   enabled: true
   image:
