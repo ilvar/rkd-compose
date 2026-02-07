@@ -676,6 +676,7 @@ vaultwarden:
     hosts:
     - vaultwarden.h.rkd.pw
     - vaultwarden.k.rkd.pw
+    - vw.h.rkd.pw
     servicePort: 80
 itTools:
   enabled: true
