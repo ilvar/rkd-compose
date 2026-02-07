@@ -55,28 +55,6 @@ docker run -p 9000:9000 \
   compote3
 ```
 
-### Docker Compose (Local Testing)
-
-```bash
-# Enable BuildKit for faster builds (optional but recommended)
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
-
-# Optionally set GITHUB_TOKEN in your environment
-export GITHUB_TOKEN=your_token
-
-# Build and run (always rebuilds the image)
-docker-compose up -d --build
-
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
-```
-
-The Dockerfile uses BuildKit cache mounts to speed up builds by caching Go modules and build artifacts. The compose file mounts your local `config.yaml` automatically.
-
 ### Kubernetes
 
 When running in Kubernetes, the application will automatically use in-cluster config to access the Kubernetes API.

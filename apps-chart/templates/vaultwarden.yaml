@@ -1,0 +1,109 @@
+{{- if .Values.vaultwarden.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  labels:
+    app: vaultwarden
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vaultwarden
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: vaultwarden
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      containers:
+      - name: vaultwarden
+        image: "{{ .Values.vaultwarden.image.repository }}:{{ .Values.vaultwarden.image.tag }}"
+        env:
+        {{- range $key, $value := .Values.vaultwarden.environment }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        - name: ADMIN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: vaultwarden-secrets
+              key: admin-token
+        resources:
+          limits:
+            memory: {{ .Values.vaultwarden.resources.limits.memory }}
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.vaultwarden.storage.data }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden
+  labels:
+    app: vaultwarden
+spec:
+  ports:
+  - port: {{ .Values.vaultwarden.ingress.servicePort }}
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: vaultwarden
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.vaultwarden.storage.data }}
+spec:
+  storageClassName: local-path-retain
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+{{- if and .Values.vaultwarden.enabled .Values.vaultwarden.ingress.enabled (gt (len .Values.vaultwarden.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaultwarden
+  labels:
+    app: vaultwarden
+spec:
+{{- if gt (len .Values.vaultwarden.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+{{- range .Values.vaultwarden.ingress.hosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
+  rules:
+  {{- range .Values.vaultwarden.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vaultwarden
+            port:
+              number: {{ $.Values.vaultwarden.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
