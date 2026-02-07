@@ -674,6 +674,7 @@ vaultwarden:
   ingress:
     enabled: true
     hosts:
+    - vaultwarden.rkd.pw
     - vaultwarden.h.rkd.pw
     - vaultwarden.k.rkd.pw
     - vw.h.rkd.pw
