@@ -944,9 +944,9 @@ jitsi-meet:
   prosody:
     resources:
       limits:
-        memory: 256Mi
+        memory: 1024Mi
       requests:
-        memory: 128Mi
+        memory: 256Mi
         cpu: 100m
     affinity:
       nodeAffinity:
