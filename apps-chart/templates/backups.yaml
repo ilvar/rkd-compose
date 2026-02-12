@@ -994,8 +994,8 @@ spec:
               BACKUP_DIR="/tmp/backup"
               mkdir -p "$BACKUP_DIR"
 
-              # Use sqlite3 .backup for consistent copy of all .db files
-              for db in /mnt/bugsink-data/*.db; do
+              # Use sqlite3 .backup for consistent copy of all .db and .sqlite3 files
+              for db in /mnt/bugsink-data/*.db /mnt/bugsink-data/*.sqlite3; do
                 if [ -f "$db" ]; then
                   BASENAME=$(basename "$db")
                   sqlite3 "$db" ".backup '$BACKUP_DIR/$BASENAME'"
