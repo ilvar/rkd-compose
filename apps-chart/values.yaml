@@ -325,6 +325,8 @@ compote3:
       description: Dashboard and application launcher
     - name: deluge
       description: BitTorrent client
+    - name: fizzy
+      description: Team chat and messaging
     - name: frigate
       description: NVR with real-time AI object detection
     - name: gandi
@@ -1201,6 +1203,33 @@ zigbee2mqtt:
       '0xdc8e95fffe5d2fb4':
         friendly_name: 'EV Charger'
     version: 4
+fizzy:
+  enabled: true
+  image:
+    repository: ghcr.io/basecamp/fizzy
+    tag: main
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 256Mi
+      cpu: 200m
+  environment:
+    SECRET_KEY_BASE: fizzy.rkd.pw
+    TLS_DOMAIN: fizzy.rkd.pw
+    BASE_URL: https://fizzy.rkd.pw
+    MAILER_FROM_ADDRESS: fizzy@rkd.pw
+    VAPID_PRIVATE_KEY: 9W2PEq-Bc5O33SACygOzVDsYsO-GzVogT4HcgPUMKYw
+    VAPID_PUBLIC_KEY: BF1JuOOZFK8-mCwGaefFcmzTY23w4NfO1wtxeqIrPRdo2ExxfvmriWlrlluA8LTeds1LpYCDtjgIajSpV3o034k
+  storage:
+    data: fizzy-data
+  ingress:
+    enabled: true
+    hosts:
+    - fizzy.rkd.pw
+    - fizzy.h.rkd.pw
+    - fizzy.k.rkd.pw
+    servicePort: 80
 backups:
   enabled: true
   serviceAccountName: backup
@@ -1383,6 +1412,9 @@ backups:
   hoarder:
     enabled: true
     schedule: "0 6 * * *"
+  fizzy:
+    enabled: true
+    schedule: "0 4 * * *"
 longhorn:
   ingress:
     enabled: true
