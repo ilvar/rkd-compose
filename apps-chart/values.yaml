@@ -891,7 +891,7 @@ kosmos:
       - api.kosmos.h.rkd.pw
       servicePort: 8000
   frontend:
-    image: docker.io/ilvar/kosmos-frontend:1.6.17 # {"$imagepolicy": "flux-system:kosmos-frontend"}
+    image: docker.io/ilvar/kosmos-frontend:1.6.18 # {"$imagepolicy": "flux-system:kosmos-frontend"}
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
