@@ -1210,9 +1210,9 @@ fizzy:
     tag: main
   resources:
     limits:
-      memory: 512Mi
+      memory: 2048Mi
     requests:
-      memory: 256Mi
+      memory: 1024Mi
       cpu: 200m
   environment:
     SECRET_KEY_BASE: fizzy.rkd.pw

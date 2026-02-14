@@ -49,6 +49,9 @@ spec:
         resources:
           limits:
             memory: {{ .Values.fizzy.resources.limits.memory }}
+          requests:
+            memory: {{ .Values.fizzy.resources.requests.memory }}
+            cpu: {{ .Values.fizzy.resources.requests.cpu }}
         ports:
         - containerPort: 80
           protocol: TCP
