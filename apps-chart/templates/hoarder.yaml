@@ -295,8 +295,8 @@ spec:
                   RCLONE_ARCH="amd64"
                 fi
                 
-                RCLONE_VERSION=$(curl -s https://api.github.com/repos/rclone/rclone/releases/latest | grep -oP '"tag_name": "v\K[^"]*' || echo "latest")
-                curl -LsSf "https://github.com/rclone/rclone/releases/latest/download/rclone-v${RCLONE_VERSION}-linux-${RCLONE_ARCH}.zip" -o /tmp/rclone.zip
+                # Use redirect-based URL to avoid GitHub API rate limits
+                curl -LsSf "https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip" -o /tmp/rclone.zip
                 cd /tmp && unzip -q rclone.zip && mv rclone-v*/rclone /usr/local/bin/ && chmod +x /usr/local/bin/rclone
               fi
 

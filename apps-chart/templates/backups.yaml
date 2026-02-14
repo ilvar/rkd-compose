@@ -994,11 +994,14 @@ spec:
               BACKUP_DIR="/tmp/backup"
               mkdir -p "$BACKUP_DIR"
 
-              # Use sqlite3 .backup for consistent copy of all .db and .sqlite3 files
+              # Copy DB files first, then use sqlite3 .backup on the copies for consistency
+              # (source volume is readOnly, and sqlite3 needs write access for WAL/journal locks)
               for db in /mnt/bugsink-data/*.db /mnt/bugsink-data/*.sqlite3; do
                 if [ -f "$db" ]; then
                   BASENAME=$(basename "$db")
-                  sqlite3 "$db" ".backup '$BACKUP_DIR/$BASENAME'"
+                  cp "$db" "/tmp/${BASENAME}.raw"
+                  sqlite3 "/tmp/${BASENAME}.raw" ".backup '$BACKUP_DIR/$BASENAME'"
+                  rm -f "/tmp/${BASENAME}.raw"
                   echo "Backed up $BASENAME"
                 fi
               done
