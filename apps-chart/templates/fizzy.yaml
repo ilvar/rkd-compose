@@ -1,0 +1,121 @@
+{{- if .Values.fizzy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fizzy
+  labels:
+    app: fizzy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fizzy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: fizzy
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      containers:
+      - name: fizzy
+        image: "{{ .Values.fizzy.image.repository }}:{{ .Values.fizzy.image.tag }}"
+        env:
+        {{- range $key, $value := .Values.fizzy.environment }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        - name: SMTP_ADDRESS
+          valueFrom:
+            secretKeyRef:
+              name: bugsink-email
+              key: host
+        - name: SMTP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: bugsink-email
+              key: username
+        - name: SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bugsink-email
+              key: password
+        resources:
+          limits:
+            memory: {{ .Values.fizzy.resources.limits.memory }}
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        - containerPort: 443
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /rails/storage
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.fizzy.storage.data }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fizzy
+  labels:
+    app: fizzy
+spec:
+  ports:
+  - port: {{ .Values.fizzy.ingress.servicePort }}
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: fizzy
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.fizzy.storage.data }}
+spec:
+  storageClassName: local-path-retain
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+{{- if and .Values.fizzy.enabled .Values.fizzy.ingress.enabled (gt (len .Values.fizzy.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fizzy
+  labels:
+    app: fizzy
+spec:
+{{- if gt (len .Values.fizzy.ingress.hosts) 0 }}
+  tls:
+  - hosts:
+{{- range .Values.fizzy.ingress.hosts }}
+    - {{ . | quote }}
+{{- end }}
+    secretName: homelab-wildcard-h-tls
+{{- end }}
+  rules:
+  {{- range .Values.fizzy.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: fizzy
+            port:
+              number: {{ $.Values.fizzy.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
