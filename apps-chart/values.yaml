@@ -1412,6 +1412,9 @@ backups:
   hoarder:
     enabled: true
     schedule: "0 6 * * *"
+  fizzy:
+    enabled: true
+    schedule: "0 4 * * *"
 longhorn:
   ingress:
     enabled: true
