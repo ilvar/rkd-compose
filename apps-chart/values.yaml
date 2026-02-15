@@ -628,6 +628,24 @@ immich:
     - immich.h.rkd.pw
     - immich.k.rkd.pw
     servicePort: 2283
+bugsinkDb:
+  enabled: true
+  image:
+    repository: postgres
+    tag: 16-alpine
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      memory: 256Mi
+      cpu: 200m
+  environment:
+    POSTGRES_USER: bugsink
+    POSTGRES_DB: bugsink
+  secrets:
+    postgresPassword: bugsink-pg-2026
+  storage:
+    size: 2Gi
 bugsink:
   enabled: true
   image:
@@ -1298,6 +1316,14 @@ backups:
       user: postgres
       database: crm
       secretName: kosmos-secrets
+      passwordKey: postgres-password
+      schedule: "0 4 * * *"
+    - name: bugsink
+      host: bugsink-db
+      port: 5432
+      user: bugsink
+      database: bugsink
+      secretName: bugsink-db-secrets
       passwordKey: postgres-password
       schedule: "0 4 * * *"
     resources:

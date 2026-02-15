@@ -1,3 +1,83 @@
+{{- if .Values.bugsinkDb.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bugsink-db
+  labels:
+    app: bugsink-db
+spec:
+  serviceName: bugsink-db
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: bugsink-db
+  template:
+    metadata:
+      labels:
+        app: bugsink-db
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      containers:
+      - name: bugsink-db
+        image: "{{ .Values.bugsinkDb.image.repository }}:{{ .Values.bugsinkDb.image.tag }}"
+        env:
+        - name: POSTGRES_USER
+          value: {{ .Values.bugsinkDb.environment.POSTGRES_USER | quote }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bugsink-db-secrets
+              key: postgres-password
+        - name: POSTGRES_DB
+          value: {{ .Values.bugsinkDb.environment.POSTGRES_DB | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.bugsinkDb.resources.limits.memory }}
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.bugsinkDb.storage.size | default "2Gi" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bugsink-db
+  labels:
+    app: bugsink-db
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: bugsink-db
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bugsink-db-secrets
+  labels:
+    app: bugsink-db
+type: Opaque
+stringData:
+  postgres-password: {{ .Values.bugsinkDb.secrets.postgresPassword | quote }}
+{{- end }}
+---
 {{- if .Values.bugsink.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -31,6 +111,8 @@ spec:
       - name: bugsink
         image: "{{ .Values.bugsink.image.repository }}:{{ .Values.bugsink.image.tag }}"
         env:
+        - name: DATABASE_URL
+          value: "postgres://{{ .Values.bugsinkDb.environment.POSTGRES_USER }}:{{ .Values.bugsinkDb.secrets.postgresPassword }}@bugsink-db:5432/{{ .Values.bugsinkDb.environment.POSTGRES_DB }}"
         - name: SECRET_KEY
           valueFrom:
             secretKeyRef:
