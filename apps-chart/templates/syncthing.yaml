@@ -45,6 +45,8 @@ spec:
                 values:
                 - {{ .Values.syncthing.nodeName | quote }}
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: syncthing
         image: "{{ .Values.syncthing.image.repository }}:{{ .Values.syncthing.image.tag }}"
@@ -102,28 +104,6 @@ spec:
   - name: discovery
     port: 21027
     targetPort: 21027
-    protocol: UDP
-  selector:
-    app: syncthing
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: syncthing-nodeport
-  labels:
-    app: syncthing
-spec:
-  type: NodePort
-  ports:
-  - name: sync
-    port: 22000
-    targetPort: 22000
-    nodePort: 32000
-    protocol: TCP
-  - name: discovery
-    port: 21027
-    targetPort: 21027
-    nodePort: 32027
     protocol: UDP
   selector:
     app: syncthing

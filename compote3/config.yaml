@@ -6,6 +6,10 @@ links:
     url: https://rutracker.org/forum/viewforum.php?f=635
   - name: Meduza
     url: https://meduza.io
+  - name: Syncthing (web)
+    url: https://syncthing.h.rkd.pw
+  - name: Syncthing (desktop)
+    url: http://localhost:8384
   # Add more links here
   # - name: Example
   #   url: https://example.com
