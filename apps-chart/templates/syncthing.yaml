@@ -105,6 +105,28 @@ spec:
     protocol: UDP
   selector:
     app: syncthing
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing-nodeport
+  labels:
+    app: syncthing
+spec:
+  type: NodePort
+  ports:
+  - name: sync
+    port: 22000
+    targetPort: 22000
+    nodePort: 32000
+    protocol: TCP
+  - name: discovery
+    port: 21027
+    targetPort: 21027
+    nodePort: 32027
+    protocol: UDP
+  selector:
+    app: syncthing
 {{- if and .Values.syncthing.enabled .Values.syncthing.ingress.enabled (gt (len .Values.syncthing.ingress.hosts) 0) }}
 ---
 apiVersion: networking.k8s.io/v1
