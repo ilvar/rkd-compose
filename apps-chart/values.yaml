@@ -7,8 +7,8 @@ global:
 blocky:
   enabled: true
   image:
-    repository: ilvar/blocky
-    tag: parental
+    repository: spx01/blocky
+    tag: latest
   timezone: Europe/Dublin
   ports:
     dns:
