@@ -281,11 +281,6 @@ spec:
           readOnly: true
         - name: upload
           mountPath: /usr/src/app/upload
-        {{- if .Values.immich.server.externalLibrary }}
-        - name: external-library
-          mountPath: {{ .Values.immich.server.externalLibrary.mountPath }}
-          readOnly: true
-        {{- end }}
       volumes:
       - name: localtime
         hostPath:
@@ -294,12 +289,6 @@ spec:
       - name: upload
         persistentVolumeClaim:
           claimName: {{ .Values.immich.server.storage.upload }}
-      {{- if .Values.immich.server.externalLibrary }}
-      - name: external-library
-        hostPath:
-          path: {{ .Values.immich.server.externalLibrary.hostPath | quote }}
-          type: Directory
-      {{- end }}
 ---
 apiVersion: v1
 kind: Service
