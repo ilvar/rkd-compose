@@ -939,7 +939,7 @@ kosmos:
         chatIdKey: chat-id
     checkInterval: "0 * * * *"
 jitsi-meet:
-  enabled: true
+  enabled: false
   publicURL: https://jitsi.h.rkd.pw
   enableAuth: true
   enableGuests: false
@@ -1222,7 +1222,7 @@ zigbee2mqtt:
         friendly_name: 'EV Charger'
     version: 4
 fizzy:
-  enabled: true
+  enabled: false
   image:
     repository: ghcr.io/basecamp/fizzy
     tag: main
@@ -1439,7 +1439,7 @@ backups:
     enabled: true
     schedule: "0 6 * * *"
   fizzy:
-    enabled: true
+    enabled: false
     schedule: "0 4 * * *"
 longhorn:
   ingress:
