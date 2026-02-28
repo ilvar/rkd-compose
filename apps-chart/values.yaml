@@ -579,6 +579,9 @@ immich:
       REDIS_HOSTNAME: immich-redis
     storage:
       upload: immich-upload
+    externalLibrary:
+      hostPath: /home/rkd/.docker/immich/upload/library
+      mountPath: /mnt/external-library
   secrets:
     dbPassword: postgres
     postgresPassword: postgres
