@@ -325,7 +325,7 @@ compote3:
       description: Dashboard and application launcher
     - name: deluge
       description: BitTorrent client
-    - name: fizzy
+    - name: velero
       description: Team chat and messaging
     - name: frigate
       description: NVR with real-time AI object detection
@@ -349,10 +349,6 @@ compote3:
       description: Torrent tracker proxy and API aggregator
     - name: jellyfin
       description: Media server and streaming platform
-    - name: jitsi
-      description: Video conferencing and meetings
-    - name: jitsi-meet
-      description: Video conferencing and meetings
     - name: kosmos
       description: Kosmos CRM qa
     - name: kuma
@@ -938,122 +934,6 @@ kosmos:
         botTokenKey: bot-token
         chatIdKey: chat-id
     checkInterval: "0 * * * *"
-jitsi-meet:
-  enabled: false
-  publicURL: https://jitsi.h.rkd.pw
-  enableAuth: true
-  enableGuests: false
-  web:
-    replicaCount: 1
-    resources:
-      limits:
-        memory: 128Mi
-      requests:
-        memory: 64Mi
-        cpu: 250m
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-  prosody:
-    resources:
-      limits:
-        memory: 1024Mi
-      requests:
-        memory: 256Mi
-        cpu: 100m
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-    persistence:
-      enabled: true
-      size: 3Gi
-  jicofo:
-    resources:
-      limits:
-        memory: 512Mi
-      requests:
-        memory: 256Mi
-        cpu: 250m
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-  jvb:
-    replicaCount: 1
-    resources:
-      limits:
-        memory: 2Gi
-      requests:
-        memory: 1Gi
-        cpu: 1000m
-    useHostPort: true
-    useNodeIP: true
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-  ingress:
-    enabled: true
-    className: ''
-    hosts:
-    - host: jitsi.h.rkd.pw
-      paths:
-      - path: /
-        pathType: Prefix
-    - host: jitsi.k.rkd.pw
-      paths:
-      - path: /
-        pathType: Prefix
-    tls:
-    - secretName: homelab-wildcard-h-tls
-      hosts:
-      - jitsi.h.rkd.pw
-      - jitsi.k.rkd.pw
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
-    alertmanager:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-              - rockpro64
-              - orangepi5
   nodeExporter:
     enabled: true
   kubeEtcd:
@@ -1221,33 +1101,6 @@ zigbee2mqtt:
       '0xdc8e95fffe5d2fb4':
         friendly_name: 'EV Charger'
     version: 4
-fizzy:
-  enabled: false
-  image:
-    repository: ghcr.io/basecamp/fizzy
-    tag: main
-  resources:
-    limits:
-      memory: 2048Mi
-    requests:
-      memory: 1024Mi
-      cpu: 200m
-  environment:
-    SECRET_KEY_BASE: fizzy.rkd.pw
-    TLS_DOMAIN: fizzy.rkd.pw
-    BASE_URL: https://fizzy.rkd.pw
-    MAILER_FROM_ADDRESS: fizzy@rkd.pw
-    VAPID_PRIVATE_KEY: 9W2PEq-Bc5O33SACygOzVDsYsO-GzVogT4HcgPUMKYw
-    VAPID_PUBLIC_KEY: BF1JuOOZFK8-mCwGaefFcmzTY23w4NfO1wtxeqIrPRdo2ExxfvmriWlrlluA8LTeds1LpYCDtjgIajSpV3o034k
-  storage:
-    data: fizzy-data
-  ingress:
-    enabled: true
-    hosts:
-    - fizzy.rkd.pw
-    - fizzy.h.rkd.pw
-    - fizzy.k.rkd.pw
-    servicePort: 80
 backups:
   enabled: true
   serviceAccountName: backup
@@ -1425,9 +1278,6 @@ backups:
   hoarder:
     enabled: true
     schedule: "0 6 * * *"
-  fizzy:
-    enabled: false
-    schedule: "0 4 * * *"
 longhorn:
   ingress:
     enabled: true

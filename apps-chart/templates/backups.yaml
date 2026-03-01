@@ -677,10 +677,6 @@ spec:
               prune_repo "bugsink"
               {{- end }}
 
-              {{- if .Values.backups.fizzy.enabled }}
-              prune_repo "fizzy"
-              {{- end }}
-
               echo ""
               echo "========================================"
               echo "Backup cleanup completed"
@@ -973,107 +969,6 @@ spec:
           - name: bugsink-data
             persistentVolumeClaim:
               claimName: {{ .Values.bugsink.storage.data }}
-{{- end }}
-
-{{- if .Values.backups.fizzy.enabled }}
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: backup-fizzy
-  labels:
-    app: backup-fizzy
-spec:
-  schedule: {{ .Values.backups.fizzy.schedule | default "0 4 * * *" | quote }}
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 3
-  concurrencyPolicy: Forbid
-  jobTemplate:
-    spec:
-      template:
-        metadata:
-          labels:
-            app: backup-fizzy
-        spec:
-          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
-          restartPolicy: OnFailure
-          containers:
-          - name: fizzy-backup
-            image: "alpine:latest"
-            command:
-            - /bin/sh
-            - -c
-            - |
-              set -e
-              apk add --no-cache restic sqlite 2>/dev/null || true
-
-              echo "Backing up fizzy data (Rails storage, encrypted)..."
-
-              BACKUP_DIR="/tmp/backup"
-              mkdir -p "$BACKUP_DIR"
-
-              # Use sqlite3 .backup for consistent copy of any SQLite databases
-              for db in /mnt/fizzy-data/*.sqlite3 /mnt/fizzy-data/*.db; do
-                if [ -f "$db" ]; then
-                  BASENAME=$(basename "$db")
-                  cp "$db" "/tmp/${BASENAME}.raw"
-                  sqlite3 "/tmp/${BASENAME}.raw" ".backup '$BACKUP_DIR/$BASENAME'"
-                  rm -f "/tmp/${BASENAME}.raw"
-                  echo "Backed up $BASENAME"
-                fi
-              done
-
-              # Also backup non-database files (uploads, etc.)
-              cp -r /mnt/fizzy-data/* "$BACKUP_DIR/" 2>/dev/null || true
-
-              {{- if .Values.backups.backblaze.enabled }}
-              # Initialize restic repository if needed
-              restic cat config > /dev/null 2>&1 || restic init
-
-              echo "Uploading fizzy backup to B2 via restic (encrypted)..."
-              cd $BACKUP_DIR
-              restic backup . --host backup-fizzy --compression auto
-              {{- end }}
-
-              # Cleanup
-              rm -rf "$BACKUP_DIR"
-
-              echo "Fizzy backup completed"
-            volumeMounts:
-            - name: fizzy-data
-              mountPath: /mnt/fizzy-data
-              readOnly: true
-            env:
-            {{- if .Values.backups.backblaze.enabled }}
-            - name: B2_ACCOUNT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.backups.backblaze.secretName }}
-                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: B2_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.backups.backblaze.secretName }}
-                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
-            - name: RESTIC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.backups.backblaze.secretName }}
-                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
-            - name: RESTIC_REPOSITORY
-              value: "b2:{{ .Values.backups.backblaze.bucket }}:fizzy"
-            {{- end }}
-            resources:
-              limits:
-                memory: 256Mi
-                cpu: 200m
-              requests:
-                memory: 128Mi
-                cpu: 100m
-          volumes:
-          - name: fizzy-data
-            persistentVolumeClaim:
-              claimName: {{ .Values.fizzy.storage.data }}
 {{- end }}
 
 {{- if .Values.backups.hoarder.enabled }}
