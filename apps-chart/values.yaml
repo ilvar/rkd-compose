@@ -1323,6 +1323,9 @@ velero:
     existingSecret: velero-b2-credentials
   configuration:
     uploaderType: kopia
+    volumeSnapshotLocation:
+    - name: default
+      provider: aws
     backupStorageLocation:
     - name: default
       provider: aws
