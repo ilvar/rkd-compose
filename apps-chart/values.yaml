@@ -1258,19 +1258,6 @@ backups:
     accountIdKey: account-id
     applicationKeyKey: application-key
     resticPasswordKey: restic-password
-  velero:
-    enabled: false
-    schedule: "0 2 * * *"
-    image:
-      repository: velero/velero
-      tag: v1.17.2
-    resources:
-      limits:
-        memory: 512Mi
-        cpu: 500m
-      requests:
-        memory: 256Mi
-        cpu: 200m
   etcd:
     enabled: true
     schedule: "0 3 * * *"
@@ -1480,6 +1467,50 @@ longhornMigration:
     requests:
       memory: 512Mi
       cpu: 500m
+velero:
+  enabled: true
+  credentials:
+    existingSecret: velero-b2-credentials
+  configuration:
+    uploaderType: kopia
+    backupStorageLocation:
+    - name: default
+      provider: aws
+      bucket: homelab-rancher-backup
+      prefix: velero
+      config:
+        region: us-west-004
+        s3Url: https://s3.us-west-004.backblazeb2.com
+        s3ForcePathStyle: "true"
+        checksumAlgorithm: ""
+  initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.11.1
+    volumeMounts:
+    - mountPath: /target
+      name: plugins
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  schedules:
+    daily-backup:
+      disabled: false
+      schedule: "0 2 * * *"
+      template:
+        ttl: 720h0m0s
+        defaultVolumesToFsBackup: true
+        includedNamespaces:
+        - default
+  secrets:
+    b2AccountId: CHANGEME
+    b2ApplicationKey: CHANGEME
+velero-ui:
+  enabled: true
+  ingress:
+    enabled: false
 parrot:
   enabled: true
   image:

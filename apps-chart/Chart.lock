@@ -8,5 +8,11 @@ dependencies:
 - name: headlamp
   repository: https://kubernetes-sigs.github.io/headlamp/
   version: 0.40.0
-digest: sha256:efcbda9875b7da7a1078420641f8bcf4efb98d811caf5288dd7619aa1a888ed4
-generated: "2026-02-06T09:18:32.561520974Z"
+- name: velero
+  repository: https://vmware-tanzu.github.io/helm-charts
+  version: 11.4.0
+- name: velero-ui
+  repository: https://helm.otwld.com/
+  version: 0.14.0
+digest: sha256:49e3fbef6958f85185cd7330da3363ef95478a0bbde6bd470fa12a674b6dcc23
+generated: "2026-03-01T18:06:47.67774499Z"

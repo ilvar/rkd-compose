@@ -32,3 +32,9 @@ dependencies:
   - name: headlamp
     version: "0.40.0"
     repository: "https://kubernetes-sigs.github.io/headlamp/"
+  - name: velero
+    version: "11.4.0"
+    repository: "https://vmware-tanzu.github.io/helm-charts"
+  - name: velero-ui
+    version: "0.14.0"
+    repository: "https://helm.otwld.com/"

@@ -6,87 +6,6 @@ metadata:
   name: {{ .Values.backups.serviceAccountName | default "backup" }}
   labels:
     app: backup
-{{- if .Values.backups.velero.enabled }}
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: backup-velero
-  labels:
-    app: backup-velero
-spec:
-  schedule: {{ .Values.backups.velero.schedule | default "0 2 * * *" | quote }}
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 3
-  concurrencyPolicy: Forbid
-  jobTemplate:
-    spec:
-      template:
-        metadata:
-          labels:
-            app: backup-velero
-        spec:
-          serviceAccountName: {{ .Values.backups.serviceAccountName | default "backup" }}
-          restartPolicy: OnFailure
-          containers:
-          - name: velero-backup
-            image: "{{ .Values.backups.velero.image.repository }}:{{ .Values.backups.velero.image.tag }}"
-            command:
-            - /bin/sh
-            - -c
-            - |
-              set -e
-              apk add --no-cache restic 2>/dev/null || true
-
-              echo "Starting Velero backup..."
-
-              # Create backup
-              BACKUP_NAME="velero-backup-$(date +%Y%m%d-%H%M%S)"
-              velero backup create $BACKUP_NAME --wait
-
-              {{- if .Values.backups.backblaze.enabled }}
-              # Initialize restic repository if needed
-              restic cat config > /dev/null 2>&1 || restic init
-
-              echo "Uploading Velero backup to B2 via restic (encrypted)..."
-              cd /tmp/backups/velero
-              restic backup . --host backup-velero --compression auto
-              {{- end }}
-
-              echo "Velero backup completed: $BACKUP_NAME"
-            env:
-            {{- if .Values.backups.backblaze.enabled }}
-            - name: B2_ACCOUNT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.backups.backblaze.secretName }}
-                  key: {{ .Values.backups.backblaze.accountIdKey | default "account-id" }}
-            - name: B2_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.backups.backblaze.secretName }}
-                  key: {{ .Values.backups.backblaze.applicationKeyKey | default "application-key" }}
-            - name: RESTIC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.backups.backblaze.secretName }}
-                  key: {{ .Values.backups.backblaze.resticPasswordKey | default "restic-password" }}
-            - name: RESTIC_REPOSITORY
-              value: "b2:{{ .Values.backups.backblaze.bucket }}:velero"
-            {{- end }}
-            resources:
-              {{- if .Values.backups.velero.resources }}
-              {{- toYaml .Values.backups.velero.resources | nindent 14 }}
-              {{- else }}
-              limits:
-                memory: 512Mi
-                cpu: 500m
-              requests:
-                memory: 256Mi
-                cpu: 200m
-              {{- end }}
-{{- end }}
-
 {{- if .Values.backups.etcd.enabled }}
 ---
 apiVersion: batch/v1
@@ -709,10 +628,6 @@ spec:
                   echo "Repository $REPO_PATH does not exist, skipping"
                 fi
               }
-
-              {{- if .Values.backups.velero.enabled }}
-              prune_repo "velero"
-              {{- end }}
 
               {{- if .Values.backups.etcd.enabled }}
               prune_repo "etcd"
