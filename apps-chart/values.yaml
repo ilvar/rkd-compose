@@ -1480,3 +1480,21 @@ longhornMigration:
     requests:
       memory: 512Mi
       cpu: 500m
+parrot:
+  enabled: true
+  image:
+    repository: ilvar/parrot
+    tag: 0.1.0
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      memory: 64Mi
+      cpu: 100m
+  storage:
+    data: parrot-data
+  ingress:
+    enabled: true
+    hosts:
+    - parrot.h.rkd.pw
+    servicePort: 8080
