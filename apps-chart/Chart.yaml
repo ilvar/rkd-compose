@@ -27,7 +27,7 @@ dependencies:
     version: "2.2.7"
     repository: "https://stakater.github.io/stakater-charts"
   - name: jitsi-meet
-    version: "2.6.0"
+    version: "2.9.3"
     repository: "https://jitsi-contrib.github.io/jitsi-helm/"
   - name: headlamp
     version: "0.40.0"
