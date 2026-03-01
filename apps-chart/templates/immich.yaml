@@ -16,7 +16,7 @@ metadata:
   name: {{ .Values.immich.server.storage.upload }}
   labels:
     app: immich
-    storage-type: longhorn
+    storage-type: local-path
     app.kubernetes.io/managed-by: Helm
   annotations:
     meta.helm.sh/release-name: {{ .Release.Name }}

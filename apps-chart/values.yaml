@@ -574,7 +574,7 @@ immich:
       DB_HOSTNAME: immich-database
       REDIS_HOSTNAME: immich-redis
     storage:
-      upload: immich-upload
+      upload: immich-upload-local
   secrets:
     dbPassword: postgres
     postgresPassword: postgres
@@ -1233,7 +1233,7 @@ backups:
     enabled: true
     schedule: "0 9 * * *"
     sourcePath: /home/rkd/.docker/immich/upload
-    pvcName: immich-upload
+    pvcName: immich-upload-local
     image:
       repository: alpine
       tag: latest
