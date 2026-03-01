@@ -331,8 +331,6 @@ compote3:
       description: NVR with real-time AI object detection
     - name: gandi
       description: Domain and DNS management
-    - name: longhorn-ui
-      description: Longhorn storage management console
     - name: hoarder
       description: Web archive and bookmark manager
     - name: headlamp
@@ -351,8 +349,6 @@ compote3:
       description: Media server and streaming platform
     - name: kosmos
       description: Kosmos CRM qa
-    - name: kuma
-      description: Uptime monitoring and status page
     - name: mailbox
       description: Email hosting and management
     - name: miniflux
@@ -363,6 +359,8 @@ compote3:
       description: Flow-based programming for IoT
     - name: paperless
       description: Document management system
+    - name: parrot
+      description: Screen time control
     - name: pinchflat
       description: YouTube subscription manager
     - name: portainer
@@ -507,7 +505,7 @@ nextcloud:
     storage:
       size: 10Gi
       hostPath: /home/rkd/.docker/nextcloud/db
-      longhornClaim: nextcloud-db-data
+      claim: nextcloud-db-data
 syncthing:
   enabled: true
   image:
@@ -535,26 +533,6 @@ syncthing:
     - syncthing.h.rkd.pw
     - syncthing.k.rkd.pw
     servicePort: 8384
-kuma:
-  enabled: true
-  image:
-    repository: louislam/uptime-kuma
-    tag: latest
-  resources:
-    limits:
-      memory: 182Mi
-    requests:
-      memory: 182Mi
-      cpu: 100m
-  storage:
-    data: kuma-data
-  ingress:
-    enabled: true
-    hosts:
-    - kuma.h.rkd.pw
-    - kuma.k.rkd.pw
-    - k.h.rkd.pw
-    servicePort: 3001
 immich:
   enabled: true
   server:
@@ -1278,45 +1256,6 @@ backups:
   hoarder:
     enabled: true
     schedule: "0 6 * * *"
-longhorn:
-  ingress:
-    enabled: true
-    hosts:
-    - longhorn.h.rkd.pw
-    - longhorn.k.rkd.pw
-    servicePort: 80
-    tlsSecretName: homelab-wildcard-h-tls
-    certManager:
-      clusterIssuer: letsencrypt-prod
-    annotations: {}
-  requirementsCheck:
-    enabled: false
-    image:
-      repository: alpine
-      tag: latest
-longhornMigration:
-  enabled: true
-  storageClass: longhorn
-  image:
-    repository: alpine
-    tag: latest
-  immich:
-    sourcePath: /home/rkd/.docker/immich/upload
-    size: 40Gi
-    schedule: "0 0 * * *" # Daily at 00:00
-  nextcloud:
-    sourcePath: /home/rkd/.docker/nextcloud/data
-    size: 80Gi
-    schedule: "0 0 * * *" # Daily at 00:00
-  nextcloudDb:
-    enabled: true
-  resources:
-    limits:
-      memory: 2Gi
-      cpu: 2000m
-    requests:
-      memory: 512Mi
-      cpu: 500m
 velero:
   enabled: true
   credentials:

@@ -5,11 +5,10 @@ metadata:
   name: {{ .Values.syncthing.storage.config }}
   labels:
     app: syncthing
-    storage-type: longhorn
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: {{ .Values.syncthing.storage.className | default "longhorn" }}
+  storageClassName: {{ .Values.syncthing.storage.className | default "local-path-retain" }}
   resources:
     requests:
       storage: {{ .Values.syncthing.storage.configSize }}
