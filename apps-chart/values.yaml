@@ -527,7 +527,7 @@ syncthing:
   storage:
     config: syncthing-config
     configSize: 5Gi
-    className: longhorn
+    className: local-path-retain
     dataPath: /home/rkd/.docker/nextcloud/data/data/ilvar/files
   ingress:
     enabled: true

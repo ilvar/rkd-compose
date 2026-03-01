@@ -24,7 +24,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn-retain
+  storageClassName: local-path-retain
   resources:
     requests:
       storage: {{ .Values.longhornMigration.immich.size | default "50Gi" }}
