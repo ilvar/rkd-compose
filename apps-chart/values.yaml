@@ -1504,9 +1504,6 @@ velero:
         defaultVolumesToFsBackup: true
         includedNamespaces:
         - default
-  secrets:
-    b2AccountId: CHANGEME
-    b2ApplicationKey: CHANGEME
 velero-ui:
   enabled: true
   ingress:
