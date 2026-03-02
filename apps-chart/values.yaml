@@ -1314,9 +1314,16 @@ velero-ui:
       value: "admin"
   ingress:
     enabled: true
+    className: traefik
     hosts:
-    - velero.h.rkd.pw
-    - velero.k.rkd.pw
+    - host: velero.h.rkd.pw
+      paths:
+      - path: /
+        pathType: Prefix
+    - host: velero.k.rkd.pw
+      paths:
+      - path: /
+        pathType: Prefix
     tls:
     - hosts:
       - velero.h.rkd.pw
