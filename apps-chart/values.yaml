@@ -1340,6 +1340,40 @@ descheduler:
       memory: 64Mi
     limits:
       memory: 128Mi
+descheduler:
+  enabled: true
+  kind: Deployment
+  schedule: "*/10 * * * *"
+  deschedulerPolicy:
+    profiles:
+      - name: default
+        pluginConfig:
+          - name: LowNodeUtilization
+            args:
+              thresholds:
+                memory: 20
+              targetThresholds:
+                memory: 50
+          - name: RemoveDuplicates
+            args: {}
+          - name: RemovePodsViolatingNodeAffinity
+            args:
+              nodeAffinityType:
+                - requiredDuringSchedulingIgnoredDuringExecution
+        plugins:
+          balance:
+            enabled:
+              - LowNodeUtilization
+              - RemoveDuplicates
+          deschedule:
+            enabled:
+              - RemovePodsViolatingNodeAffinity
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
 parrot:
   enabled: true
   image:
