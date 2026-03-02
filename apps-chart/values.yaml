@@ -1303,7 +1303,8 @@ velero:
 velero-ui:
   enabled: true
   configuration:
-    veleroNamespace: default
+    general:
+      veleroNamespace: default
   ingress:
     enabled: false
 descheduler:
