@@ -11,5 +11,8 @@ dependencies:
 - name: velero-ui
   repository: https://helm.otwld.com/
   version: 0.14.0
-digest: sha256:b6fb11f6b9d9b4ad22932104090a7052a00abe8dde3b27c9e0cf9af8202f7cb6
-generated: "2026-03-01T22:21:32.406422545Z"
+- name: descheduler
+  repository: https://kubernetes-sigs.github.io/descheduler/
+  version: 0.35.0
+digest: sha256:1b64e449a87295a1ebd06b5488ff7e41d6dfbd01ce5a4b5b91fc773c7062c2d5
+generated: "2026-03-02T18:23:33.198484411Z"
