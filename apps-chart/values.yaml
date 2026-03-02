@@ -1305,6 +1305,13 @@ velero-ui:
   configuration:
     general:
       veleroNamespace: default
+  extraEnv:
+    - name: BASIC_AUTH_ENABLED
+      value: "true"
+    - name: BASIC_AUTH_USER
+      value: "admin"
+    - name: BASIC_AUTH_PASSWORD
+      value: "admin"
   ingress:
     enabled: true
     hosts:
