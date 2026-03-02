@@ -1306,7 +1306,15 @@ velero-ui:
     general:
       veleroNamespace: default
   ingress:
-    enabled: false
+    enabled: true
+    hosts:
+    - velero.h.rkd.pw
+    - velero.k.rkd.pw
+    tls:
+    - hosts:
+      - velero.h.rkd.pw
+      - velero.k.rkd.pw
+      secretName: homelab-wildcard-h-tls
 descheduler:
   enabled: true
   kind: Deployment
