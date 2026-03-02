@@ -1,7 +1,7 @@
 dependencies:
 - name: reloader
   repository: https://stakater.github.io/stakater-charts
-  version: 2.2.7
+  version: 2.2.8
 - name: headlamp
   repository: https://kubernetes-sigs.github.io/headlamp/
   version: 0.40.0
@@ -14,5 +14,5 @@ dependencies:
 - name: descheduler
   repository: https://kubernetes-sigs.github.io/descheduler/
   version: 0.35.0
-digest: sha256:1b64e449a87295a1ebd06b5488ff7e41d6dfbd01ce5a4b5b91fc773c7062c2d5
-generated: "2026-03-02T18:23:33.198484411Z"
+digest: sha256:55f6704bb264dd18dd5d222ca11b93b8e6e3f1d187a4e9d565b313714f5823a0
+generated: "2026-03-02T18:32:07.728575619Z"
