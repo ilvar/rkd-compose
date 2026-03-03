@@ -1258,13 +1258,19 @@ backups:
     schedule: "0 6 * * *"
 velero:
   enabled: true
+  deployNodeAgent: true
+  nodeAgent:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
   credentials:
     existingSecret: velero-b2-credentials
   configuration:
     uploaderType: kopia
-    volumeSnapshotLocation:
-    - name: default
-      provider: aws
+    volumeSnapshotLocation: []
     backupStorageLocation:
     - name: default
       provider: aws
