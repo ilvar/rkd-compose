@@ -1283,8 +1283,8 @@ velero:
         checksumAlgorithm: ""
   kubectl:
     image:
-      repository: alpine/k8s
-      tag: "1.35.2"
+      repository: docker.io/bitnamilegacy/kubectl
+      tag: "1.33"
   initContainers:
   - name: velero-plugin-for-aws
     image: velero/velero-plugin-for-aws:v1.13.2
