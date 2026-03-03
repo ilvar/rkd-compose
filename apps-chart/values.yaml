@@ -1260,6 +1260,11 @@ velero:
   enabled: true
   deployNodeAgent: true
   nodeAgent:
+    tolerations:
+    - key: dedicated
+      operator: Equal
+      value: blocky
+      effect: NoSchedule
     resources:
       requests:
         cpu: 100m
