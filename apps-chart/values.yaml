@@ -1259,6 +1259,8 @@ backups:
 velero:
   enabled: true
   deployNodeAgent: true
+  podAnnotations:
+    backup.velero.io/backup-volumes-excludes: plugins,scratch
   nodeAgent:
     tolerations:
     - key: dedicated

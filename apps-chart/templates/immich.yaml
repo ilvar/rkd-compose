@@ -166,6 +166,8 @@ spec:
     metadata:
       labels:
         app: immich-machine-learning
+      annotations:
+        backup.velero.io/backup-volumes-excludes: model-cache
     spec:
       affinity:
         nodeAffinity:
