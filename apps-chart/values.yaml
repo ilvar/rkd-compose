@@ -883,7 +883,7 @@ kosmos:
       - api.kosmos.h.rkd.pw
       servicePort: 8000
   frontend:
-    image: docker.io/ilvar/kosmos-frontend:1.6.52 # {"$imagepolicy": "flux-system:kosmos-frontend"}
+    image: docker.io/ilvar/kosmos-frontend:1.6.53 # {"$imagepolicy": "flux-system:kosmos-frontend"}
     environment:
       BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
       DNS_RESOLVER: 10.43.0.10
@@ -1319,12 +1319,12 @@ velero-ui:
     general:
       veleroNamespace: default
   extraEnv:
-    - name: BASIC_AUTH_ENABLED
-      value: "true"
-    - name: BASIC_AUTH_USER
-      value: "admin"
-    - name: BASIC_AUTH_PASSWORD
-      value: "admin"
+  - name: BASIC_AUTH_ENABLED
+    value: "true"
+  - name: BASIC_AUTH_USER
+    value: "admin"
+  - name: BASIC_AUTH_PASSWORD
+    value: "admin"
   ingress:
     enabled: true
     className: traefik
@@ -1347,45 +1347,45 @@ descheduler:
   kind: Deployment
   schedule: "*/10 * * * *"
   tolerations:
-    - key: "dedicated"
-      operator: "Equal"
-      value: "blocky"
-      effect: "NoSchedule"
+  - key: "dedicated"
+    operator: "Equal"
+    value: "blocky"
+    effect: "NoSchedule"
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 1
-          preference:
-            matchExpressions:
-              - key: kubernetes.io/arch
-                operator: In
-                values:
-                  - arm64
-                  - amd64
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - arm64
+            - amd64
   deschedulerPolicy:
     profiles:
-      - name: default
-        pluginConfig:
-          - name: LowNodeUtilization
-            args:
-              thresholds:
-                memory: 20
-              targetThresholds:
-                memory: 50
-          - name: RemoveDuplicates
-            args: {}
-          - name: RemovePodsViolatingNodeAffinity
-            args:
-              nodeAffinityType:
-                - requiredDuringSchedulingIgnoredDuringExecution
-        plugins:
-          balance:
-            enabled:
-              - LowNodeUtilization
-              - RemoveDuplicates
-          deschedule:
-            enabled:
-              - RemovePodsViolatingNodeAffinity
+    - name: default
+      pluginConfig:
+      - name: LowNodeUtilization
+        args:
+          thresholds:
+            memory: 20
+          targetThresholds:
+            memory: 50
+      - name: RemoveDuplicates
+        args: {}
+      - name: RemovePodsViolatingNodeAffinity
+        args:
+          nodeAffinityType:
+          - requiredDuringSchedulingIgnoredDuringExecution
+      plugins:
+        balance:
+          enabled:
+          - LowNodeUtilization
+          - RemoveDuplicates
+        deschedule:
+          enabled:
+          - RemovePodsViolatingNodeAffinity
   resources:
     requests:
       cpu: 50m
