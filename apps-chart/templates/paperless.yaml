@@ -50,7 +50,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - rkd-um560
+                - hm60
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: paperless-redis
@@ -111,7 +111,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - rkd-um560
+                - hm60
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: paperless-webserver
@@ -159,19 +159,19 @@ spec:
       volumes:
       - name: data
         hostPath:
-          path: /home/rkd/.docker/paperless/data
+          path: /home/rkd/.nas/homelab/paperless/data
           type: DirectoryOrCreate
       - name: media
         hostPath:
-          path: /home/rkd/.docker/paperless/media
+          path: /home/rkd/.nas/homelab/paperless/media
           type: DirectoryOrCreate
       - name: export
         hostPath:
-          path: /home/rkd/.docker/paperless/export
+          path: /home/rkd/.nas/homelab/paperless/export
           type: DirectoryOrCreate
       - name: consume
         hostPath:
-          path: /home/rkd/.docker/paperless/consume
+          path: /home/rkd/.nas/homelab/paperless/consume
           type: DirectoryOrCreate
 ---
 apiVersion: v1
