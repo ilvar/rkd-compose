@@ -28,7 +28,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - rkd-um560
+                - hm60
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: radarr
@@ -55,7 +55,7 @@ spec:
       volumes:
       - name: config
         hostPath:
-          path: /home/rkd/.docker/radarr/data
+          path: /home/rkd/.nas/homelab/radarr/data
           type: DirectoryOrCreate
       - name: movies
         hostPath:
