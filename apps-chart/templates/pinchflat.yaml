@@ -29,7 +29,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - rkd-um560
+                - hm60
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       initContainers:
       - name: fix-permissions
@@ -77,7 +77,7 @@ spec:
       volumes:
       - name: config
         hostPath:
-          path: /home/rkd/.docker/pinchflat/config
+          path: /home/rkd/.nas/homelab/pinchflat/config
           type: DirectoryOrCreate
       - name: downloads
         hostPath:
