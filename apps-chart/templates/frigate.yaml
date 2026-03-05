@@ -30,7 +30,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - hm60
+                - rkd-um560
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: frigate
