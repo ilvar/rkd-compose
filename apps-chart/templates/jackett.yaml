@@ -28,7 +28,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - rkd-um560
+                - hm60
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: jackett
@@ -53,7 +53,7 @@ spec:
       volumes:
       - name: config
         hostPath:
-          path: /home/rkd/.docker/jackett/data
+          path: /home/rkd/.nas/homelab/jackett/data
           type: DirectoryOrCreate
       - name: downloads
         hostPath:
