@@ -28,7 +28,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - rkd-um560
+                - hm60
 {{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: jellyfin
@@ -55,11 +55,11 @@ spec:
       volumes:
       - name: config
         hostPath:
-          path: /home/rkd/.docker/jellyfin/config
+          path: /home/rkd/.nas/homelab/jellyfin/config
           type: DirectoryOrCreate
       - name: cache
         hostPath:
-          path: /home/rkd/.docker/jellyfin/cache
+          path: /home/rkd/.nas/homelab/jellyfin/cache
           type: DirectoryOrCreate
       - name: nas
         hostPath:
