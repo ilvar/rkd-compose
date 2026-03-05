@@ -33,7 +33,16 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
-      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - hm60
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 14 }}
       containers:
       - name: hoarder-web
         image: "{{ .Values.hoarder.web.image.repository }}:{{ .Values.hoarder.web.image.tag }}"
@@ -64,8 +73,9 @@ spec:
           mountPath: /data
       volumes:
       - name: data
-        persistentVolumeClaim:
-          claimName: {{ .Values.hoarder.web.storage.data }}
+        hostPath:
+          path: /home/rkd/.nas/homelab/hoarder/data
+          type: DirectoryOrCreate
 ---
 apiVersion: apps/v1
 kind: Deployment
