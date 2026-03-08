@@ -54,6 +54,8 @@ spec:
         env:
         - name: TZ
           value: {{ .Values.pinchflat.environment.TZ | quote }}
+        - name: JOURNAL_MODE
+          value: "delete"
         resources:
           limits:
             memory: {{ .Values.pinchflat.resources.limits.memory }}
