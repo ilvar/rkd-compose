@@ -55,7 +55,7 @@ spec:
       volumes:
       - name: config
         hostPath:
-          path: /home/rkd/.nas/homelab/radarr/data
+          path: /home/rkd/.local/homelab/radarr/data
           type: DirectoryOrCreate
       - name: movies
         hostPath:
