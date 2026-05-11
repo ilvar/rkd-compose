@@ -6,6 +6,108 @@ metadata:
   name: {{ .Values.backups.serviceAccountName | default "backup" }}
   labels:
     app: backup
+{{- if .Values.backups.appDatabases.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-app-databases
+  labels:
+    app: backup-app-databases
+spec:
+  schedule: {{ .Values.backups.appDatabases.schedule | default "30 3 * * *" | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup-app-databases
+        spec:
+          restartPolicy: OnFailure
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - hm60
+{{- include "apps-chart.excludeNodeMatchExpressions" . | nindent 18 }}
+          containers:
+          - name: app-database-backup
+            image: "{{ .Values.backups.appDatabases.image.repository }}:{{ .Values.backups.appDatabases.image.tag }}"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+
+              apk add --no-cache sqlite >/dev/null
+
+              STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+              BACKUP_ROOT="/backups"
+              RETENTION_DAYS="{{ .Values.backups.appDatabases.retentionDays | default 30 }}"
+
+              backup_sqlite_tree() {
+                app="$1"
+                src="$2"
+                if [ ! -d "$src" ]; then
+                  echo "Skipping $app: source $src does not exist"
+                  return 0
+                fi
+
+                echo "Backing up $app SQLite databases from $src"
+                find "$src" -type f -name '*.db' | sort | while IFS= read -r db; do
+                  rel="${db#$src/}"
+                  dest="$BACKUP_ROOT/$app/$STAMP/$rel"
+                  mkdir -p "$(dirname "$dest")"
+
+                  if [ -s "$db" ] && sqlite3 "$db" 'PRAGMA quick_check;' >/dev/null 2>&1; then
+                    sqlite3 "$db" ".backup '$dest'"
+                    echo "sqlite backup: $db -> $dest"
+                  else
+                    cp -a "$db" "$dest"
+                    echo "file copy: $db -> $dest"
+                  fi
+                done
+              }
+
+              mkdir -p "$BACKUP_ROOT"
+              backup_sqlite_tree radarr /radarr-config
+              backup_sqlite_tree jellyfin /jellyfin-config
+
+              find "$BACKUP_ROOT/radarr" "$BACKUP_ROOT/jellyfin" -mindepth 1 -maxdepth 1 -type d -mtime +"$RETENTION_DAYS" -exec rm -rf {} + 2>/dev/null || true
+
+              echo "Application database backup completed at $STAMP"
+            volumeMounts:
+            - name: radarr-config
+              mountPath: /radarr-config
+              readOnly: true
+            - name: jellyfin-config
+              mountPath: /jellyfin-config
+              readOnly: true
+            - name: app-db-backups
+              mountPath: /backups
+            resources:
+              {{- toYaml .Values.backups.appDatabases.resources | nindent 14 }}
+          volumes:
+          - name: radarr-config
+            hostPath:
+              path: /home/rkd/.local/homelab/radarr/data
+              type: Directory
+          - name: jellyfin-config
+            hostPath:
+              path: /home/rkd/.local/homelab/jellyfin/config
+              type: Directory
+          - name: app-db-backups
+            hostPath:
+              path: {{ .Values.backups.appDatabases.backupPath | default "/home/rkd/.nas/homelab/db-backups" | quote }}
+              type: DirectoryOrCreate
+{{- end }}
 {{- if .Values.backups.etcd.enabled }}
 ---
 apiVersion: batch/v1

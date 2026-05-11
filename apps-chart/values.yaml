@@ -98,9 +98,9 @@ jellyfin:
     tag: latest
   resources:
     limits:
-      memory: 1024Mi
+      memory: 2Gi
     requests:
-      memory: 1024Mi
+      memory: 2Gi
       cpu: 500m
   user: 1000:1000
   environment:
@@ -1106,6 +1106,21 @@ backups:
       requests:
         memory: 256Mi
         cpu: 200m
+  appDatabases:
+    enabled: true
+    schedule: "30 3 * * *"
+    image:
+      repository: alpine
+      tag: latest
+    backupPath: /home/rkd/.nas/homelab/db-backups
+    retentionDays: 30
+    resources:
+      limits:
+        memory: 256Mi
+        cpu: 500m
+      requests:
+        memory: 128Mi
+        cpu: 100m
   postgres:
     enabled: true
     image:

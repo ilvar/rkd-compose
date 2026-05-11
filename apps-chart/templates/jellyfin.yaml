@@ -55,11 +55,11 @@ spec:
       volumes:
       - name: config
         hostPath:
-          path: /home/rkd/.nas/homelab/jellyfin/config
+          path: /home/rkd/.local/homelab/jellyfin/config
           type: DirectoryOrCreate
       - name: cache
         hostPath:
-          path: /home/rkd/.nas/homelab/jellyfin/cache
+          path: /home/rkd/.local/homelab/jellyfin/cache
           type: DirectoryOrCreate
       - name: nas
         hostPath:
