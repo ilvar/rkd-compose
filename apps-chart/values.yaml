@@ -848,7 +848,7 @@ kosmos:
     storage:
       size: 10Gi
   backend:
-    image: docker.io/ilvar/kosmos-backend:1.7.43 # {"$imagepolicy": "flux-system:kosmos-backend"}
+    image: docker.io/ilvar/kosmos-backend:1.7.44 # {"$imagepolicy": "flux-system:kosmos-backend"}
     resources:
       limits:
         memory: 512Mi
