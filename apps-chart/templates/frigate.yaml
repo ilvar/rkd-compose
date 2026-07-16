@@ -11,10 +11,7 @@ spec:
     matchLabels:
       app: frigate
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+    type: Recreate
   template:
     metadata:
       labels:
@@ -36,10 +33,10 @@ spec:
       - name: frigate
         image: "{{ .Values.frigate.image.repository }}:{{ .Values.frigate.image.tag }}"
         env:
-        - name: FRIGATE_RTSP_PASSWORD
-          value: {{ .Values.frigate.environment.FRIGATE_RTSP_PASSWORD | quote }}
-        - name: LIBVA_DRIVER_NAME
-          value: {{ .Values.frigate.environment.LIBVA_DRIVER_NAME | quote }}
+        {{- range $name, $value := .Values.frigate.environment }}
+        - name: {{ $name }}
+          value: {{ $value | quote }}
+        {{- end }}
         resources:
           limits:
             memory: {{ .Values.frigate.resources.limits.memory }}
@@ -68,16 +65,10 @@ spec:
         - name: localtime
           mountPath: /etc/localtime
           readOnly: true
-        - name: dev-dri
-          mountPath: /dev/dri
-        - name: dev-kfd
-          mountPath: /dev/kfd
-        - name: dev-dma-heap
-          mountPath: /dev/dma_heap
-        - name: dev-rga
-          mountPath: /dev/rga
-        - name: dev-mpp-service
-          mountPath: /dev/mpp_service
+        {{- range .Values.frigate.deviceMounts }}
+        - name: {{ .name }}
+          mountPath: {{ .path }}
+        {{- end }}
         securityContext:
           privileged: {{ .Values.frigate.privileged }}
       securityContext:
@@ -99,22 +90,14 @@ spec:
         hostPath:
           path: /etc/localtime
           type: File
-      - name: dev-dri
+      {{- range .Values.frigate.deviceMounts }}
+      - name: {{ .name }}
         hostPath:
-          path: /dev/dri
-          type: Directory
-      - name: dev-kfd
-        hostPath:
-          path: /dev/kfd
-      - name: dev-dma-heap
-        hostPath:
-          path: /dev/dma_heap
-      - name: dev-rga
-        hostPath:
-          path: /dev/rga
-      - name: dev-mpp-service
-        hostPath:
-          path: /dev/mpp_service
+          path: {{ .path }}
+          {{- if .type }}
+          type: {{ .type }}
+          {{- end }}
+      {{- end }}
       hostNetwork: false
       dnsPolicy: ClusterFirst
 ---
