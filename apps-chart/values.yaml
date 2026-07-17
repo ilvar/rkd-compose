@@ -197,9 +197,9 @@ frigate:
     FRIGATE_RTSP_PASSWORD: frigate
     LIBVA_DRIVER_NAME: iHD
   deviceMounts:
-    - name: dev-dri
-      path: /dev/dri
-      type: Directory
+  - name: dev-dri
+    path: /dev/dri
+    type: Directory
   storage:
     cacheSize: 500Mi
   ingress:
@@ -852,7 +852,7 @@ kosmos:
     storage:
       size: 10Gi
   backend:
-    image: docker.io/ilvar/kosmos-backend:1.7.66 # {"$imagepolicy": "flux-system:kosmos-backend"}
+    image: docker.io/ilvar/kosmos-backend:1.7.67 # {"$imagepolicy": "flux-system:kosmos-backend"}
     resources:
       limits:
         memory: 512Mi
