@@ -351,8 +351,6 @@ compote3:
       description: Torrent tracker proxy and API aggregator
     - name: jellyfin
       description: Media server and streaming platform
-    - name: kosmos
-      description: Kosmos CRM qa
     - name: mailbox
       description: Email hosting and management
     - name: miniflux
@@ -392,10 +390,6 @@ compote3:
     exclusions:
       - compote3
       - rkd-pw
-      - kosmos-backend
-    overrides:
-      - name: kosmos-frontend
-        new_name: kosmos
   ingress:
     enabled: true
     hosts:
@@ -832,98 +826,6 @@ pinchflat:
     - pinchflat.h.rkd.pw
     - pinchflat.k.rkd.pw
     servicePort: 8945
-kosmos:
-  enabled: true
-  db:
-    image:
-      repository: postgres
-      tag: '14'
-    resources:
-      limits:
-        memory: 100Mi
-      requests:
-        memory: 100Mi
-        cpu: 300m
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_DB: crm
-    secrets:
-      postgresPassword: postgres
-    storage:
-      size: 10Gi
-  backend:
-    image: docker.io/ilvar/kosmos-backend:1.7.79 # {"$imagepolicy": "flux-system:kosmos-backend"}
-    resources:
-      limits:
-        memory: 512Mi
-      requests:
-        memory: 512Mi
-        cpu: 300m
-    environment:
-      DEBUG: 'False'
-    secrets:
-      SECRET_KEY:
-        name: kosmos-secret
-        key: SECRET_KEY
-      jwtSecret:
-        name: kosmos-jwt-secret
-        key: jwt-secret
-      openaiApiKey:
-        name: kosmos-openai-secret
-        key: openai-api-key
-      sentryDsnToken:
-        name: kosmos-sentry-secret
-        key: sentry-dsn-token
-    storage:
-      media: kosmos-media
-      static: kosmos-static
-      mediaSize: 10Gi
-      staticSize: 1Gi
-    ingress:
-      enabled: true
-      hosts:
-      - api.kosmos.k.rkd.pw
-      - api.kosmos.rkd.pw
-      - api.kosmos.h.rkd.pw
-      servicePort: 8000
-  frontend:
-    image: docker.io/ilvar/kosmos-frontend:1.8.86 # {"$imagepolicy": "flux-system:kosmos-frontend"}
-    environment:
-      BACKEND_URL: http://kosmos-backend.default.svc.cluster.local:8000
-      DNS_RESOLVER: 10.43.0.10
-    resources:
-      limits:
-        memory: 100Mi
-      requests:
-        memory: 100Mi
-        cpu: 100m
-    ingress:
-      enabled: true
-      hosts:
-      - kosmos.h.rkd.pw
-      - kosmos.k.rkd.pw
-      - kosmos.rkd.pw
-      servicePort: 80
-  notifications:
-    enabled: true
-    image:
-      repository: python
-      tag: 3.14-alpine
-    telegram:
-      enabled: true
-      secret:
-        name: kosmos-telegram-secret
-        botTokenKey: bot-token
-        chatIdKey: chat-id
-    checkInterval: "0 * * * *"
-  nodeExporter:
-    enabled: true
-  kubeEtcd:
-    enabled: false
-  kubeControllerManager:
-    enabled: false
-  kubeScheduler:
-    enabled: false
 videosCleanupReport:
   enabled: true
   schedule: 0 2 * * *
@@ -1145,14 +1047,6 @@ backups:
       user: miniflux
       database: miniflux
       secretName: miniflux-db-secrets
-      passwordKey: postgres-password
-      schedule: "0 4 * * *"
-    - name: kosmos
-      host: kosmos-db
-      port: 5432
-      user: postgres
-      database: crm
-      secretName: kosmos-secrets
       passwordKey: postgres-password
       schedule: "0 4 * * *"
     - name: bugsink

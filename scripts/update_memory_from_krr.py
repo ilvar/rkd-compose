@@ -29,9 +29,6 @@ APP_MAPPINGS = {
     "it-tools": "itTools",
     "jackett": "jackett",
     "jellyfin": "jellyfin",
-    "kosmos-backend": "kosmos.backend",
-    "kosmos-frontend": "kosmos.frontend",
-    "kosmos-db": "kosmos.db",
     "kuma": "kuma",
     "miniflux": "miniflux",
     "miniflux-db": "minifluxDb",
@@ -148,12 +145,11 @@ def update_values_yaml(values_path: Path, csv_path: Path):
         current_request = get_nested_value(values, requests_path)
         
         # Check if requests are supported (either already exist or template supports them)
-        # Templates that explicitly support requests: frigate, pinchflat, immich*, kosmos* (use toYaml)
+        # Templates that explicitly support requests: frigate, pinchflat, immich* (use toYaml)
         supports_requests = (
             current_request is not None or  # Already has requests
             csv_app_name in ('frigate', 'pinchflat') or  # Explicitly supports requests
-            csv_app_name.startswith('immich-') or  # Uses toYaml
-            csv_app_name.startswith('kosmos-')  # Uses toYaml
+            csv_app_name.startswith('immich-')  # Uses toYaml
         )
         
         # Update limit if recommended

@@ -22,12 +22,9 @@ github:
 exclusions:
   - compote3
   - rkd-pw
-  - kosmos-backend
 
 # Override app names and URLs
 overrides:
-  - name: kosmos-frontend
-    new_name: kosmos
   - name: rkd-compose-grafana
     new_name: grafana
     url: |

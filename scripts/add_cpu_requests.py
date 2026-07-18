@@ -36,13 +36,10 @@ CPU_REQUESTS = {
     "nextcloud.app": "300m",
     "paperless.webserver": "400m",
     "bugsink": "300m",
-    "kosmos.backend": "300m",
-    "kosmos.frontend": "100m",
     
     # Database services (200-500m)
     "nextcloud.db": "300m",
     "minifluxDb": "200m",
-    "kosmos.db": "300m",
     "paperless.redis": "100m",
     "immich.database": "300m",
     "immich.redis": "100m",
