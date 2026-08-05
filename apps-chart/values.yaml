@@ -65,6 +65,28 @@ jackett:
     - jackett.h.rkd.pw
     - jackett.k.rkd.pw
     servicePort: 9117
+flaresolverr:
+  enabled: true
+  image:
+    repository: ghcr.io/flaresolverr/flaresolverr
+    tag: latest
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 512Mi
+      cpu: 250m
+  environment:
+    LOG_LEVEL: info
+    LOG_HTML: 'false'
+    CAPTCHA_SOLVER: none
+    TZ: Europe/Dublin
+  ingress:
+    enabled: true
+    hosts:
+    - flaresolverr.h.rkd.pw
+    - flaresolverr.k.rkd.pw
+    servicePort: 8191
 radarr:
   enabled: true
   image:

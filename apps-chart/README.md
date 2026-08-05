@@ -17,6 +17,7 @@ This chart includes the following applications, organized by category:
 ### Media & Entertainment
 - **Jellyfin** - Media server for streaming movies, TV shows, and music
 - **Jackett** - Torrent indexer
+- **FlareSolverr** - Proxy service for solving Cloudflare and anti-bot challenges
 - **Radarr** - Movie collection manager
 - **Deluge** - BitTorrent client
 - **Immich** - Self-hosted photo and video backup solution
@@ -145,4 +146,3 @@ For issues:
 2. Review Fleet/GitRepo logs
 3. Verify cluster resources
 4. Check ingress controller status
-
