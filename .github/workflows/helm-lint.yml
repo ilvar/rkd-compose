@@ -22,7 +22,7 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
-          version: '3.13.0'
+          version: '3.21.4'
 
       - name: Update Helm Dependencies
         run: helm dependency update apps-chart/
