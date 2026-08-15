@@ -205,9 +205,9 @@ frigate:
     tag: stable
   resources:
     limits:
-      memory: 1676Mi
+      memory: 3Gi
     requests:
-      memory: 1676Mi
+      memory: 3Gi
       cpu: 800m
   privileged: true
   ports:
@@ -224,6 +224,7 @@ frigate:
     type: Directory
   storage:
     cacheSize: 500Mi
+    shmSize: 512Mi
   ingress:
     enabled: true
     hosts:

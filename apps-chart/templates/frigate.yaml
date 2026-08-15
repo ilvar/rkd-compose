@@ -62,6 +62,8 @@ spec:
           mountPath: /media/frigate
         - name: cache
           mountPath: /tmp/cache
+        - name: shm
+          mountPath: /dev/shm
         - name: localtime
           mountPath: /etc/localtime
           readOnly: true
@@ -86,6 +88,10 @@ spec:
       - name: cache
         emptyDir:
           sizeLimit: {{ .Values.frigate.storage.cacheSize }}
+      - name: shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: {{ .Values.frigate.storage.shmSize }}
       - name: localtime
         hostPath:
           path: /etc/localtime
