@@ -1346,3 +1346,59 @@ parrot:
     hosts:
     - parrot.h.rkd.pw
     servicePort: 8080
+glacier:
+  enabled: true
+  image:
+    repository: ghcr.io/ilvar/glacier
+    tag: "0.1.0"
+  persistence:
+    enabled: true
+    storageClass: local-path-retain
+    # Stories are plain text, but ingested media (photos/audio/video) can
+    # grow well past the chart's 1Gi default; resize as the archive fills.
+    size: 10Gi
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 128Mi
+      cpu: 50m
+  # Created out of band (not by this chart, since it holds a real secret):
+  #   kubectl create secret generic glacier-secrets \
+  #     --from-literal=openai-api-key=sk-... \
+  #     --from-literal=openai-base-url=https://api.openai.com/v1
+  # openai-base-url is only needed to point at a non-OpenAI-compatible
+  # endpoint; glacier defaults it itself. Both keys are optional: the
+  # LLM/voice features are opt-in and degrade to an actionable error
+  # rather than a crash when no key is configured.
+  podAnnotations:
+    reloader.stakater.com/auto: "true"
+  env:
+  - name: LEGACY_OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: glacier-secrets
+        key: openai-api-key
+        optional: true
+  - name: LEGACY_OPENAI_BASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: glacier-secrets
+        key: openai-base-url
+        optional: true
+  ingress:
+    # API mode has no authentication of its own. h.rkd.pw is homelab-only
+    # (not reachable outside the LAN/VPN), which is why this is safe to
+    # expose there even without an auth layer in front of it -- unlike a
+    # public *.rkd.pw host, which would need one first.
+    enabled: true
+    className: traefik
+    hosts:
+    - host: glacier.h.rkd.pw
+      paths:
+      - path: /
+        pathType: Prefix
+    tls:
+    - hosts:
+      - glacier.h.rkd.pw
+      secretName: homelab-wildcard-h-tls
