@@ -1,7 +1,7 @@
 dependencies:
 - name: reloader
   repository: https://stakater.github.io/stakater-charts
-  version: 2.2.8
+  version: 2.2.16
 - name: headlamp
   repository: https://kubernetes-sigs.github.io/headlamp/
   version: 0.40.0
@@ -17,5 +17,5 @@ dependencies:
 - name: glacier
   repository: oci://ghcr.io/ilvar/charts
   version: 0.1.0
-digest: sha256:0caf059f6198c42544b52171a3f860b2d973dded0f9caf45c91b9e50044aa7e9
-generated: "2026-08-17T05:57:59.389804452+01:00"
+digest: sha256:1949ef7e4df186fe1f44e8bdbda4bc8320b16921592be63c506cb29675d37654
+generated: "2026-08-17T10:07:47.16635278Z"
