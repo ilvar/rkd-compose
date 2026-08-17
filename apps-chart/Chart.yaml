@@ -2,7 +2,7 @@ apiVersion: v2
 name: rkd-apps-chart
 description: A comprehensive Helm chart for deploying multiple self-hosted applications including media servers, productivity tools, development utilities, and monitoring solutions.
 type: application
-version: 0.3.2
+version: 0.3.3
 appVersion: "1.0"
 keywords:
   - self-hosted
@@ -38,3 +38,7 @@ dependencies:
   - name: descheduler
     version: "0.35.0"
     repository: "https://kubernetes-sigs.github.io/descheduler/"
+  - name: glacier
+    version: "0.1.0"
+    repository: "oci://ghcr.io/ilvar/charts"
+    condition: glacier.enabled

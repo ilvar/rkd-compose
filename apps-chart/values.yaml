@@ -1346,3 +1346,24 @@ parrot:
     hosts:
     - parrot.h.rkd.pw
     servicePort: 8080
+glacier:
+  enabled: true
+  image:
+    repository: ghcr.io/ilvar/glacier
+    tag: "0.1.0"
+  persistence:
+    enabled: true
+    storageClass: local-path-retain
+    # Stories are plain text, but ingested media (photos/audio/video) can
+    # grow well past the chart's 1Gi default; resize as the archive fills.
+    size: 10Gi
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 128Mi
+      cpu: 50m
+  ingress:
+    # API mode has no authentication of its own -- leave this off until
+    # there's a reverse proxy or VPN layer in front of it.
+    enabled: false
