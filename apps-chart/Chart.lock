@@ -14,5 +14,8 @@ dependencies:
 - name: descheduler
   repository: https://kubernetes-sigs.github.io/descheduler/
   version: 0.35.0
-digest: sha256:55f6704bb264dd18dd5d222ca11b93b8e6e3f1d187a4e9d565b313714f5823a0
-generated: "2026-03-02T18:32:07.728575619Z"
+- name: glacier
+  repository: oci://ghcr.io/ilvar/charts
+  version: 0.1.0
+digest: sha256:0caf059f6198c42544b52171a3f860b2d973dded0f9caf45c91b9e50044aa7e9
+generated: "2026-08-17T05:57:59.389804452+01:00"
