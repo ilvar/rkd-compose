@@ -454,7 +454,7 @@ paperless:
   redis:
     image:
       repository: redis
-      tag: '8.6'
+      tag: '8.10'
     resources:
       limits:
         memory: 100Mi
@@ -1124,7 +1124,7 @@ backups:
     enabled: true
     image:
       repository: redis
-      tag: 8.6-alpine
+      tag: 8.10-alpine
     instances:
     - name: paperless
       host: paperless-redis
