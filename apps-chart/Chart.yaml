@@ -39,6 +39,6 @@ dependencies:
     version: "0.35.0"
     repository: "https://kubernetes-sigs.github.io/descheduler/"
   - name: glacier
-    version: "0.1.0"
+    version: "0.2.0"
     repository: "oci://ghcr.io/ilvar/charts"
     condition: glacier.enabled
