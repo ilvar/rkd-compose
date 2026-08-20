@@ -1350,7 +1350,7 @@ glacier:
   enabled: true
   image:
     repository: ghcr.io/ilvar/glacier
-    tag: "0.1.0"
+    tag: "0.2.0"
   persistence:
     enabled: true
     storageClass: local-path-retain
