@@ -3,5 +3,13 @@
   "extends": [
     "config:recommended"
   ],
-  "ignoreDeps": ["postgres", "getmeili/meilisearch"]
+  "ignoreDeps": ["postgres", "getmeili/meilisearch"],
+  "packageRules": [
+    {
+      "description": "glacier is ours and its own CI gates every release, so its bumps land without waiting to be merged by hand. Grouped because the chart dependency and the container image are one release: a PR that moves only one of them leaves the cluster running a chart and an image that disagree, which is exactly what happened between v0.1.1 and v0.2.0.",
+      "matchDepNames": ["glacier", "ghcr.io/ilvar/glacier"],
+      "groupName": "glacier",
+      "automerge": true
+    }
+  ]
 }
