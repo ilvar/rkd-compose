@@ -60,7 +60,7 @@ jobs:
 
       - name: Log in to Docker Hub
         if: github.event_name == 'workflow_dispatch' || steps.version_check.outputs.version_changed == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
