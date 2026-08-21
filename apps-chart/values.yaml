@@ -713,15 +713,17 @@ itTools:
     servicePort: 80
 minifluxDb:
   enabled: true
+  name: miniflux-db-v16
+  appLabel: miniflux-db-v16
   image:
     repository: postgres
-    tag: 9.6.24-alpine
+    tag: 16-alpine
   resources:
     limits:
-      memory: 100Mi
+      memory: 256Mi
     requests:
-      memory: 100Mi
-      cpu: 200m
+      memory: 128Mi
+      cpu: 100m
   environment:
     POSTGRES_USER: miniflux
     POSTGRES_DB: miniflux
