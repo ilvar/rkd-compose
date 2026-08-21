@@ -116,6 +116,17 @@ jobs:
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
             VCS_REF=${{ github.sha }}
 
+      - name: Report image and binary size
+        if: github.event_name == 'workflow_dispatch' || steps.version_check.outputs.version_changed == 'true'
+        # The build pushed straight to the registry without loading the image
+        # locally, so pull it back and measure exactly what was published.
+        # A scratch image is a couple of megabytes, so this is a cheap pull.
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+        run: |
+          docker pull -q "$IMAGE"
+          scripts/report_compote_size.sh "$IMAGE"
+
       - name: Update VERSION file (manual dispatch only)
         if: steps.version.outputs.is_manual == 'true'
         run: |

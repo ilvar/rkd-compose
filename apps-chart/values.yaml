@@ -311,7 +311,7 @@ compote3:
   enabled: true
   image:
     repository: ilvar/compote3
-    tag: v0.3.14
+    tag: v0.4.0
   resources:
     limits:
       memory: 100Mi

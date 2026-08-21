@@ -1,22 +1,6 @@
-# Binaries
-compote3
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary
-*.test
-
-# Output of the go coverage tool
-*.out
-
-# Go workspace file
-go.work
-
-# Dependencies
-vendor/
+# Rust
+/target
+**/*.rs.bk
 
 # IDE
 .vscode/

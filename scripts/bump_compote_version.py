@@ -12,6 +12,8 @@ from pathlib import Path
 
 VERSION_FILE = Path("compote3/VERSION")
 VALUES_FILE = Path("apps-chart/values.yaml")
+CARGO_FILE = Path("compote3/Cargo.toml")
+CARGO_LOCK = Path("compote3/Cargo.lock")
 
 
 def get_current_version():
@@ -50,6 +52,50 @@ def update_version_file(new_version):
     """Update version in VERSION file (with 'v' prefix)"""
     VERSION_FILE.write_text(f"v{new_version}\n")
     print(f"Updated {VERSION_FILE} to v{new_version}")
+
+
+def update_cargo_files(new_version):
+    """Update the crate version in Cargo.toml and Cargo.lock
+
+    The three version records — VERSION, the chart tag and the crate — have to
+    agree, otherwise `compote3 --version`-shaped questions get a different
+    answer from the image tag.
+    """
+    if not CARGO_FILE.exists():
+        print(f"Warning: {CARGO_FILE} not found")
+        return False
+
+    content = CARGO_FILE.read_text()
+    # Only the [package] version, which is the first `version =` in the file.
+    new_content, count = re.subn(
+        r'^version = "\d+\.\d+\.\d+"$',
+        f'version = "{new_version}"',
+        content,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if count != 1:
+        print(f"Warning: Could not find a package version in {CARGO_FILE}")
+        return False
+
+    CARGO_FILE.write_text(new_content)
+    print(f"Updated {CARGO_FILE} to {new_version}")
+
+    if CARGO_LOCK.exists():
+        lock = CARGO_LOCK.read_text()
+        new_lock, count = re.subn(
+            r'(name = "compote3"\nversion = )"\d+\.\d+\.\d+"',
+            rf'\g<1>"{new_version}"',
+            lock,
+            count=1,
+        )
+        if count == 1:
+            CARGO_LOCK.write_text(new_lock)
+            print(f"Updated {CARGO_LOCK} to {new_version}")
+        else:
+            print(f"Warning: Could not find compote3 in {CARGO_LOCK}")
+
+    return True
 
 
 def update_values_file(new_version):
@@ -141,15 +187,17 @@ def main():
     print(f"New version: v{new_version}")
     update_version_file(new_version)
     update_values_file(new_version)
+    update_cargo_files(new_version)
     
     # Stage the updated files
     try:
         subprocess.run(
-            ['git', 'add', str(VERSION_FILE), str(VALUES_FILE)],
+            ['git', 'add', str(VERSION_FILE), str(VALUES_FILE),
+             str(CARGO_FILE), str(CARGO_LOCK)],
             check=True,
             capture_output=True
         )
-        print(f"✓ Staged {VERSION_FILE} and {VALUES_FILE}")
+        print(f"✓ Staged {VERSION_FILE}, {VALUES_FILE} and the Cargo manifests")
         print(f"✓ Successfully bumped compote version from v{current_version} to v{new_version}")
     except subprocess.CalledProcessError as e:
         print(f"Warning: Could not stage files: {e}")
