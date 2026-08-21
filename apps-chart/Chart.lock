@@ -4,7 +4,7 @@ dependencies:
   version: 2.2.16
 - name: headlamp
   repository: https://kubernetes-sigs.github.io/headlamp/
-  version: 0.40.0
+  version: 0.45.0
 - name: velero
   repository: https://vmware-tanzu.github.io/helm-charts
   version: 11.4.0
@@ -17,5 +17,5 @@ dependencies:
 - name: glacier
   repository: oci://ghcr.io/ilvar/charts
   version: 0.3.0
-digest: sha256:effe1b928078517df371f81d483b3c09cdaea9a392e1346df412bcf248d3f77a
-generated: "2026-08-21T01:51:36.170477042Z"
+digest: sha256:955aa0286dd4b6040f6ef13129cd1ff88e1d44ef2465668bbb119fb8b379e93d
+generated: "2026-08-21T17:06:04.254088000Z"
