@@ -127,7 +127,7 @@ checksum = "6e4de3bc4ea267985becf712dc6d9eed8b04c953b3fcfb339ebc87acd9804901"
 name = "compote3"
 version = "0.4.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "proptest",
  "rcgen",
  "regex",
