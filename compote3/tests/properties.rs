@@ -107,7 +107,10 @@ proptest! {
         absent in name_strategy(),
         replacement in select(vec!["renamed".to_owned(), String::new()]),
     ) {
-        proptest::prop_assume!(present != absent);
+        // Override matching is case-insensitive, so two names differing only
+        // in case are the *same* application and the override rightly applies.
+        // `name_strategy` is ASCII-only, so an ASCII comparison is exact here.
+        proptest::prop_assume!(!present.eq_ignore_ascii_case(&absent));
 
         let ingresses = vec![Application {
             name: present.clone(),

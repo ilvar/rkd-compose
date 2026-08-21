@@ -270,6 +270,22 @@ mod tests {
     }
 
     #[test]
+    fn an_override_matches_an_ingress_name_in_a_different_case() {
+        let config = Config {
+            overrides: vec![AppOverride {
+                name: "grafana".to_owned(),
+                new_name: String::new(),
+                url: "https://elsewhere.example.com".to_owned(),
+            }],
+            ..Config::default()
+        };
+
+        let applications = assemble(&config, vec![app("GRAFANA", "https://g.rkd.pw")]);
+
+        assert_eq!(applications[0].url, "https://elsewhere.example.com");
+    }
+
+    #[test]
     fn dashes_in_a_name_become_spaces() {
         let applications = assemble(&Config::default(), vec![app("irish-schools", "https://s")]);
         assert_eq!(applications[0].name, "irish schools");
