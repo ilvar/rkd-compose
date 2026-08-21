@@ -1368,11 +1368,21 @@ glacier:
   # Created out of band (not by this chart, since it holds a real secret):
   #   kubectl create secret generic glacier-secrets \
   #     --from-literal=openai-api-key=sk-... \
-  #     --from-literal=openai-base-url=https://api.openai.com/v1
-  # openai-base-url is only needed to point at a non-OpenAI-compatible
-  # endpoint; glacier defaults it itself. Both keys are optional: the
-  # LLM/voice features are opt-in and degrade to an actionable error
-  # rather than a crash when no key is configured.
+  #     --from-literal=openai-base-url=https://api.openai.com/v1 \
+  #     --from-literal=openai-model=gpt-4o-mini
+  # Only the key is normally needed: glacier defaults the base URL to
+  # OpenAI and the model to gpt-4o-mini. Set the other two together when
+  # pointing at a self-hosted or proxied endpoint -- a base URL without a
+  # model it actually serves fails at request time, not at startup.
+  #
+  # These are the plain OPENAI_* names on purpose. Glacier reads
+  # LEGACY_LLM_* for tagging/enrichment/ask and LEGACY_OPENAI_* for
+  # speech, and both fall back to OPENAI_*, so one pair covers everything.
+  # Setting LEGACY_OPENAI_* alone reaches only the speech side, which is
+  # what silently left enrichment unconfigured before.
+  #
+  # Every key is optional: the LLM features are opt-in and degrade to an
+  # actionable error rather than a crash when nothing is configured.
   podAnnotations:
     reloader.stakater.com/auto: "true"
   env:
@@ -1387,6 +1397,12 @@ glacier:
       secretKeyRef:
         name: glacier-secrets
         key: openai-base-url
+        optional: true
+  - name: OPENAI_MODEL
+    valueFrom:
+      secretKeyRef:
+        name: glacier-secrets
+        key: openai-model
         optional: true
   ingress:
     # API mode has no authentication of its own. h.rkd.pw is homelab-only
