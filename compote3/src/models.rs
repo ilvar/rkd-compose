@@ -40,15 +40,3 @@ pub struct ApiResponse {
     pub github_weekly: Vec<GitHubRepo>,
     pub github_watched: Vec<GitHubRepo>,
 }
-
-/// Request body of `POST /api/templates/parse`.
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct TemplateParseRequest {
-    pub template: String,
-}
-
-/// Response body of `POST /api/templates/parse`.
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct TemplateParseResponse {
-    pub variables: Vec<String>,
-}

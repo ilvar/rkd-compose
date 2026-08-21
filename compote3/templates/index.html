@@ -416,62 +416,6 @@
             color: #666;
         }
 
-        .template-section {
-            margin-bottom: 2rem;
-            padding: 0 1rem;
-        }
-
-        .template-section h2 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #333;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .template-input {
-            width: 100%;
-            max-width: 600px;
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            background: white;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 80px;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .template-input:focus {
-            outline: none;
-            border-color: #3077ba;
-            box-shadow: 0 0 0 3px rgba(48, 119, 186, 0.1);
-        }
-
-        .template-variables {
-            margin-top: 0.75rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .template-variable-tag {
-            background: #e8f0fe;
-            color: #3077ba;
-            padding: 0.25rem 0.75rem;
-            border-radius: 16px;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .template-hint {
-            font-size: 0.8rem;
-            color: #999;
-            margin-top: 0.5rem;
-        }
-
         @media (max-width: 768px) {
             .container {
                 padding: 0 0.5rem;
@@ -507,14 +451,6 @@
         <!-- Search Field -->
         <div class="search-container">
             <input type="text" id="search-input" class="search-input" placeholder="Search tiles...">
-        </div>
-
-        <!-- Add Template Section -->
-        <div class="template-section">
-            <h2>Добавить шаблон</h2>
-            <textarea id="template-input" class="template-input" placeholder="Введите шаблон с переменными, например: {{ Фамилия }} {{ Имя }} {{ Маршрут }}"></textarea>
-            <p class="template-hint">Используйте {{ имя_переменной }} для обозначения переменных</p>
-            <div id="template-variables" class="template-variables"></div>
         </div>
 
         <!-- Applications Section -->
@@ -872,44 +808,6 @@
 
         // Fetch fresh data after page load (runs in background)
         fetchFreshData();
-
-        // Template variable extraction
-        // Regex matches {{ variable_name }} with double braces on each side.
-        // Non-greedy (.+?) ensures consecutive variables like
-        // {{ Фамилия }}{{ Имя }}{{ Маршрут }} are parsed correctly.
-        function extractTemplateVariables(template) {
-            const regex = /\{\{\s*(.+?)\s*\}\}/g;
-            const seen = new Set();
-            const vars = [];
-            let match;
-            while ((match = regex.exec(template)) !== null) {
-                const name = match[1].trim();
-                if (name && !seen.has(name)) {
-                    seen.add(name);
-                    vars.push(name);
-                }
-            }
-            return vars;
-        }
-
-        function setupTemplateForm() {
-            const input = document.getElementById('template-input');
-            const variablesContainer = document.getElementById('template-variables');
-            if (!input || !variablesContainer) return;
-
-            input.addEventListener('input', () => {
-                const vars = extractTemplateVariables(input.value);
-                variablesContainer.innerHTML = '';
-                vars.forEach(v => {
-                    const tag = document.createElement('span');
-                    tag.className = 'template-variable-tag';
-                    tag.textContent = v;
-                    variablesContainer.appendChild(tag);
-                });
-            });
-        }
-
-        setupTemplateForm();
     </script>
 </body>
 </html>

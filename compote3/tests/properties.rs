@@ -8,7 +8,6 @@ use compote3::config::Config;
 use compote3::config::LinkConfig;
 use compote3::data::build_response;
 use compote3::models::Application;
-use compote3::templating::extract_variables;
 use proptest::collection::vec;
 use proptest::prelude::prop_assert;
 use proptest::prelude::prop_assert_eq;
@@ -46,32 +45,6 @@ proptest! {
 
         prop_assert_eq!(rendered.len(), 10);
         prop_assert_eq!(rendered.matches('-').count(), 2);
-    }
-
-    /// Extraction never invents a name and never repeats one.
-    #[test]
-    fn extracted_variables_are_unique_and_present(names in vec(name_strategy(), 0..6)) {
-        let template: String = names
-            .iter()
-            .map(|name| format!("{{{{ {name} }}}}"))
-            .collect();
-
-        let extracted = extract_variables(&template);
-
-        for name in &extracted {
-            prop_assert!(names.contains(name), "invented {name}");
-        }
-        for index in 1..extracted.len() {
-            let (earlier, rest) = extracted.split_at(index);
-            let current = rest.first().unwrap_or_else(|| unreachable!());
-            prop_assert!(!earlier.contains(current), "repeated {current}");
-        }
-    }
-
-    /// Text with no placeholder yields no variables, however it is arranged.
-    #[test]
-    fn plain_text_has_no_variables(text in "[^{}]{0,40}") {
-        prop_assert!(extract_variables(&text).is_empty());
     }
 
     /// Applications always come back sorted, and an excluded name never
