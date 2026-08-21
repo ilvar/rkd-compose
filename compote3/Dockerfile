@@ -3,7 +3,7 @@
 # Alpine's Rust is musl-native, so the release binary is static and the runtime
 # stage needs no libc at all. TLS roots come from webpki-roots, compiled in by
 # ureq, so it needs no ca-certificates bundle either.
-FROM rust:1.97-alpine AS builder
+FROM rust:1.98-alpine AS builder
 
 RUN apk add --no-cache musl-dev
 
