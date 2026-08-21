@@ -59,3 +59,35 @@ jobs:
       # panic=abort have their own way of failing to build.
       - name: Build the release binary
         run: cargo build --release --locked
+
+  size:
+    name: Image and binary size
+    runs-on: ubuntu-latest
+    # Only worth a container build once the code is known good.
+    needs: check
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Not pushed: this is the same image the release workflow publishes,
+      # built here only so its size shows up on every change rather than
+      # once per release.
+      - name: Build the runtime image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./compote3
+          file: ./compote3/Dockerfile
+          push: false
+          load: true
+          tags: compote3:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # The job-wide default working directory is compote3/; the script lives
+      # at the repository root and is shared with the release workflow.
+      - name: Report sizes
+        working-directory: .
+        run: scripts/report_compote_size.sh compote3:ci
