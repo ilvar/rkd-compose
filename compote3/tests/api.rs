@@ -9,7 +9,6 @@ use compote3::github;
 use compote3::k3s::Source;
 use compote3::kubeconfig::ClusterAccess;
 use compote3::models::ApiResponse;
-use compote3::models::TemplateParseResponse;
 use compote3::server;
 use compote3::server::Cluster;
 use compote3::server::State;
@@ -209,29 +208,6 @@ fn the_dashboard_serves_every_route_it_advertises() {
     // `description: null` and `language: null` must not become the string "null".
     assert_eq!(data.github_watched[0].description, "");
     assert_eq!(data.github_watched[0].language, "");
-
-    // Template parsing.
-    let (status, body) = request(
-        compote_port,
-        "POST /api/templates/parse",
-        r#"{"template":"{{ Фамилия }}{{ Имя }}{{ Фамилия }}"}"#,
-    );
-    assert_eq!(status, 200, "body: {body}");
-    let parsed: TemplateParseResponse = serde_json::from_str(&body).expect("payload is JSON");
-    assert_eq!(parsed.variables, vec!["Фамилия", "Имя"]);
-
-    // An empty result is an array, never null.
-    let (status, body) = request(
-        compote_port,
-        "POST /api/templates/parse",
-        r#"{"template":"nothing here"}"#,
-    );
-    assert_eq!(status, 200);
-    assert_eq!(body, r#"{"variables":[]}"#);
-
-    // A malformed body is rejected, not treated as an empty template.
-    let (status, _) = request(compote_port, "POST /api/templates/parse", "not json");
-    assert_eq!(status, 400);
 
     // Unknown routes render the error page.
     let (status, body) = request(compote_port, "GET /nope", "");

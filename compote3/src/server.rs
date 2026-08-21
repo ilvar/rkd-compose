@@ -1,6 +1,5 @@
 //! The HTTP surface: the dashboard page and the two JSON endpoints behind it.
 
-use std::io::Read;
 use std::sync::Arc;
 use std::thread;
 use tiny_http::Header;
@@ -18,18 +17,11 @@ use crate::k3s::Source;
 use crate::kubeconfig::ClusterAccess;
 use crate::models::ApiResponse;
 use crate::models::Application;
-use crate::models::TemplateParseRequest;
-use crate::models::TemplateParseResponse;
-use crate::templating;
 
 /// The dashboard page, compiled in rather than read from disk so the runtime
 /// image needs nothing but the binary and a config file.
 const INDEX_HTML: &str = include_str!("../templates/index.html");
 const ERROR_HTML: &str = include_str!("../templates/error.html");
-
-/// Largest `POST /api/templates/parse` body accepted, so an oversized request
-/// cannot exhaust the process.
-const MAX_BODY_BYTES: u64 = 64 * 1024;
 
 /// Everything a request handler needs, shared across worker threads.
 pub struct State {
@@ -172,38 +164,6 @@ pub fn collect(state: &State) -> ApiResponse {
     )
 }
 
-fn handle_template_parse(mut request: Request) {
-    let mut body = String::new();
-    let read = request
-        .as_reader()
-        .take(MAX_BODY_BYTES)
-        .read_to_string(&mut body);
-
-    if read.is_err() {
-        respond_json(
-            request,
-            400,
-            r#"{"error":"invalid request body"}"#.to_owned(),
-        );
-        return;
-    }
-
-    let Ok(parsed) = serde_json::from_str::<TemplateParseRequest>(&body) else {
-        respond_json(
-            request,
-            400,
-            r#"{"error":"invalid request body"}"#.to_owned(),
-        );
-        return;
-    };
-
-    let response = TemplateParseResponse {
-        variables: templating::extract_variables(&parsed.template),
-    };
-    let (status, body) = to_json(&response);
-    respond_json(request, status, body);
-}
-
 fn handle(state: &State, request: Request) {
     // Query strings and fragments are not part of any route compote3 serves.
     let path = request
@@ -219,7 +179,6 @@ fn handle(state: &State, request: Request) {
             let (status, body) = to_json(&collect(state));
             respond_json(request, status, body);
         }
-        (Method::Post, "/api/templates/parse") => handle_template_parse(request),
         _ => respond_html(request, 404, error_page("Not found")),
     }
 }
@@ -260,10 +219,8 @@ mod tests {
     use super::error_json;
     use super::error_page;
     use super::escape_html;
-    use super::to_json;
     use super::ERROR_HTML;
     use super::INDEX_HTML;
-    use crate::models::TemplateParseResponse;
 
     #[test]
     fn the_dashboard_page_is_compiled_into_the_binary() {
@@ -291,13 +248,5 @@ mod tests {
             error_json(r#"a "quoted" \ message"#),
             r#"{"error":"a \"quoted\" \\ message"}"#
         );
-    }
-
-    #[test]
-    fn an_empty_variable_list_serializes_as_an_array_not_null() {
-        let (status, body) = to_json(&TemplateParseResponse::default());
-
-        assert_eq!(status, 200);
-        assert_eq!(body, r#"{"variables":[]}"#);
     }
 }

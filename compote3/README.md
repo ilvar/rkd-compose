@@ -9,8 +9,6 @@ been up to. Written in Rust; the whole runtime image is one static binary.
 - **Links** — bookmarks from `config.yaml`
 - **GitHub trending** — popular repositories pushed to in the last day and week
 - **GitHub watched** — the repositories a configured user has starred
-- **Template variables** — a helper that lists the `{{ placeholders }}` in a
-  block of text
 
 Every section degrades independently: an unreachable cluster or a GitHub rate
 limit empties that section and leaves the rest of the dashboard intact.
@@ -89,7 +87,6 @@ binds grants `list` and `get` on `networking.k8s.io/ingresses` and nothing else.
 
 - `GET /` — the dashboard
 - `GET /api/data` — every section as JSON
-- `POST /api/templates/parse` — `{"template": "..."}` in, `{"variables": [...]}` out
 
 ## Development
 
@@ -119,7 +116,6 @@ strictrs check .
 | `src/github.rs`     | trending and starred repositories                      |
 | `src/clock.rs`      | the calendar arithmetic GitHub's date filters need     |
 | `src/data.rs`       | assembling the payload — pure, and the most tested     |
-| `src/templating.rs` | `{{ variable }}` extraction                            |
 | `src/server.rs`     | routing and concurrent fetching                        |
 
 `templates/index.html` is compiled into the binary, so the runtime image is

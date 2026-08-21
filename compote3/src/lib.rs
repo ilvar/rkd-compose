@@ -19,7 +19,6 @@ pub mod kubeconfig;
 pub mod models;
 pub mod server;
 pub mod sys;
-pub mod templating;
 
 /// Default listen port, overridden by `PORT`.
 pub const DEFAULT_PORT: &str = "9000";
