@@ -1,39 +1,44 @@
 # syntax=docker/dockerfile:1.26
-# Build stage
-FROM golang:1.27-alpine AS builder
+# --- compile ----------------------------------------------------------------
+# Alpine's Rust is musl-native, so the release binary is static and the runtime
+# stage needs no libc at all. TLS roots come from webpki-roots, compiled in by
+# ureq, so it needs no ca-certificates bundle either.
+FROM rust:1.97-alpine AS builder
 
-WORKDIR /app
+RUN apk add --no-cache musl-dev
 
-# Copy go mod files
-COPY go.mod ./
-COPY go.sum* ./
+WORKDIR /src
 
-# Download dependencies (with cache mount for speed)
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
+# Dependencies first, against a stub source: this layer is keyed on the
+# manifests alone, so editing the real code does not recompile the whole tree.
+COPY rust-toolchain.toml Cargo.toml Cargo.lock ./
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    mkdir -p src \
+    && echo 'fn main() {}' > src/main.rs \
+    && echo '' > src/lib.rs \
+    && cargo build --release --locked \
+    && rm -rf src
 
-# Copy source code
-COPY . .
+COPY src ./src
+COPY templates ./templates
+COPY config.yaml ./config.yaml
 
-# Build the application (with cache mount for build cache)
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=linux go build -installsuffix cgo -o compote3 .
+# Cargo keys freshness on mtime, and the stub artifacts above are newer than
+# the source COPY just laid down, so make the real ones unambiguously newer.
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    touch src/*.rs \
+    && cargo build --release --locked --bin compote3 \
+    && strip target/release/compote3
 
-# Runtime stage
-FROM alpine:latest
+# --- runtime ----------------------------------------------------------------
+# Nothing but the binary and a default config: no shell, no package manager,
+# no interpreter. The dashboard HTML is compiled into the binary.
+FROM scratch AS runtime
 
-RUN apk --no-cache add ca-certificates
+COPY --from=builder /src/target/release/compote3 /usr/local/bin/compote3
+COPY --from=builder /src/config.yaml /root/config.yaml
 
-WORKDIR /root/
-
-# Copy the binary from builder
-COPY --from=builder /app/compote3 .
-COPY --from=builder /app/templates ./templates
-COPY --from=builder /app/config.yaml ./config.yaml
-
-# Expose port
+WORKDIR /root
 EXPOSE 9000
 
-# Run the application
-CMD ["./compote3"]
-
+ENTRYPOINT ["/usr/local/bin/compote3"]

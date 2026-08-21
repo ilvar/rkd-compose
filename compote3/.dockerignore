@@ -1,7 +1,6 @@
-*.md
 .git
 .gitignore
-Dockerfile
 .dockerignore
-compote3
-
+Dockerfile
+*.md
+target/

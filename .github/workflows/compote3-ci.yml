@@ -1,0 +1,61 @@
+name: Compote3 CI
+
+on:
+  push:
+    paths:
+      - 'compote3/**'
+      - 'apps-chart/values.yaml'
+      - '.github/workflows/compote3-ci.yml'
+  pull_request:
+    paths:
+      - 'compote3/**'
+      - 'apps-chart/values.yaml'
+      - '.github/workflows/compote3-ci.yml'
+  workflow_dispatch:
+
+# A superseded run on the same branch stops promptly instead of finishing a
+# build nobody is waiting for.
+concurrency:
+  group: compote3-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: compote3
+
+jobs:
+  check:
+    name: Format, lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # The toolchain comes from compote3/rust-toolchain.toml, so this pin
+      # cannot drift from the one the Dockerfile and local development use.
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            compote3/target
+          key: compote3-${{ runner.os }}-${{ hashFiles('compote3/Cargo.lock') }}
+          restore-keys: compote3-${{ runner.os }}-
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Lint
+        run: cargo clippy --all-targets --all-features --locked -- -D warnings
+
+      - name: Test
+        run: cargo test --all-targets --all-features --locked
+
+      # The release profile is not what `cargo test` exercises: LTO and
+      # panic=abort have their own way of failing to build.
+      - name: Build the release binary
+        run: cargo build --release --locked
