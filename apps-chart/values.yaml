@@ -1376,13 +1376,13 @@ glacier:
   podAnnotations:
     reloader.stakater.com/auto: "true"
   env:
-  - name: LEGACY_OPENAI_API_KEY
+  - name: OPENAI_API_KEY
     valueFrom:
       secretKeyRef:
         name: glacier-secrets
         key: openai-api-key
         optional: true
-  - name: LEGACY_OPENAI_BASE_URL
+  - name: OPENAI_BASE_URL
     valueFrom:
       secretKeyRef:
         name: glacier-secrets
