@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@v5
         with:
           # 3.13.0 has a client-side OCI auth bug (helm/helm#12449): it adds
           # a bogus second scope to the GHCR token request, which GHCR then
