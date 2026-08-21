@@ -182,6 +182,10 @@ spec:
       containers:
       - name: immich-machine-learning
         image: "{{ .Values.immich.machineLearning.image.repository }}:{{ .Values.immich.machineLearning.image.tag }}"
+        resources:
+          {{- if .Values.immich.machineLearning.resources }}
+          {{- toYaml .Values.immich.machineLearning.resources | nindent 10 }}
+          {{- end }}
         volumeMounts:
         - name: model-cache
           mountPath: /cache
