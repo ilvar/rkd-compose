@@ -16,6 +16,6 @@ dependencies:
   version: 0.35.0
 - name: glacier
   repository: oci://ghcr.io/ilvar/charts
-  version: 0.2.0
-digest: sha256:d72cce341771677ad7c3c36acfc6180c1df144f04becc25d234aab64275ae169
-generated: "2026-08-20T20:48:30.95876852Z"
+  version: 0.3.0
+digest: sha256:effe1b928078517df371f81d483b3c09cdaea9a392e1346df412bcf248d3f77a
+generated: "2026-08-21T01:51:36.170477042Z"
