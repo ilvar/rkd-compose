@@ -1305,7 +1305,7 @@ descheduler:
           thresholds:
             memory: 20
           targetThresholds:
-            memory: 50
+            memory: 70
       - name: RemoveDuplicates
         args: {}
       - name: RemovePodsViolatingNodeAffinity
