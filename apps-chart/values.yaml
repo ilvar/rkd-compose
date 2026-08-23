@@ -285,8 +285,8 @@ hoarder:
     servicePort: 3000
   chrome:
     image:
-      repository: gcr.io/zenika-hub/alpine-chrome
-      tag: '124'
+      repository: ghcr.io/karakeep-app/karakeep-chrome
+      tag: release
     resources:
       limits:
         memory: 1Gi
