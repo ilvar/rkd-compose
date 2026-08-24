@@ -91,3 +91,91 @@ jobs:
       - name: Report sizes
         working-directory: .
         run: scripts/report_compote_size.sh compote3:ci
+
+  version:
+    name: Version records
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # The drift check diffs against the merge base, which needs history.
+          fetch-depth: 0
+
+      # scripts/bump_compote_version.py is a pre-commit hook, so it only fires
+      # on local commits and cannot fire on a squash-merge of a pull request.
+      # That is how #151 removed the template form without moving VERSION:
+      # build-compote3.yml only builds on a VERSION change, so no image was
+      # produced and v0.4.0 ended up naming two different codebases.
+      - name: Check VERSION moved with the code
+        if: github.event_name == 'pull_request'
+        working-directory: .
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          base=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+
+          # VERSION itself is excluded: a bump alone is a legitimate change.
+          changed=$(git diff --name-only "$base" "$HEAD_SHA" \
+            -- compote3 ':(exclude)compote3/VERSION')
+
+          if [ -z "$changed" ]; then
+            echo "No compote3/ changes outside VERSION; nothing to gate."
+            exit 0
+          fi
+
+          if git diff --quiet "$base" "$HEAD_SHA" -- compote3/VERSION; then
+            echo "::error::compote3/ changed but compote3/VERSION did not."
+            echo "Changed files:"
+            echo "$changed" | sed 's/^/  /'
+            echo
+            echo "build-compote3.yml only builds when compote3/VERSION changes,"
+            echo "so merging this leaves the cluster on an image that predates"
+            echo "these changes while still carrying the same tag."
+            echo
+            echo "Fix: ./scripts/bump_compote_version.py --force"
+            exit 1
+          fi
+
+          echo "compote3/VERSION moved with the code."
+
+      # A partial bump is its own failure mode: the tag would name one build
+      # while `compote3 --version` reports another.
+      - name: Check the version records agree
+        working-directory: .
+        run: |
+          set -euo pipefail
+          version=$(tr -d '[:space:]' < compote3/VERSION)
+          version=${version#v}
+
+          cargo=$(sed -n '/^\[package\]/,/^\[/ s/^version = "\(.*\)"$/\1/p' \
+            compote3/Cargo.toml | head -1)
+          lock=$(grep -A1 '^name = "compote3"$' compote3/Cargo.lock \
+            | sed -n 's/^version = "\(.*\)"$/\1/p' | head -1)
+          tag=$(grep -A1 'repository: ilvar/compote3' apps-chart/values.yaml \
+            | sed -n 's/^ *tag: *v\{0,1\}\(.*\)$/\1/p' | head -1)
+
+          echo "VERSION           $version"
+          echo "Cargo.toml        $cargo"
+          echo "Cargo.lock        $lock"
+          echo "values.yaml tag   $tag"
+
+          status=0
+          for pair in "Cargo.toml:$cargo" "Cargo.lock:$lock" "values.yaml:$tag"; do
+            name=${pair%%:*}
+            found=${pair#*:}
+            if [ -z "$found" ]; then
+              echo "::error::Could not read the compote3 version from $name."
+              status=1
+            elif [ "$found" != "$version" ]; then
+              echo "::error::$name says $found but compote3/VERSION says $version."
+              status=1
+            fi
+          done
+
+          if [ "$status" -ne 0 ]; then
+            echo "Fix: ./scripts/bump_compote_version.py --force"
+          fi
+          exit $status
