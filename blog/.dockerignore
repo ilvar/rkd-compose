@@ -1,0 +1,6 @@
+# The old .dockerignore excluded the entire Hugo source, because the image only
+# ever copied a pre-built public/. The build runs Hugo now, so the source has to
+# reach the context -- only build output and local scratch are excluded.
+.git
+public
+.hugo_build.lock

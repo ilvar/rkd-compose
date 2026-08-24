@@ -1,0 +1,4 @@
+# Built by CI, not committed. Keeping it in git is what let the source and the
+# deployed site drift apart.
+public/
+.hugo_build.lock

@@ -1,0 +1,71 @@
+name: Blog CI
+
+on:
+  pull_request:
+    paths:
+      - 'blog/**'
+      - '.github/workflows/blog-ci.yml'
+  workflow_dispatch:
+
+# A superseded run on the same branch stops promptly instead of finishing a
+# build nobody is waiting for.
+concurrency:
+  group: blog-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build the site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # The theme is a submodule; without it Hugo renders nothing.
+          submodules: recursive
+
+      # Builds through the same Dockerfile the release publishes, so a template
+      # error cannot pass CI and then break the published image.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build the image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./blog
+          file: ./blog/Dockerfile
+          push: false
+          load: true
+          tags: blog:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # A Hugo build that renders zero pages still exits 0 and produces an
+      # image serving nothing, so assert the output is actually there.
+      - name: Check the site rendered
+        run: |
+          set -euo pipefail
+          pages=$(docker run --rm --entrypoint sh blog:ci -c \
+            'find /app/html -name "*.html" | wc -l')
+          echo "Rendered $pages HTML files."
+          if [ "$pages" -lt 20 ]; then
+            echo "::error::Only $pages HTML files rendered; expected the full site."
+            exit 1
+          fi
+
+      - name: Check it serves
+        run: |
+          set -euo pipefail
+          docker run -d --name blog-ci -p 5000:5000 blog:ci
+          for i in $(seq 1 15); do
+            if curl -sf -o /dev/null http://localhost:5000/; then
+              echo "Serving after ${i}s."
+              docker rm -f blog-ci >/dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::The container never served the index page."
+          docker logs blog-ci
+          docker rm -f blog-ci >/dev/null
+          exit 1
