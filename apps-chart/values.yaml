@@ -760,7 +760,7 @@ blog:
   enabled: true
   image:
     repository: ilvar/blog
-    tag: latest
+    tag: 1.0.1
   resources:
     limits:
       memory: 100Mi
