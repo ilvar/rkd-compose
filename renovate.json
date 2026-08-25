@@ -24,6 +24,15 @@
       ],
       "groupName": "blog",
       "automerge": true
+    },
+    {
+      "description": "Keep the Beszel hub and agent on the same release and let Renovate apply patch/minor updates automatically.",
+      "matchDepNames": [
+        "henrygd/beszel",
+        "henrygd/beszel-agent"
+      ],
+      "groupName": "beszel",
+      "automerge": true
     }
   ]
 }

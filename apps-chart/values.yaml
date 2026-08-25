@@ -869,7 +869,7 @@ beszel:
     enabled: true
     image:
       repository: henrygd/beszel
-      tag: latest
+      tag: 0.18.8
       pullPolicy: IfNotPresent
     port: 8090
     servicePort: 8090
@@ -901,7 +901,7 @@ beszel:
     enabled: true
     image:
       repository: henrygd/beszel-agent
-      tag: latest
+      tag: 0.18.8
       pullPolicy: IfNotPresent
     hubUrl: https://beszel.h.rkd.pw
     # Note: KEY and TOKEN are stored in external secret 'beszel-agent-credentials'
