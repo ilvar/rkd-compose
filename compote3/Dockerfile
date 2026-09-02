@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.26
+# syntax=docker/dockerfile:1.27
 # --- compile ----------------------------------------------------------------
 # Alpine's Rust is musl-native, so the release binary is static and the runtime
 # stage needs no libc at all. TLS roots come from webpki-roots, compiled in by
