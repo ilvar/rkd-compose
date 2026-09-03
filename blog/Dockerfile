@@ -11,7 +11,7 @@ COPY . .
 # serves today, hiding real diffs behind whitespace churn.
 RUN hugo --destination /public
 
-FROM caddy:2.10-alpine
+FROM caddy:2.11-alpine
 EXPOSE 5000
 WORKDIR /app/html
 COPY --from=build /public /app/html
