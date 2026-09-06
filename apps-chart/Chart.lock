@@ -2,9 +2,6 @@ dependencies:
 - name: reloader
   repository: https://stakater.github.io/stakater-charts
   version: 2.2.16
-- name: headlamp
-  repository: https://kubernetes-sigs.github.io/headlamp/
-  version: 0.45.0
 - name: velero
   repository: https://vmware-tanzu.github.io/helm-charts
   version: 12.1.0
@@ -17,5 +14,5 @@ dependencies:
 - name: glacier
   repository: oci://ghcr.io/ilvar/charts
   version: 0.3.0
-digest: sha256:99f6cdcfcef2c22c26e9f8eb2f582b5cf0ccce2570eaa7ef97921cb0b3f1cb23
-generated: "2026-08-21T17:08:38.635498792Z"
+digest: sha256:d65261e88f22b0355c92a291c95ea36f259e4287eb513033c37e7ed72f4f63da
+generated: "2026-09-06T16:09:48.486356208+01:00"

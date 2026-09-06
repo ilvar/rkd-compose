@@ -21,25 +21,6 @@ blocky:
     requests:
       memory: 128Mi
       cpu: 100m
-portainer:
-  enabled: true
-  image:
-    repository: portainer/portainer-ce
-    tag: latest
-  resources:
-    limits:
-      memory: 256Mi
-    requests:
-      memory: 128Mi
-      cpu: 100m
-  storage:
-    data: portainer-data
-  ingress:
-    enabled: true
-    hosts:
-    - portainer.h.rkd.pw
-    - portainer.k.rkd.pw
-    servicePort: 9000
 jackett:
   enabled: true
   image:
@@ -360,14 +341,10 @@ compote3:
       description: Domain and DNS management
     - name: hoarder
       description: Web archive and bookmark manager
-    - name: headlamp
-      description: Kubernetes diagnostics and cluster explorer
     - name: homeassistant
       description: Home automation and IoT platform
     - name: immich
       description: Self-hosted photo and video backup
-    - name: irish-schools
-      description: Irish schools information and lookup
     - name: it-tools
       description: Collection of IT tools and utilities
     - name: jackett
@@ -384,12 +361,8 @@ compote3:
       description: Flow-based programming for IoT
     - name: paperless
       description: Document management system
-    - name: parrot
-      description: Screen time control
     - name: pinchflat
       description: YouTube subscription manager
-    - name: portainer
-      description: Container management and Docker GUI
     - name: radarr
       description: Movie collection manager and downloader
     - name: rancher
@@ -412,7 +385,10 @@ compote3:
       description: Zigbee to MQTT bridge
     exclusions:
       - compote3
+      - flaresolverr
+      - jackett
       - rkd-pw
+      - zigbee2mqtt
   ingress:
     enabled: true
     hosts:
@@ -796,24 +772,6 @@ rkdPw:
     - rkdpw.h.rkd.pw
     - rkdpw.k.rkd.pw
     - www.rkd.pw
-    servicePort: 5000
-irishSchools:
-  enabled: true
-  image:
-    repository: ilvar/irish-schools
-    tag: latest
-  resources:
-    limits:
-      memory: 100Mi
-    requests:
-      memory: 100Mi
-      cpu: 50m
-  ingress:
-    enabled: true
-    hosts:
-    - irish-schools.h.rkd.pw
-    - irish-schools.k.rkd.pw
-    - irish-schools.rkd.pw
     servicePort: 5000
 reloader:
   enabled: true
@@ -1326,24 +1284,6 @@ descheduler:
       memory: 64Mi
     limits:
       memory: 128Mi
-parrot:
-  enabled: true
-  image:
-    repository: ilvar/parrot
-    tag: 0.1.0
-  resources:
-    limits:
-      memory: 128Mi
-    requests:
-      memory: 64Mi
-      cpu: 100m
-  storage:
-    data: parrot-data
-  ingress:
-    enabled: true
-    hosts:
-    - parrot.h.rkd.pw
-    servicePort: 8080
 glacier:
   enabled: true
   image:
