@@ -169,6 +169,8 @@ homeassistant:
   privileged: true
   ports:
     http: 8123
+  service:
+    type: LoadBalancer
   storage:
     config: homeassistant-config
     media: homeassistant-media
