@@ -27,7 +27,7 @@ dependencies:
     version: "2.2.16"
     repository: "https://stakater.github.io/stakater-charts"
   - name: velero
-    version: "12.1.0"
+    version: "12.2.0"
     repository: "https://vmware-tanzu.github.io/helm-charts"
   - name: velero-ui
     version: "0.15.0"
