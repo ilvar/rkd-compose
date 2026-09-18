@@ -4,6 +4,34 @@ global:
   - orangepi5
   # Create storage classes with Retain policy to protect PVCs from deletion
   createStorageClasses: true
+byosFastapi:
+  enabled: true
+  image:
+    repository: ilvar/trmnl-server-waveshare
+    tag: main-10d16d7
+  environment:
+    SERVER_PORT: "4567"
+    ENABLE_SSL: "false"
+    TIME_ZONE: Europe/Dublin
+    CALIBRATION_PLUGIN_ENABLED: "false"
+    SETUP_FRIENDLY_ID: RLCD42
+    DISPLAY_WIDTH: "400"
+    DISPLAY_HEIGHT: "300"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+  storage:
+    name: byos-fastapi-data
+    size: 2Gi
+  ingress:
+    enabled: true
+    hosts:
+    - trmnl.h.rkd.pw
+    - trmnl.k.rkd.pw
+    servicePort: 4567
 blocky:
   enabled: true
   image:

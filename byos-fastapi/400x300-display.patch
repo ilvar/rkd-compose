@@ -1,0 +1,68 @@
+diff --git a/trmnl_server/routes/images.py b/trmnl_server/routes/images.py
+--- a/trmnl_server/routes/images.py
++++ b/trmnl_server/routes/images.py
+@@ -3,9 +3,11 @@
+ from __future__ import annotations
+ 
+ from io import BytesIO
++import os
+ 
+ from fastapi import APIRouter, HTTPException, Request
+-from fastapi.responses import FileResponse, Response
++from fastapi.responses import Response
++from PIL import Image
+ 
+ from .. import config, models, utils
+ from ..services import state
+@@ -40,6 +42,25 @@ def _binary_response(image_blob: BytesIO, media_type: str) -> Response:
+     return Response(content=payload, media_type=media_type, headers=headers)
+ 
+ 
++def _device_image_response(image_blob: BytesIO, media_type: str) -> Response:
++    """Resize device-facing images for non-standard TRMNL display panels."""
++    width = int(os.getenv('DISPLAY_WIDTH', '800'))
++    height = int(os.getenv('DISPLAY_HEIGHT', '480'))
++    if (width, height) == (800, 480):
++        return _binary_response(image_blob, media_type)
++
++    image_blob.seek(0)
++    with Image.open(image_blob) as source:
++        resized = source.resize((width, height), resample=Image.Resampling.LANCZOS)
++        output = BytesIO()
++        if media_type == 'image/bmp':
++            resized.convert('1').save(output, format='BMP')
++        else:
++            resized.save(output, format='PNG', optimize=True)
++    output.seek(0)
++    return _binary_response(output, media_type)
++
++
+ def _client_host(request: Request) -> str:
+     client = request.client
+     return client.host if client else 'unknown'
+@@ -57,7 +78,7 @@ def _serve_bmp_frame(request: Request, route: str) -> Response:
+         f'serving image for IP: {client_host} device: {device_id}'
+     )
+     logger.info('[API] %s - serving image for IP: %s device: %s', route, client_host, device_id)
+-    return _binary_response(frame, 'image/bmp')
++    return _device_image_response(frame, 'image/bmp')
+ 
+ 
+ def _serve_original_image(request: Request) -> Response:
+@@ -75,7 +96,7 @@ def _serve_grayscale_frame(request: Request) -> Response:
+         png_blob = state.get_next_png_frame(device_id, device_state)
+     except state.RotationUnavailableError as exc:
+         raise HTTPException(status_code=503, detail=str(exc)) from exc
+-    return _binary_response(png_blob, 'image/png')
++    return _device_image_response(png_blob, 'image/png')
+ 
+ 
+ @router.get('/image/{image_name}')
+@@ -89,7 +110,8 @@ def serve_image_variant(request: Request, image_name: str) -> Response:
+     if image_name in GRAYSCALE_VARIANTS:
+         return _serve_grayscale_frame(request)
+     if image_name == 'dummy.bmp':
+-        return FileResponse(utils.asset_path('img', 'dummy.bmp'), media_type='image/bmp')
++        with open(utils.asset_path('img', 'dummy.bmp'), 'rb') as dummy_file:
++            return _device_image_response(BytesIO(dummy_file.read()), 'image/bmp')
+     raise HTTPException(status_code=404, detail='Unknown image path')

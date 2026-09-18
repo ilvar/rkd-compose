@@ -1,0 +1,120 @@
+{{- if .Values.byosFastapi.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: byos-fastapi
+  labels:
+    app: byos-fastapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: byos-fastapi
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: byos-fastapi
+    spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: byos-fastapi
+        image: "{{ .Values.byosFastapi.image.repository }}:{{ .Values.byosFastapi.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: SERVER_PORT
+          value: {{ .Values.byosFastapi.environment.SERVER_PORT | quote }}
+        - name: ENABLE_SSL
+          value: {{ .Values.byosFastapi.environment.ENABLE_SSL | quote }}
+        - name: TIME_ZONE
+          value: {{ .Values.byosFastapi.environment.TIME_ZONE | quote }}
+        - name: TZ
+          value: {{ .Values.byosFastapi.environment.TIME_ZONE | quote }}
+        - name: CALIBRATION_PLUGIN_ENABLED
+          value: {{ .Values.byosFastapi.environment.CALIBRATION_PLUGIN_ENABLED | quote }}
+        - name: SETUP_FRIENDLY_ID
+          value: {{ .Values.byosFastapi.environment.SETUP_FRIENDLY_ID | quote }}
+        - name: DISPLAY_WIDTH
+          value: {{ .Values.byosFastapi.environment.DISPLAY_WIDTH | quote }}
+        - name: DISPLAY_HEIGHT
+          value: {{ .Values.byosFastapi.environment.DISPLAY_HEIGHT | quote }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.byosFastapi.environment.SERVER_PORT | int }}
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.byosFastapi.resources | nindent 10 }}
+        volumeMounts:
+        - name: data
+          mountPath: /app/var
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.byosFastapi.storage.name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: byos-fastapi
+  labels:
+    app: byos-fastapi
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.byosFastapi.ingress.servicePort }}
+    targetPort: http
+    protocol: TCP
+  selector:
+    app: byos-fastapi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.byosFastapi.storage.name }}
+spec:
+  storageClassName: local-path-retain
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.byosFastapi.storage.size }}
+{{- if and .Values.byosFastapi.ingress.enabled (gt (len .Values.byosFastapi.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: byos-fastapi
+  labels:
+    app: byos-fastapi
+spec:
+  tls:
+  - hosts:
+    {{- range .Values.byosFastapi.ingress.hosts }}
+    - {{ . | quote }}
+    {{- end }}
+    secretName: homelab-wildcard-h-tls
+  rules:
+  {{- range .Values.byosFastapi.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: byos-fastapi
+            port:
+              number: {{ $.Values.byosFastapi.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}
