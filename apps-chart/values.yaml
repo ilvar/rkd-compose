@@ -17,6 +17,7 @@ byosFastapi:
     SETUP_FRIENDLY_ID: RLCD42
     DISPLAY_WIDTH: "400"
     DISPLAY_HEIGHT: "300"
+    FORWARDED_ALLOW_IPS: "127.0.0.1,10.42.0.0/16"
   resources:
     requests:
       cpu: 100m

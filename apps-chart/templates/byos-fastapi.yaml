@@ -43,6 +43,8 @@ spec:
           value: {{ .Values.byosFastapi.environment.DISPLAY_WIDTH | quote }}
         - name: DISPLAY_HEIGHT
           value: {{ .Values.byosFastapi.environment.DISPLAY_HEIGHT | quote }}
+        - name: FORWARDED_ALLOW_IPS
+          value: {{ .Values.byosFastapi.environment.FORWARDED_ALLOW_IPS | quote }}
         ports:
         - name: http
           containerPort: {{ .Values.byosFastapi.environment.SERVER_PORT | int }}
