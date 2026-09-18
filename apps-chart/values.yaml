@@ -1211,8 +1211,10 @@ velero-ui:
   enabled: true
   configuration:
     general:
+      secretPassPhrase:
+        existingSecret: homelab-velero-ui-passphrase
       veleroNamespace: default
-  extraEnv:
+  env:
   - name: BASIC_AUTH_ENABLED
     value: "true"
   - name: BASIC_AUTH_USER
