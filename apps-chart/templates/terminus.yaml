@@ -1,0 +1,256 @@
+{{- if .Values.terminusDb.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: terminus-db
+  labels:
+    app: terminus-db
+spec:
+  serviceName: terminus-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: terminus-db
+  template:
+    metadata:
+      labels:
+        app: terminus-db
+    spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      containers:
+      - name: postgres
+        image: "{{ .Values.terminusDb.image.repository }}:{{ .Values.terminusDb.image.tag }}"
+        env:
+        - name: POSTGRES_USER
+          value: {{ .Values.terminusDb.environment.POSTGRES_USER | quote }}
+        - name: POSTGRES_DB
+          value: {{ .Values.terminusDb.environment.POSTGRES_DB | quote }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: terminus-secrets
+              key: database-password
+        ports:
+        - name: postgres
+          containerPort: 5432
+        resources:
+          {{- toYaml .Values.terminusDb.resources | nindent 10 }}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      storageClassName: local-path-retain
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.terminusDb.storage.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: terminus-db
+spec:
+  selector:
+    app: terminus-db
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+{{- end }}
+{{- if .Values.terminus.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.terminus.storage.valkey.name }}
+spec:
+  storageClassName: local-path-retain
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.terminus.storage.valkey.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: terminus-valkey
+  labels:
+    app: terminus-valkey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: terminus-valkey
+  template:
+    metadata:
+      labels:
+        app: terminus-valkey
+    spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      containers:
+      - name: valkey
+        image: valkey/valkey:9.1-alpine
+        args: ["--appendonly", "yes"]
+        ports:
+        - name: redis
+          containerPort: 6379
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.terminus.storage.valkey.name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: terminus-valkey
+spec:
+  selector:
+    app: terminus-valkey
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.terminus.storage.uploads.name }}
+spec:
+  storageClassName: local-path-retain
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.terminus.storage.uploads.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: terminus
+  labels:
+    app: terminus
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: terminus
+  template:
+    metadata:
+      labels:
+        app: terminus
+    spec:
+      {{- include "apps-chart.excludeNodeAffinity" . | nindent 6 }}
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+      - name: migrate
+        image: "{{ .Values.terminus.image.repository }}:{{ .Values.terminus.image.tag }}"
+        command: ["bundle", "exec", "hanami", "db", "migrate"]
+        env: &terminus-env
+        - name: API_URI
+          value: {{ .Values.terminus.environment.API_URI | quote }}
+        - name: HANAMI_PORT
+          value: {{ .Values.terminus.environment.HANAMI_PORT | quote }}
+        - name: TZ
+          value: {{ .Values.terminus.environment.TZ | quote }}
+        - name: RACK_ATTACK_ALLOWED_SUBNETS
+          value: {{ .Values.terminus.environment.RACK_ATTACK_ALLOWED_SUBNETS | quote }}
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: terminus-secrets
+              key: database-url
+        - name: APP_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: terminus-secrets
+              key: app-secret
+        - name: KEYVALUE_URL
+          value: redis://terminus-valkey:6379
+      containers:
+      - name: web
+        image: "{{ .Values.terminus.image.repository }}:{{ .Values.terminus.image.tag }}"
+        env: *terminus-env
+        ports:
+        - name: http
+          containerPort: {{ .Values.terminus.environment.HANAMI_PORT | int }}
+        resources:
+          {{- toYaml .Values.terminus.resources.web | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /up
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/public/uploads
+      - name: worker
+        image: "{{ .Values.terminus.image.repository }}:{{ .Values.terminus.image.tag }}"
+        command: ["bundle", "exec", "sidekiq", "-r", "./config/sidekiq.rb"]
+        env: *terminus-env
+        resources:
+          {{- toYaml .Values.terminus.resources.worker | nindent 10 }}
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/public/uploads
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: {{ .Values.terminus.storage.uploads.name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: terminus
+spec:
+  selector:
+    app: terminus
+  ports:
+  - name: http
+    port: {{ .Values.terminus.ingress.servicePort }}
+    targetPort: http
+{{- if and .Values.terminus.ingress.enabled (gt (len .Values.terminus.ingress.hosts) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: terminus
+spec:
+  tls:
+  - hosts:
+    {{- range .Values.terminus.ingress.hosts }}
+    - {{ . | quote }}
+    {{- end }}
+    secretName: homelab-wildcard-h-tls
+  rules:
+  {{- range .Values.terminus.ingress.hosts }}
+  - host: {{ . | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: terminus
+            port:
+              number: {{ $.Values.terminus.ingress.servicePort }}
+  {{- end }}
+{{- end }}
+{{- end }}

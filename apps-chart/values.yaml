@@ -33,6 +33,58 @@ byosFastapi:
     - trmnl.h.rkd.pw
     - trmnl.k.rkd.pw
     servicePort: 4567
+terminus:
+  enabled: true
+  image:
+    repository: ghcr.io/usetrmnl/terminus
+    tag: latest
+  environment:
+    API_URI: https://terminus.h.rkd.pw
+    HANAMI_PORT: "2300"
+    TZ: Europe/Dublin
+    RACK_ATTACK_ALLOWED_SUBNETS: "10.42.0.0/16"
+  resources:
+    web:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+    worker:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+  storage:
+    uploads:
+      name: terminus-uploads
+      size: 2Gi
+    valkey:
+      name: terminus-valkey-data
+      size: 1Gi
+  ingress:
+    enabled: true
+    hosts:
+    - terminus.h.rkd.pw
+    - terminus.k.rkd.pw
+    servicePort: 2300
+terminusDb:
+  enabled: true
+  image:
+    repository: postgres
+    tag: 18.6-alpine
+  environment:
+    POSTGRES_USER: terminus
+    POSTGRES_DB: terminus
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  storage:
+    size: 2Gi
 blocky:
   enabled: true
   image:
