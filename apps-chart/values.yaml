@@ -516,7 +516,7 @@ nextcloud:
   db:
     image:
       repository: mariadb
-      tag: '12.3'
+      tag: '13.0'
     resources:
       limits:
         memory: 163Mi
