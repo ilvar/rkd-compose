@@ -8,7 +8,7 @@ byosFastapi:
   enabled: true
   image:
     repository: ilvar/trmnl-server-waveshare
-    tag: main-10d16d7
+    tag: native400-20260918
   environment:
     SERVER_PORT: "4567"
     ENABLE_SSL: "false"
