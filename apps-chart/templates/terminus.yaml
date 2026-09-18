@@ -193,8 +193,7 @@ spec:
         resources:
           {{- toYaml .Values.terminus.resources.web | nindent 10 }}
         readinessProbe:
-          httpGet:
-            path: /up
+          tcpSocket:
             port: http
           initialDelaySeconds: 10
           periodSeconds: 10
