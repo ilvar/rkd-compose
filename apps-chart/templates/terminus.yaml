@@ -167,6 +167,8 @@ spec:
           value: {{ .Values.terminus.environment.API_URI | quote }}
         - name: HANAMI_PORT
           value: {{ .Values.terminus.environment.HANAMI_PORT | quote }}
+        - name: APP_SETUP
+          value: "true"
         - name: TZ
           value: {{ .Values.terminus.environment.TZ | quote }}
         - name: RACK_ATTACK_ALLOWED_SUBNETS
