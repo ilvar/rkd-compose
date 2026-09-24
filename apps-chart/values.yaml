@@ -1237,6 +1237,8 @@ backups:
     schedule: "0 6 * * *"
 velero:
   enabled: true
+  image:
+    tag: v1.18.3
   deployNodeAgent: true
   podAnnotations:
     backup.velero.io/backup-volumes-excludes: plugins,scratch
@@ -1269,7 +1271,7 @@ velero:
         checksumAlgorithm: ""
   initContainers:
   - name: velero-plugin-for-aws
-    image: velero/velero-plugin-for-aws:v1.14.2
+    image: velero/velero-plugin-for-aws:v1.14.3
     volumeMounts:
     - mountPath: /target
       name: plugins
