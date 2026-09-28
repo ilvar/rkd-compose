@@ -55,7 +55,7 @@ terminus:
         cpu: 100m
         memory: 512Mi
       limits:
-        memory: 1Gi
+        memory: 2Gi
   storage:
     uploads:
       name: terminus-uploads
