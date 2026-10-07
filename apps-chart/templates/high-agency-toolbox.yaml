@@ -1,0 +1,121 @@
+{{- if .Values.highAgencyToolbox.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: high-agency-toolbox
+  labels:
+    app: high-agency-toolbox
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: high-agency-toolbox
+  template:
+    metadata:
+      labels:
+        app: high-agency-toolbox
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.highAgencyToolbox.imagePullSecret }}
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: high-agency-toolbox
+          image: "{{ .Values.highAgencyToolbox.image.repository }}:{{ .Values.highAgencyToolbox.image.tag }}"
+          imagePullPolicy: Always
+          env:
+            - name: LISTEN_ADDR
+              value: ":8080"
+            - name: DATA_DIR
+              value: /data
+            - name: WEB_DIR
+              value: /app/web
+            - name: APP_URL
+              value: {{ .Values.highAgencyToolbox.appUrl | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            {{- toYaml .Values.highAgencyToolbox.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: high-agency-toolbox-data
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: high-agency-toolbox
+spec:
+  selector:
+    app: high-agency-toolbox
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: high-agency-toolbox-data
+spec:
+  storageClassName: local-path-retain
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.highAgencyToolbox.storageSize }}
+{{- if .Values.highAgencyToolbox.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: high-agency-toolbox
+spec:
+  tls:
+    - hosts:
+        - {{ .Values.highAgencyToolbox.ingress.host | quote }}
+      secretName: homelab-wildcard-h-tls
+  rules:
+    - host: {{ .Values.highAgencyToolbox.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: high-agency-toolbox
+                port:
+                  number: 8080
+{{- end }}
+{{- end }}
