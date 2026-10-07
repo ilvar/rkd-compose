@@ -836,7 +836,7 @@ blog:
   enabled: true
   image:
     repository: ilvar/blog
-    tag: 1.0.1
+    tag: 1.0.2
   resources:
     limits:
       memory: 100Mi
