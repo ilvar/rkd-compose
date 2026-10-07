@@ -4,7 +4,7 @@ dependencies:
   version: 2.2.18
 - name: velero
   repository: https://vmware-tanzu.github.io/helm-charts
-  version: 12.1.0
+  version: 12.2.0
 - name: velero-ui
   repository: https://helm.otwld.com/
   version: 0.15.0
@@ -14,5 +14,5 @@ dependencies:
 - name: glacier
   repository: oci://ghcr.io/ilvar/charts
   version: 0.3.0
-digest: sha256:e792041763cff95c6a6bec08b77a067599505fadddacfb7f798ce92f5e9b04b2
+digest: sha256:f569671ce4b6bd3e8b7227aeb2198e6afbd29ea2cbef087b5f436677ac8b6bec
 generated: "2026-10-05T18:01:57.93107729Z"
