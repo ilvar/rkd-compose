@@ -33,7 +33,7 @@ dependencies:
     version: "0.16.0"
     repository: "https://helm.otwld.com/"
   - name: descheduler
-    version: "0.36.0"
+    version: "0.37.0"
     repository: "https://kubernetes-sigs.github.io/descheduler/"
   - name: glacier
     version: "0.3.0"
