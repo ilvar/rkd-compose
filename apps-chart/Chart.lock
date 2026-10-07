@@ -1,7 +1,7 @@
 dependencies:
 - name: reloader
   repository: https://stakater.github.io/stakater-charts
-  version: 2.2.16
+  version: 2.2.18
 - name: velero
   repository: https://vmware-tanzu.github.io/helm-charts
   version: 12.2.0
@@ -14,5 +14,5 @@ dependencies:
 - name: glacier
   repository: oci://ghcr.io/ilvar/charts
   version: 0.3.0
-digest: sha256:0d6fb864ba29f6f0df91063bc027062eca6a974112159ff96cbea8a72f79ac3d
-generated: "2026-10-05T18:02:25.532922665Z"
+digest: sha256:f569671ce4b6bd3e8b7227aeb2198e6afbd29ea2cbef087b5f436677ac8b6bec
+generated: "2026-10-05T18:01:57.93107729Z"
