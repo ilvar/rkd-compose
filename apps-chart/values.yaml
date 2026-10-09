@@ -1321,6 +1321,12 @@ velero-ui:
     value: "admin"
   - name: BASIC_AUTH_PASSWORD
     value: "admin"
+  livenessProbe:
+    timeoutSeconds: 10
+    failureThreshold: 12
+  readinessProbe:
+    timeoutSeconds: 10
+    failureThreshold: 12
   ingress:
     enabled: true
     className: traefik
