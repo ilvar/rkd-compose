@@ -33,6 +33,18 @@
       ],
       "groupName": "beszel",
       "automerge": true
+    },
+    {
+      "description": "Track each published High Agency Toolbox image by its latest digest; commit SHA tags are not ordered versions.",
+      "matchManagers": [
+        "helm-values"
+      ],
+      "matchDepNames": [
+        "ghcr.io/ilvar/high-agency-toolbox"
+      ],
+      "pinDigests": true,
+      "automerge": true,
+      "groupName": "high-agency-toolbox"
     }
   ]
 }

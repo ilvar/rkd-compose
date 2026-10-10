@@ -8,7 +8,8 @@ highAgencyToolbox:
   enabled: true
   image:
     repository: ghcr.io/ilvar/high-agency-toolbox
-    tag: sha-847aeba5ccc03b9e92a144520733c52b912bb313
+    # Follow main releases through Renovate digest updates, while keeping deployments immutable.
+    tag: latest@sha256:bb245fa5e625123ab649b2c0cf37ae1fec8842ac819cca34655928f6c09946e6
   imagePullSecret: high-agency-toolbox-ghcr
   appUrl: https://hat.h.rkd.pw
   storageSize: 2Gi
