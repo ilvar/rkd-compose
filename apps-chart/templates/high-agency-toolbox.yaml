@@ -1,4 +1,7 @@
 {{- if .Values.highAgencyToolbox.enabled }}
+{{- if and .Values.highAgencyToolbox.openrouter.enabled (not .Values.highAgencyToolbox.auth.enabled) }}
+{{- fail "highAgencyToolbox.auth.enabled must be true when highAgencyToolbox.openrouter.enabled is true for public deployments" }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,6 +39,30 @@ spec:
               value: /app/web
             - name: APP_URL
               value: {{ .Values.highAgencyToolbox.appUrl | quote }}
+            {{- if .Values.highAgencyToolbox.openrouter.enabled }}
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "highAgencyToolbox.openrouter.apiKeySecret.name is required" .Values.highAgencyToolbox.openrouter.apiKeySecret.name }}
+                  key: {{ required "highAgencyToolbox.openrouter.apiKeySecret.key is required" .Values.highAgencyToolbox.openrouter.apiKeySecret.key }}
+            - name: OPENROUTER_MODEL
+              value: {{ required "highAgencyToolbox.openrouter.model is required when openrouter.enabled=true" .Values.highAgencyToolbox.openrouter.model | quote }}
+            - name: OPENROUTER_BASE_URL
+              value: {{ .Values.highAgencyToolbox.openrouter.baseUrl | quote }}
+            {{- end }}
+            {{- if .Values.highAgencyToolbox.auth.enabled }}
+            - name: SUPABASE_URL
+              value: {{ required "highAgencyToolbox.auth.supabaseUrl is required when auth.enabled=true" .Values.highAgencyToolbox.auth.supabaseUrl | quote }}
+            {{- if .Values.highAgencyToolbox.auth.supabaseInternalUrl }}
+            - name: SUPABASE_INTERNAL_URL
+              value: {{ .Values.highAgencyToolbox.auth.supabaseInternalUrl | quote }}
+            {{- end }}
+            - name: SUPABASE_PUBLISHABLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "highAgencyToolbox.auth.publishableKeySecret.name is required when auth.enabled=true" .Values.highAgencyToolbox.auth.publishableKeySecret.name }}
+                  key: {{ required "highAgencyToolbox.auth.publishableKeySecret.key is required when auth.enabled=true" .Values.highAgencyToolbox.auth.publishableKeySecret.key }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 8080

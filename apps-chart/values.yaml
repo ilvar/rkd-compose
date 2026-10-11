@@ -12,6 +12,20 @@ highAgencyToolbox:
     tag: latest@sha256:8e0740fd53a138fe08c3f306b5d8845927db8e051fead067db5d4baf828eb494
   imagePullSecret: high-agency-toolbox-ghcr
   appUrl: https://hat.h.rkd.pw
+  openrouter:
+    enabled: false
+    apiKeySecret:
+      name: high-agency-toolbox-openrouter
+      key: OPENROUTER_API_KEY
+    model: ""
+    baseUrl: https://openrouter.ai/api/v1
+  auth:
+    enabled: false
+    supabaseUrl: ""
+    supabaseInternalUrl: ""
+    publishableKeySecret:
+      name: ""
+      key: SUPABASE_PUBLISHABLE_KEY
   storageSize: 2Gi
   resources:
     requests:
