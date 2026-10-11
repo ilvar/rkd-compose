@@ -17,7 +17,7 @@ highAgencyToolbox:
     apiKeySecret:
       name: high-agency-toolbox-openrouter
       key: OPENROUTER_API_KEY
-    model: ""
+    model: openrouter/auto
     baseUrl: https://openrouter.ai/api/v1
   auth:
     enabled: false
