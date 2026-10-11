@@ -13,7 +13,7 @@ highAgencyToolbox:
   imagePullSecret: high-agency-toolbox-ghcr
   appUrl: https://hat.h.rkd.pw
   openrouter:
-    enabled: false
+    enabled: true
     apiKeySecret:
       name: high-agency-toolbox-openrouter
       key: OPENROUTER_API_KEY

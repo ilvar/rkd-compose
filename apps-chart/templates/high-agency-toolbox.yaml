@@ -1,7 +1,4 @@
 {{- if .Values.highAgencyToolbox.enabled }}
-{{- if and .Values.highAgencyToolbox.openrouter.enabled (not .Values.highAgencyToolbox.auth.enabled) }}
-{{- fail "highAgencyToolbox.auth.enabled must be true when highAgencyToolbox.openrouter.enabled is true for public deployments" }}
-{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
