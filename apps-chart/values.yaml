@@ -826,7 +826,7 @@ miniflux:
   enabled: true
   image:
     repository: miniflux/miniflux
-    tag: 2.3.3
+    tag: 2.3.4
   resources:
     limits:
       memory: 100Mi
