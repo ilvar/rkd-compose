@@ -146,3 +146,9 @@ For issues:
 2. Review Fleet/GitRepo logs
 3. Verify cluster resources
 4. Check ingress controller status
+
+## High Agency Toolbox updates
+
+The toolbox image uses `latest@sha256:...` in `values.yaml`. Its publishing workflow updates `latest` on every main-branch push and verifies amd64/arm64 manifests. Renovate's native `helm-values` manager tracks the digest and auto-merges its update PR once repository checks allow it; Fleet then reconciles the changed image reference. Commit-SHA tags remain available upstream for manual rollback, but are not used for automatic update ordering.
+
+The GHCR package is private. Renovate needs read access to `ghcr.io/ilvar/high-agency-toolbox`; the cluster's `high-agency-toolbox-ghcr` image-pull Secret is separate and is not available to Renovate. Renovate can use its GitHub platform token if that token has package access. Otherwise configure a read-only GHCR credential in Mend's repository/organization Credentials settings and a matching `ghcr.io` Docker host rule; never commit a token to this public repository. Check Renovate's logs for registry lookup errors if no digest-update PR appears.

@@ -8,9 +8,24 @@ highAgencyToolbox:
   enabled: true
   image:
     repository: ghcr.io/ilvar/high-agency-toolbox
-    tag: sha-847aeba5ccc03b9e92a144520733c52b912bb313
+    # Follow main releases through Renovate digest updates, while keeping deployments immutable.
+    tag: latest@sha256:1b6ed07974e43cbc03226002d92cc3b1c0f61ade8275a8c7891631786d6904fd
   imagePullSecret: high-agency-toolbox-ghcr
   appUrl: https://hat.h.rkd.pw
+  openrouter:
+    enabled: true
+    apiKeySecret:
+      name: high-agency-toolbox-openrouter
+      key: OPENROUTER_API_KEY
+    model: openrouter/auto
+    baseUrl: https://openrouter.ai/api/v1
+  auth:
+    enabled: true
+    supabaseUrl: https://pqbynvejnhtjblqazmif.supabase.co
+    supabaseInternalUrl: ""
+    publishableKeySecret:
+      name: high-agency-toolbox-supabase
+      key: SUPABASE_PUBLISHABLE_KEY
   storageSize: 2Gi
   resources:
     requests:
@@ -392,7 +407,7 @@ compote3:
   enabled: true
   image:
     repository: ilvar/compote3
-    tag: v0.4.1
+    tag: v0.4.2
   resources:
     limits:
       memory: 100Mi
@@ -635,7 +650,7 @@ immich:
   server:
     image:
       repository: ghcr.io/immich-app/immich-server
-      tag: v3.2.4
+      tag: v3.3.3
     resources:
       limits:
         memory: 2048Mi
@@ -656,7 +671,7 @@ immich:
   machineLearning:
     image:
       repository: ghcr.io/immich-app/immich-machine-learning
-      tag: v3.2.4
+      tag: v3.3.3
     resources:
       limits:
         memory: 1024Mi
@@ -1288,7 +1303,7 @@ velero:
         checksumAlgorithm: ""
   initContainers:
   - name: velero-plugin-for-aws
-    image: velero/velero-plugin-for-aws:v1.14.3
+    image: velero/velero-plugin-for-aws:v1.14.4
     volumeMounts:
     - mountPath: /target
       name: plugins
@@ -1321,6 +1336,12 @@ velero-ui:
     value: "admin"
   - name: BASIC_AUTH_PASSWORD
     value: "admin"
+  livenessProbe:
+    timeoutSeconds: 10
+    failureThreshold: 12
+  readinessProbe:
+    timeoutSeconds: 10
+    failureThreshold: 12
   ingress:
     enabled: true
     className: traefik
