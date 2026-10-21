@@ -166,7 +166,7 @@ flaresolverr:
     tag: latest
   resources:
     limits:
-      memory: 512Mi
+      memory: 2048Mi
     requests:
       memory: 512Mi
       cpu: 250m
