@@ -650,7 +650,7 @@ immich:
   server:
     image:
       repository: ghcr.io/immich-app/immich-server
-      tag: v3.3.4
+      tag: v3.3.5
     resources:
       limits:
         memory: 2048Mi
@@ -671,7 +671,7 @@ immich:
   machineLearning:
     image:
       repository: ghcr.io/immich-app/immich-machine-learning
-      tag: v3.3.4
+      tag: v3.3.5
     resources:
       limits:
         memory: 1024Mi
