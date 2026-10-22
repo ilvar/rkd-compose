@@ -1332,10 +1332,13 @@ velero-ui:
   env:
   - name: BASIC_AUTH_ENABLED
     value: "true"
-  - name: BASIC_AUTH_USER
+  - name: BASIC_AUTH_USERNAME
     value: "admin"
   - name: BASIC_AUTH_PASSWORD
-    value: "admin"
+    valueFrom:
+      secretKeyRef:
+        name: homelab-velero-ui-basic-auth
+        key: password
   livenessProbe:
     timeoutSeconds: 10
     failureThreshold: 12
