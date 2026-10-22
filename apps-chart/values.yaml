@@ -650,7 +650,7 @@ immich:
   server:
     image:
       repository: ghcr.io/immich-app/immich-server
-      tag: v3.3.4
+      tag: v3.3.5
     resources:
       limits:
         memory: 2048Mi
