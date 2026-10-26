@@ -764,7 +764,7 @@ vaultwarden:
   enabled: true
   image:
     repository: vaultwarden/server
-    tag: latest
+    tag: 1.37.3
   resources:
     limits:
       memory: 256Mi
