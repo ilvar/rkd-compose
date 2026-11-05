@@ -7,12 +7,12 @@ dependencies:
   version: 12.2.3
 - name: velero-ui
   repository: https://helm.otwld.com/
-  version: 1.1.0
+  version: 1.2.0
 - name: descheduler
   repository: https://kubernetes-sigs.github.io/descheduler/
   version: 0.37.0
 - name: glacier
   repository: oci://ghcr.io/ilvar/charts
   version: 0.3.0
-digest: sha256:c800bb19d44dcd2e7071482be4389303381f3ed48c005c65ce6f683668f2a133
-generated: "2026-11-03T13:53:37.725879708Z"
+digest: sha256:9d52c31949e7ad8f3f4a840e6f34a1c4301ea4915e951bccc16f9723f415dd9c
+generated: "2026-11-05T08:36:00.259436839Z"
