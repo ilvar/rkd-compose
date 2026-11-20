@@ -991,7 +991,7 @@ nodeExporter:
   enabled: true
   image:
     repository: prom/node-exporter
-    tag: v1.12.1
+    tag: v1.13.1
   resources:
     requests:
       cpu: 100m
